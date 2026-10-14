@@ -4,7 +4,8 @@ from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKe
 from database.db import (
     get_connection, get_character_by_user_id, update_character,
     create_world_snapshot, get_world_telemetry, give_global_airdrop, get_active_groups,
-    get_character_by_identifier, give_player_item, strip_player_equipment, reset_player_character
+    get_character_by_identifier, give_player_item, strip_player_equipment, reset_player_character,
+    set_setting
 )
 from keyboards.inline_menus import owner_god_mode_keyboard, main_menu_keyboard
 from config import OWNER_ID, OWNER_USERNAME
@@ -540,6 +541,43 @@ async def admin_unjail_player(message: Message):
         f"Ritsar *{target_char['name']}* Yaratuvchining saxovati va marhamati bilan zindondan ozod etildi!",
         parse_mode="Markdown"
     )
+
+# =====================================================================
+# MAJBURIY KANAL SOZLAMASI (/set_channel, /remove_channel)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(set_channel|kanal_quying)"))
+async def admin_set_channel(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    if len(args) < 2:
+        await message.reply("❌ Kanal ko'rsatilmadi! Foydalanish:\n`/set_channel @kanal_usernami`", parse_mode="Markdown")
+        return
+        
+    channel = args[1].strip()
+    await set_setting("required_channel", channel)
+    await message.reply(
+        f"📢 *MAJBURIY KANAL O'RNATILDI!* 👑\n\n"
+        f"Endi botdan foydalanish uchun barcha o'yinchilar *{channel}* kanaliga a'zo bo'lishi shart qilib belgilandi!\n\n"
+        f"⚠️ *Muhim Eslatma:* Bot ushbu kanalda **Administrator** bo'lishi shart (a'zolikni tekshira olishi uchun).",
+        parse_mode="Markdown"
+    )
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(remove_channel|kanalni_ochir)"))
+async def admin_remove_channel(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    await set_setting("required_channel", "")
+    await message.reply("📢 *Majburiy kanal a'zoligi talabi o'chirildi!* Endi hamma erkin kira oladi.", parse_mode="Markdown")
+
 
 # =====================================================================
 # 16. CHAQMOQ VA JAZO: SMITE (/kill, !chaqmoq, !ur)

@@ -174,23 +174,49 @@ async def init_db():
         );
         """)
 
+        # 11. Game Settings Table (Key-Value)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS game_settings (
+            key TEXT PRIMARY KEY,
+            value TEXT
+        );
+        """)
+
+        # 12. Guilds Table
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS guilds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT UNIQUE,
+            leader_id INTEGER,
+            level INTEGER DEFAULT 1,
+            treasury INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        # 13. Dungeon Progress
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS dungeon_progress (
+            character_id INTEGER PRIMARY KEY,
+            max_floor INTEGER DEFAULT 1,
+            completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
         # Migrations if needed
-        try:
-            await db.execute("ALTER TABLE characters ADD COLUMN username TEXT DEFAULT NULL;")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE characters ADD COLUMN is_jailed INTEGER DEFAULT 0;")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE characters ADD COLUMN is_muted INTEGER DEFAULT 0;")
-        except Exception:
-            pass
-        try:
-            await db.execute("ALTER TABLE characters ADD COLUMN buff_multiplier REAL DEFAULT 1.0;")
-        except Exception:
-            pass
+        for col_def in [
+            ("username", "TEXT DEFAULT NULL"),
+            ("is_jailed", "INTEGER DEFAULT 0"),
+            ("is_muted", "INTEGER DEFAULT 0"),
+            ("buff_multiplier", "REAL DEFAULT 1.0"),
+            ("last_daily_claim", "TEXT DEFAULT NULL"),
+            ("daily_streak", "INTEGER DEFAULT 0"),
+            ("guild_id", "INTEGER DEFAULT NULL")
+        ]:
+            try:
+                await db.execute(f"ALTER TABLE characters ADD COLUMN {col_def[0]} {col_def[1]};")
+            except Exception:
+                pass
 
         # Seed kingdoms if not existing
         for k_id, k_data in KINGDOMS.items():
@@ -464,4 +490,160 @@ async def give_global_airdrop(amount: int = 500):
     async with get_connection() as db:
         await db.execute("UPDATE characters SET gold = gold + ? WHERE is_owner = 0", (amount,))
         await db.commit()
+
+# =====================================================================
+# GAME SETTINGS & MANDATORY CHANNEL
+# =====================================================================
+
+async def get_setting(key: str, default: str = "") -> str:
+    async with get_connection() as db:
+        async with db.execute("SELECT value FROM game_settings WHERE key = ?", (key,)) as cur:
+            row = await cur.fetchone()
+            return row[0] if row else default
+
+async def set_setting(key: str, value: str):
+    async with get_connection() as db:
+        await db.execute("""
+        INSERT INTO game_settings (key, value) VALUES (?, ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+        """, (key, value))
+        await db.commit()
+
+# =====================================================================
+# DAILY REWARD STREAK SYSTEM
+# =====================================================================
+
+DAILY_REWARDS = {
+    1: {"gold": 100, "gems": 0, "xp": 50, "text": "1-Kunlik Qasamyod: +100 🪙 Oltin"},
+    2: {"gold": 250, "gems": 1, "xp": 100, "text": "2-Kunlik Sadoqat: +250 🪙 Oltin, +1 💎 Javohir"},
+    3: {"gold": 500, "gems": 2, "xp": 200, "text": "3-Kunlik Matonat: +500 🪙 Oltin, +2 💎 Javohir"},
+    4: {"gold": 1000, "gems": 3, "xp": 350, "text": "4-Kunlik Jasorat: +1,000 🪙 Oltin, +3 💎 Javohir"},
+    5: {"gold": 2000, "gems": 5, "xp": 500, "text": "5-Kunlik Qahramonlik: +2,000 🪙 Oltin, +5 💎 Javohir"},
+    6: {"gold": 3500, "gems": 8, "xp": 750, "text": "6-Kunlik Imperator Mukofoti: +3,500 🪙 Oltin, +8 💎 Javohir"},
+    7: {"gold": 7777, "gems": 25, "xp": 2000, "text": "🔥 7-KUNLIK AFSUN: +7,777 🪙 Oltin, +25 💎 Javohir va Afsonaviy Sovut!"}
+}
+
+async def claim_daily_streak(character_id: int):
+    import datetime
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        now = datetime.datetime.utcnow()
+        last_claim_str = char.get("last_daily_claim")
+        streak = char.get("daily_streak", 0) or 0
+
+        if last_claim_str:
+            try:
+                last_claim = datetime.datetime.fromisoformat(last_claim_str)
+                diff = now - last_claim
+                if diff.total_seconds() < 72000: # 20 soatdan kam bo'lsa
+                    hours_left = int((72000 - diff.total_seconds()) // 3600)
+                    return False, f"⏳ Siz bugungi mukofotni olgansiz! Keyingi sovg'a {hours_left} soatdan so'ng ochiladi.", streak
+                elif diff.total_seconds() > 172800: # 48 soatdan o'tib ketgan bo'lsa zanjir uziladi
+                    streak = 0
+            except Exception:
+                streak = 0
+
+        streak = (streak % 7) + 1
+        reward = DAILY_REWARDS.get(streak, DAILY_REWARDS[1])
+
+        new_gold = char["gold"] + reward["gold"]
+        new_gems = char.get("gems", 0) + reward["gems"]
+        new_xp = char["xp"] + reward["xp"]
+
+        await db.execute("""
+        UPDATE characters SET
+            gold = ?, gems = ?, xp = ?,
+            daily_streak = ?, last_daily_claim = ?
+        WHERE id = ?;
+        """, (new_gold, new_gems, new_xp, streak, now.isoformat(), character_id))
+
+        # 7-kunda maxsus sovg'a
+        if streak == 7:
+            await db.execute("""
+            INSERT INTO equipment (character_id, slot_type, item_name, rarity, attack, defense, durability, max_durability, is_equipped)
+            VALUES (?, 'armor', '🌟 7-Kunlik Afsonaviy Gambeson', 'legendary', 20, 180, 999, 999, 0);
+            """, (character_id,))
+
+        await db.commit()
+        return True, f"🎁 *TABRIKLAYMIZ!* Siz {streak}-kunlik sovg'ani oldingiz!\n\n{reward['text']}", streak
+
+# =====================================================================
+# BLACKSMITH FORGE (QUROLLARNI +1 ... +10 KUCHAYTIRISH)
+# =====================================================================
+
+async def upgrade_equipment(item_id: int, character_id: int):
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM equipment WHERE id = ? AND character_id = ?", (item_id, character_id)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Anjom topilmadi!"
+            item = dict(row)
+
+        async with db.execute("SELECT gold FROM characters WHERE id = ?", (character_id,)) as cur:
+            char_gold = (await cur.fetchone())[0]
+
+        # Name format: "Qilich +1"
+        name = item["item_name"]
+        import re
+        m = re.search(r"\+(\d+)$", name)
+        current_plus = int(m.group(1)) if m else 0
+
+        if current_plus >= 10:
+            return False, "Ushbu anjom maksimal +10 darajaga yetgan!"
+
+        cost = (current_plus + 1) * 200
+        if char_gold < cost:
+            return False, f"Oltin yetarli emas! Kuchaytirish narxi: {cost} 🪙 Oltin."
+
+        # Chance of success
+        success_rate = max(35, 100 - (current_plus * 8))
+        import random
+        if random.randint(1, 100) <= success_rate:
+            new_plus = current_plus + 1
+            clean_name = re.sub(r"\s*\+\d+$", "", name)
+            new_name = f"{clean_name} +{new_plus}"
+            new_atk = item["attack"] + 15
+            new_def = item["defense"] + 10
+
+            await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?", (cost, character_id))
+            await db.execute("""
+            UPDATE equipment SET item_name = ?, attack = ?, defense = ? WHERE id = ?;
+            """, (new_name, new_atk, new_def, item_id))
+            await db.commit()
+            return True, f"✨ *TEMIRCHI MUVOFAQIShI!* Anjom muvaffaqiyatli kuchaytirildi: *{new_name}* (+15 Zarba, +10 Himoya)!"
+        else:
+            await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?", (cost, character_id))
+            await db.commit()
+            return False, f"💨 *OMAD KELMADI!* Temirchi bolg'asi ostida ruda erib ketmadi. ({cost} Oltin sarflandi, lekin anjom buzilmadi)."
+
+# =====================================================================
+# PVE DUNGEON PROGRESS (5 BOSQICHLI ZINDONLAR)
+# =====================================================================
+
+DUNGEON_FLOORS = {
+    1: {"name": "Zulmat G'ori (Goblinlar)", "boss": "Goblinlar Sardori Grik", "hp": 180, "atk": 25, "loot_gold": 250, "loot_xp": 150},
+    2: {"name": "Qora Botqoqlik (Zaharlar)", "boss": "Zaharli Botqoq Iloni", "hp": 300, "atk": 40, "loot_gold": 600, "loot_xp": 300},
+    3: {"name": "Tashlandiq Qasr (Sharpalar)", "boss": "Qora Ritsar sharpasi", "hp": 550, "atk": 65, "loot_gold": 1200, "loot_xp": 600},
+    4: {"name": "Ajdaho Qoyasi (Olovli Mag'ora)", "boss": "Qizil Ajdaho Bolasi", "hp": 900, "atk": 95, "loot_gold": 2500, "loot_xp": 1200},
+    5: {"name": "Valoriya Taqiqlangan Labirinti", "boss": "Lord Malakor — Qorong'ulik Hukmdori", "hp": 1500, "atk": 140, "loot_gold": 5000, "loot_xp": 3000}
+}
+
+async def get_dungeon_progress(character_id: int):
+    async with get_connection() as db:
+        async with db.execute("SELECT max_floor FROM dungeon_progress WHERE character_id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 1
+
+async def advance_dungeon_floor(character_id: int, current_floor: int):
+    async with get_connection() as db:
+        await db.execute("""
+        INSERT INTO dungeon_progress (character_id, max_floor) VALUES (?, ?)
+        ON CONFLICT(character_id) DO UPDATE SET max_floor = MAX(max_floor, excluded.max_floor);
+        """, (character_id, current_floor + 1))
+        await db.commit()
+
 

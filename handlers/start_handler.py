@@ -6,6 +6,7 @@ from config import OWNER_ID, OWNER_USERNAME
 from game.constants import CLASSES
 from game.retention_engine import RetentionEngine
 from keyboards.inline_menus import main_menu_keyboard, class_selection_keyboard
+from services.channel_sub import is_subscribed_to_channel
 
 start_router = Router()
 
@@ -23,6 +24,25 @@ async def handle_start(message: Message):
     username = message.from_user.username
     user_name = message.from_user.first_name or "Ritsar"
     
+    # 1. MAJBURIY KANALGA A'ZOLIK TEKSHIRUVI
+    is_sub, req_channel = await is_subscribed_to_channel(message.bot, user_id, username)
+    if not is_sub:
+        clean_chan = req_channel.lstrip("@")
+        channel_url = f"https://t.me/{clean_chan}"
+        buttons = [
+            [InlineKeyboardButton(text="📢 Rasmiy Kanalga A'zo Bo'lish", url=channel_url)],
+            [InlineKeyboardButton(text="🔄 A'zolikni Tekshirish", callback_data="check_channel_sub")]
+        ]
+        await message.answer(
+            "🛑 *VALORIYA SARHADLARIGA KIRISH CHEKLANGAN!* 🛑\n\n"
+            "Qirollik darvozasidan o'tish va o'yinni boshlash uchun rasmiy kanalimizga a'zo bo'lishingiz shart!\n\n"
+            f"📢 *Rasmiy Kanal:* {req_channel}\n\n"
+            "Kanalga a'zo bo'lgach, pastdagi *'🔄 A'zolikni Tekshirish'* tugmasini bosing:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+        )
+        return
+
     # Check referral
     args = message.text.split()
     invited_by = None
@@ -62,6 +82,37 @@ async def handle_start(message: Message):
         # FTUE 2-daqiqalik Kvest
         ftue = RetentionEngine.get_ftue_tutorial()
         await message.answer(
+            f"⚔️ *VALORIYA: BOQIY QIROLLIKLAR DUNYOSIGA XUSH KELIBSIZ!* ⚔️\n\n"
+            f"{ftue['story']}\n\n"
+            f"Qaysi yo'nalish bo'yicha qasamyod qilasiz?",
+            parse_mode="Markdown",
+            reply_markup=class_selection_keyboard()
+        )
+
+@start_router.callback_query(F.data == "check_channel_sub")
+async def process_check_sub(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    is_sub, req_channel = await is_subscribed_to_channel(callback.bot, user_id, username)
+    if not is_sub:
+        await callback.answer("❌ Siz hali kanalga a'zo bo'lmadingiz! Iltimos, a'zo bo'ling va qayta bosing.", show_alert=True)
+        return
+
+    await callback.answer("✅ A'zolik muvaffaqiyatli tasdiqlandi!", show_alert=False)
+    character = await get_character_by_user_id(user_id)
+    if character:
+        is_owner = bool(character.get("is_owner", 0)) or is_user_owner(user_id, username)
+        await callback.message.edit_text(
+            f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
+            f"🏰 Daraja: *{character['level']}* | 🪙 Oltin: *{character['gold']}*\n"
+            f"⚔️ Kasb: *{character['class_id'].upper()}* | ❤️ Jon: *{character['hp']}/{character['max_hp']}*\n\n"
+            f"Valoriya qit'asida qanday harbiy buyruq berasiz?",
+            parse_mode="Markdown",
+            reply_markup=main_menu_keyboard(is_owner)
+        )
+    else:
+        ftue = RetentionEngine.get_ftue_tutorial()
+        await callback.message.edit_text(
             f"⚔️ *VALORIYA: BOQIY QIROLLIKLAR DUNYOSIGA XUSH KELIBSIZ!* ⚔️\n\n"
             f"{ftue['story']}\n\n"
             f"Qaysi yo'nalish bo'yicha qasamyod qilasiz?",

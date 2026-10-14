@@ -17,6 +17,9 @@ from handlers.top_handler import top_router
 from handlers.owner_handler import owner_router
 from handlers.group_handler import group_router
 from handlers.chat_ai_handler import chat_router
+from handlers.daily_handler import daily_router
+from handlers.forge_handler import forge_router
+from handlers.dungeon_handler import dungeon_router
 from game.npc_broadcaster import npc_periodic_broadcaster_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -65,6 +68,9 @@ async def main():
     dp.include_router(tavern_router)
     dp.include_router(auction_router)
     dp.include_router(top_router)
+    dp.include_router(daily_router)
+    dp.include_router(forge_router)
+    dp.include_router(dungeon_router)
     dp.include_router(owner_router)
     dp.include_router(group_router)
     dp.include_router(chat_router)

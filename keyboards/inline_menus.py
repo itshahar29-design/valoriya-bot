@@ -9,11 +9,15 @@ def main_menu_keyboard(is_owner: bool = False):
         ],
         [
             InlineKeyboardButton(text="🎒 Inventar (8 Slot)", callback_data="menu_inventory"),
-            InlineKeyboardButton(text="🏛 Auksion & Bozor", callback_data="menu_auction")
+            InlineKeyboardButton(text="🔨 Temirchi (+1..+10)", callback_data="menu_forge")
         ],
         [
-            InlineKeyboardButton(text="🕊 Kaptar Pochtasi", callback_data="menu_pigeon"),
-            InlineKeyboardButton(text="🍻 Taverna", callback_data="menu_tavern")
+            InlineKeyboardButton(text="🗺 Zindonlar (PvE)", callback_data="menu_dungeon"),
+            InlineKeyboardButton(text="🎁 Kundalik Sovg'a", callback_data="menu_daily")
+        ],
+        [
+            InlineKeyboardButton(text="🏛 Auksion & Bozor", callback_data="menu_auction"),
+            InlineKeyboardButton(text="🍻 Taverna & Qimor", callback_data="menu_tavern")
         ],
         [
             InlineKeyboardButton(text="👤 Ritsar Profili", callback_data="menu_profile"),
