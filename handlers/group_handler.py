@@ -2,9 +2,10 @@ import random
 import asyncio
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from database.db import get_character_by_user_id, create_character, update_character
+from database.db import get_character_by_user_id, create_character, update_character, register_group
 from game.npc_engine import NPCEngine
 from game.battle_engine import BattleEngine
+from game.npc_broadcaster import ACTIVE_DROPS, NPCBroadcaster
 from config import OWNER_ID, OWNER_USERNAME
 
 group_router = Router()
@@ -280,4 +281,46 @@ async def group_chatter_ai(message: Message):
     ]
     speaker, phrase = random.choice(npc_speakers)
 
+    await register_group(message.chat.id, message.chat.title or "Guruh")
     await message.reply(f"{speaker}: \"{phrase}\"", parse_mode="Markdown")
+
+# =====================================================================
+# 5. DARVESH XAZINASINI BIRINCHI BO'LIB OLISH
+# =====================================================================
+@group_router.callback_query(F.data.startswith("claim_dervish_"))
+async def handle_claim_dervish(callback: CallbackQuery):
+    drop_id = callback.data.replace("claim_dervish_", "")
+    drop = ACTIVE_DROPS.get(drop_id)
+    
+    if not drop or drop.get("claimed", False):
+        await callback.answer("⏳ Kechikdingiz! Ushbu xazinani boshqa chaqqon ritsar olib ketdi!", show_alert=True)
+        return
+        
+    user_id = callback.from_user.id
+    user_name = callback.from_user.first_name or "Ritsar"
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await callback.answer("Xazinani olish uchun avval botda /start bosing!", show_alert=True)
+        return
+        
+    drop["claimed"] = True
+    gold_won = drop["gold"]
+    await update_character(char["id"], gold=char["gold"] + gold_won)
+    
+    await callback.message.edit_text(
+        f"🎉 *XAZINA EGASI TOPILDI!* 💰\n\n"
+        f"⚡️ Jasur ritsar *{user_name}* eng chaqqon chiqdi va "
+        f"Darvesh Salmonning xaltasidan *+{gold_won} Oltin* oldi!\n\n"
+        f"Darvesh Salmon guruh ahlini duo qilib, yo'lida davom etdi...",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 6. SHOVQIN VA TASODIFIY NPC CHAQIRISH (!gapir, !shovqin)
+# =====================================================================
+@group_router.message(F.chat.type.in_(["group", "supergroup"]), F.text.regexp(r"^(!|\/)(shovqin|npc_gapir|gapir)"))
+async def trigger_spontaneous_shovqin(message: Message):
+    await register_group(message.chat.id, message.chat.title or "Guruh")
+    text, keyboard = NPCBroadcaster.generate_spontaneous_event()
+    await message.answer(text, parse_mode="Markdown", reply_markup=keyboard)
+

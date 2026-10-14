@@ -165,6 +165,15 @@ async def init_db():
         );
         """)
 
+        # 10. Active Groups for spontaneous NPC broadcasts
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS active_groups (
+            chat_id INTEGER PRIMARY KEY,
+            title TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
         # Seed kingdoms if not existing
         for k_id, k_data in KINGDOMS.items():
             await db.execute("""
@@ -173,6 +182,22 @@ async def init_db():
             """, (k_id, k_data["name"], k_data["ruler"]))
 
         await db.commit()
+
+async def register_group(chat_id: int, title: str):
+    async with get_connection() as db:
+        await db.execute("""
+        INSERT INTO active_groups (chat_id, title, updated_at)
+        VALUES (?, ?, CURRENT_TIMESTAMP)
+        ON CONFLICT(chat_id) DO UPDATE SET title = excluded.title, updated_at = CURRENT_TIMESTAMP;
+        """, (chat_id, title))
+        await db.commit()
+
+async def get_active_groups():
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM active_groups") as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
 
 # =====================================================================
 # CHARACTER OPERATIONS

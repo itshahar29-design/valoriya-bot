@@ -17,6 +17,7 @@ from handlers.top_handler import top_router
 from handlers.owner_handler import owner_router
 from handlers.group_handler import group_router
 from handlers.chat_ai_handler import chat_router
+from game.npc_broadcaster import npc_periodic_broadcaster_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
@@ -69,6 +70,8 @@ async def main():
     dp.include_router(chat_router)
 
     logging.info("🚀 Telegram Bot Polling boshlandi! Qirollik eshiklari ochiq.")
+    # Start autonomous periodic NPC broadcaster
+    asyncio.create_task(npc_periodic_broadcaster_loop(bot))
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
