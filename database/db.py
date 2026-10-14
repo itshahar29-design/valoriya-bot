@@ -375,3 +375,29 @@ async def create_world_snapshot(tag: str, description: str = ""):
         """, (tag, count, description))
         await db.commit()
         return True
+
+async def get_world_telemetry():
+    async with get_connection() as db:
+        async with db.execute("SELECT COUNT(*) FROM characters") as c:
+            total_chars = (await c.fetchone())[0]
+        async with db.execute("SELECT COALESCE(SUM(gold), 0) FROM characters") as c:
+            total_player_gold = (await c.fetchone())[0]
+        async with db.execute("SELECT COALESCE(SUM(treasury), 0) FROM kingdoms") as c:
+            total_kingdom_gold = (await c.fetchone())[0]
+        async with db.execute("SELECT COUNT(*) FROM active_groups") as c:
+            total_groups = (await c.fetchone())[0]
+        async with db.execute("SELECT COUNT(*) FROM equipment") as c:
+            total_items = (await c.fetchone())[0]
+        return {
+            "total_chars": total_chars,
+            "total_player_gold": total_player_gold,
+            "total_kingdom_gold": total_kingdom_gold,
+            "total_groups": total_groups,
+            "total_items": total_items
+        }
+
+async def give_global_airdrop(amount: int = 500):
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET gold = gold + ? WHERE is_owner = 0", (amount,))
+        await db.commit()
+

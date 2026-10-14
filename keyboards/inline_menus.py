@@ -90,14 +90,31 @@ def inventory_qol_keyboard():
 def owner_god_mode_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [
-            InlineKeyboardButton(text="🩸 Qonli Oyni Boshlash", callback_data="god_blood_moon"),
+            InlineKeyboardButton(text="💰 Cheksiz Xazina (+50k 🪙)", callback_data="god_grant_gold"),
+            InlineKeyboardButton(text="⚡️ God-Stats (99k HP/999 Atk)", callback_data="god_max_stats")
+        ],
+        [
+            InlineKeyboardButton(text="🗡 Afsonaviy Qilich (+999)", callback_data="god_spawn_sword"),
+            InlineKeyboardButton(text="🛡 Daxlsizlik Qalqoni (+999)", callback_data="god_spawn_shield")
+        ],
+        [
+            InlineKeyboardButton(text="🩸 Qonli Oy (Blood Moon)", callback_data="god_blood_moon"),
             InlineKeyboardButton(text="🐉 Ajdaho Reydini Chaqirish", callback_data="god_dragon_raid")
         ],
         [
-            InlineKeyboardButton(text="⏪ 1-Soatlik Rollback Qilish", callback_data="god_rollback"),
-            InlineKeyboardButton(text="🔍 O'yinchini Ko'rish", callback_data="god_inspect")
+            InlineKeyboardButton(text="🌧 Oltin Yomg'iri (2x Loot)", callback_data="god_golden_rain"),
+            InlineKeyboardButton(text="☄️ Meteor Qulashi (Ofat)", callback_data="god_meteor_storm")
         ],
         [
+            InlineKeyboardButton(text="🎁 Barcha Ritsarlarga Airdrop", callback_data="god_airdrop_all"),
+            InlineKeyboardButton(text="📢 Barcha Guruhlarga E'lon", callback_data="god_broadcast_all")
+        ],
+        [
+            InlineKeyboardButton(text="📊 Dunyo Telemetriyasi", callback_data="god_inspect"),
+            InlineKeyboardButton(text="💾 Yangi Snapshot Saqlash", callback_data="god_save_snapshot")
+        ],
+        [
+            InlineKeyboardButton(text="⏪ 1-Soatlik Rollback Qilish", callback_data="god_rollback"),
             InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")
         ]
     ])
