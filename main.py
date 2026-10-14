@@ -1,5 +1,7 @@
+import os
 import asyncio
 import logging
+from aiohttp import web
 from aiogram import Bot, Dispatcher
 from config import BOT_TOKEN
 from database.db import init_db
@@ -16,6 +18,22 @@ from handlers.owner_handler import owner_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
+async def start_web_server():
+    """Render.com Free Tier Web Service uchun mini HTTP server"""
+    async def handle_ping(request):
+        return web.Response(text="👑 Valoriya: Boqiy Qirolliklar Urushi 24/7 ishlab turibdi!")
+
+    app = web.Application()
+    app.router.add_get("/", handle_ping)
+    app.router.add_get("/health", handle_ping)
+    
+    port = int(os.environ.get("PORT", 8080))
+    runner = web.AppRunner(app)
+    await runner.setup()
+    site = web.TCPSite(runner, "0.0.0.0", port)
+    await site.start()
+    logging.info(f"🌐 Bepul Web Server {port}-portda ishga tushdi.")
+
 async def main():
     logging.info("🏰 Valoriya: Boqiy Qirolliklar Urushi tizimi ishga tushmoqda...")
     
@@ -23,8 +41,14 @@ async def main():
     await init_db()
     logging.info("✅ Relyatsion ma'lumotlar bazasi va 12 imperiya muvaffaqiyatli ishga tushirildi.")
 
+    # 2. Start lightweight web server for Render Free Web Service tier
+    await start_web_server()
+
     if not BOT_TOKEN:
         logging.warning("⚠️ Diqqat: .env faylida BOT_TOKEN ko'rsatilmagan! Bot polling boshlanmadi, ammo barcha o'yin tizimlari va testlar to'liq tayyor.")
+        # Agar token qo'yilmagan bo'lsa ham web server to'xtab qolmasligi uchun kutib turadi
+        while True:
+            await asyncio.sleep(3600)
         return
 
     bot = Bot(token=BOT_TOKEN)

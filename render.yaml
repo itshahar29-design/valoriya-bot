@@ -1,5 +1,5 @@
 services:
-  - type: worker
+  - type: web
     name: valoriya-bot
     env: python
     region: frankfurt
