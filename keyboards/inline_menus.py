@@ -114,6 +114,9 @@ def owner_god_mode_keyboard():
             InlineKeyboardButton(text="💾 Yangi Snapshot Saqlash", callback_data="god_save_snapshot")
         ],
         [
+            InlineKeyboardButton(text="👤 O'yinchilarni Boshqarish (Pul/Buyum/Jazo)", callback_data="god_player_mgmt_guide")
+        ],
+        [
             InlineKeyboardButton(text="⏪ 1-Soatlik Rollback Qilish", callback_data="god_rollback"),
             InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")
         ]

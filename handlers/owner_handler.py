@@ -1,9 +1,10 @@
 import logging
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
 from database.db import (
     get_connection, get_character_by_user_id, update_character,
-    create_world_snapshot, get_world_telemetry, give_global_airdrop, get_active_groups
+    create_world_snapshot, get_world_telemetry, give_global_airdrop, get_active_groups,
+    get_character_by_identifier, give_player_item
 )
 from keyboards.inline_menus import owner_god_mode_keyboard, main_menu_keyboard
 from config import OWNER_ID, OWNER_USERNAME
@@ -307,3 +308,236 @@ async def trigger_rollback(callback: CallbackQuery):
         parse_mode="Markdown",
         reply_markup=owner_god_mode_keyboard()
     )
+
+# =====================================================================
+# 14. O'YINCHILARNI BOSHQARISH YO'RIQNOMASI
+# =====================================================================
+@owner_router.callback_query(F.data == "god_player_mgmt_guide")
+async def show_player_mgmt_guide(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+        
+    text = (
+        "👤 *O'YINCHILARNI BOSHQARISH VA QAZO (ADMIN) VOSITALARI* 👑\n\n"
+        "Siz istalgan guruhda yoki shaxsiy chatda o'yinchining xabariga **Reply** qilib yoki uning `@username`ini yozib boshqarishingiz mumkin:\n\n"
+        "💰 *Pul Berish:*\n"
+        "`/give_gold @username 5000` *(yoki reply qilib: `/give_gold 5000`)*\n\n"
+        "💸 *Pul Olish (Tortib olish):*\n"
+        "`/take_gold @username 2000`\n\n"
+        "🗡 *Afsonaviy Qurol Berish:*\n"
+        "`/give_item @username Afsonaviy Zangori Qilich`\n\n"
+        "👑 *Daraja Berish / O'zgartirish:*\n"
+        "`/set_level @username 15`\n\n"
+        "⛓ *Zindonga Tashlash (Muzlatish):*\n"
+        "`/jail @username`\n\n"
+        "🕊 *Zindondan Ozod Qilish:*\n"
+        "`/unjail @username`"
+    )
+    buttons = [[InlineKeyboardButton(text="⬅️ God-Mode Panel", callback_data="menu_owner_god")]]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# =====================================================================
+# 15. ADMIN KOMANDALARI: PUL VA BUYUM BOSHQARUVI
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_gold|ber_oltin|pul_ber)"))
+async def admin_give_gold(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    amount = 1000
+    args = message.text.split()
+    
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+        if len(args) > 1 and args[1].isdigit():
+            amount = int(args[1])
+    elif len(args) >= 3 and args[2].isdigit():
+        target_ident = args[1]
+        amount = int(args[2])
+        target_char = await get_character_by_identifier(target_ident)
+    elif len(args) == 2 and args[1].isdigit():
+        target_char = char
+        amount = int(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish:\n`/give_gold @username 5000` yoki reply qilib `/give_gold 5000`", parse_mode="Markdown")
+        return
+        
+    await update_character(target_char["id"], gold=target_char["gold"] + amount)
+    await message.reply(
+        f"💰 *OLTIN IN'OM ETILDI!* 👑\n\n"
+        f"Ritsar *{target_char['name']}* xazinasiga **+{amount:,} Oltin** berildi!\n"
+        f"Hozirgi balansi: *{target_char['gold'] + amount:,} 🪙*",
+        parse_mode="Markdown"
+    )
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(take_gold|ol_oltin|pul_ol)"))
+async def admin_take_gold(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    amount = 500
+    args = message.text.split()
+    
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+        if len(args) > 1 and args[1].isdigit():
+            amount = int(args[1])
+    elif len(args) >= 3 and args[2].isdigit():
+        target_ident = args[1]
+        amount = int(args[2])
+        target_char = await get_character_by_identifier(target_ident)
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish:\n`/take_gold @username 2000`", parse_mode="Markdown")
+        return
+        
+    new_gold = max(0, target_char["gold"] - amount)
+    await update_character(target_char["id"], gold=new_gold)
+    await message.reply(
+        f"💸 *OLTIN TORTIB OLINDI!* 👑\n\n"
+        f"Ritsar *{target_char['name']}* xazinasidan **-{amount:,} Oltin** musodara qilindi!\n"
+        f"Qolgan balansi: *{new_gold:,} 🪙*",
+        parse_mode="Markdown"
+    )
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_item|ber_qurol|buyum)"))
+async def admin_give_item(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    item_name = "Afsonaviy Olovli Qilich"
+    args = message.text.split(maxsplit=2)
+    
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+        if len(args) > 1:
+            item_name = " ".join(args[1:])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        item_name = args[2]
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish:\n`/give_item @username Afsonaviy Qilich`", parse_mode="Markdown")
+        return
+        
+    await give_player_item(target_char["id"], item_name=item_name, slot_type="weapon", attack=180, defense=40, rarity="mythic")
+    await message.reply(
+        f"🗡 *AFSONAVIY BUYUM SOVG'A QILINDI!* 👑\n\n"
+        f"Ritsar *{target_char['name']}* ga yangi qurol berildi:\n"
+        f"✨ *'{item_name}'* (Mifik daraja, +180 Zarba)!\n"
+        f"Buyum uning anjomlar ro'yxatiga qo'shildi.",
+        parse_mode="Markdown"
+    )
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(set_level|daraja)"))
+async def admin_set_level(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    lvl = 10
+    args = message.text.split()
+    
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+        if len(args) > 1 and args[1].isdigit():
+            lvl = int(args[1])
+    elif len(args) >= 3 and args[2].isdigit():
+        target_char = await get_character_by_identifier(args[1])
+        lvl = int(args[2])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish:\n`/set_level @username 15`", parse_mode="Markdown")
+        return
+        
+    await update_character(
+        target_char["id"],
+        level=lvl,
+        hp=100 + (lvl * 25), max_hp=100 + (lvl * 25),
+        strength=15 + (lvl * 5), constitution=10 + (lvl * 4)
+    )
+    await message.reply(
+        f"👑 *RITSAR DARAJA KO'TARILDI!* 👑\n\n"
+        f"Ritsar *{target_char['name']}* darajasi to'g'ridan-to'g'ri *{lvl}-Daraja*ga o'rnatildi!\n"
+        f"Uning joni va kuch parametrlari yangilandi.",
+        parse_mode="Markdown"
+    )
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(jail|zindonga)"))
+async def admin_jail_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish:\n`/jail @username`", parse_mode="Markdown")
+        return
+        
+    await update_character(target_char["id"], is_jailed=1)
+    await message.reply(
+        f"⛓ *RITSAR ZINDONGA TASHLANDI!* ⛓\n\n"
+        f"Ritsar *{target_char['name']}* Oliy Yaratuvchi g'azabiga uchradi va Qirollik Zindoniga zanjirband qilindi!\n"
+        f"U Yaratuvchi kechirmagunicha harakat qila olmaydi.",
+        parse_mode="Markdown"
+    )
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(unjail|ozod)"))
+async def admin_unjail_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish:\n`/unjail @username`", parse_mode="Markdown")
+        return
+        
+    await update_character(target_char["id"], is_jailed=0)
+    await message.reply(
+        f"🕊 *RITSAR ZINDONDAN OZOD QILINDI!* 🕊\n\n"
+        f"Ritsar *{target_char['name']}* Yaratuvchining saxovati va marhamati bilan zindondan ozod etildi!",
+        parse_mode="Markdown"
+    )
+

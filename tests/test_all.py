@@ -61,7 +61,7 @@ async def run_comprehensive_tests():
     attacker = {"name": "Hujumchi", "strength": 20, "agility": 15, "stamina": 100, "weapon_attack": 15}
     defender = {"name": "Himoyachi", "hp": 100, "constitution": 12, "agility": 10, "stamina": 100, "armor_defense": 8, "is_defending": False}
     
-    dmg, log, is_crit = BattleEngine.calculate_round(attacker, defender, target_zone="neck", action="strike")
+    dmg, log, is_crit = BattleEngine.calculate_round(attacker, defender, target_zone="neck", action="skill")
     assert dmg > 0, "Zarar hisoblanmadi!"
     assert attacker["stamina"] < 100, "Stamina sarflanmadi!"
     assert defender["hp"] < 100, "Jon kamaymadi!"

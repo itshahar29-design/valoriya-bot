@@ -36,15 +36,24 @@ async def handle_start(message: Message):
     target_owner = is_user_owner(user_id, username)
     
     if character:
+        clean_user = (username or "").lower().lstrip("@")
+        if character.get("username") != clean_user:
+            await update_character(character["id"], username=clean_user)
+            
         if target_owner and not character.get("is_owner", 0):
             await update_character(character["id"], is_owner=1, hide_from_leaderboard=1)
             character["is_owner"] = 1
             character["hide_from_leaderboard"] = 1
+            
         is_owner = bool(character.get("is_owner", 0))
+        
+        jail_notice = ""
+        if character.get("is_jailed", 0):
+            jail_notice = "\n\n⛓ *DIQQAT: Siz Qirollik Zindoniga tashlangansiz!* Yaratuvchi ozod etmagunicha harakatlaringiz cheklangan."
         await message.answer(
             f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
             f"🏰 Daraja: *{character['level']}* | 🪙 Oltin: *{character['gold']}*\n"
-            f"⚔️ Kasb: *{character['class_id'].upper()}* | ❤️ Jon: *{character['hp']}/{character['max_hp']}*\n\n"
+            f"⚔️ Kasb: *{character['class_id'].upper()}* | ❤️ Jon: *{character['hp']}/{character['max_hp']}*{jail_notice}\n\n"
             f"Valoriya qit'asida qanday harbiy buyruq berasiz?",
             parse_mode="Markdown",
             reply_markup=main_menu_keyboard(is_owner)

@@ -174,6 +174,16 @@ async def init_db():
         );
         """)
 
+        # Migrations if needed
+        try:
+            await db.execute("ALTER TABLE characters ADD COLUMN username TEXT DEFAULT NULL;")
+        except Exception:
+            pass
+        try:
+            await db.execute("ALTER TABLE characters ADD COLUMN is_jailed INTEGER DEFAULT 0;")
+        except Exception:
+            pass
+
         # Seed kingdoms if not existing
         for k_id, k_data in KINGDOMS.items():
             await db.execute("""
@@ -209,6 +219,32 @@ async def get_character_by_user_id(user_id: int):
         async with db.execute("SELECT * FROM characters WHERE user_id = ?", (user_id,)) as cursor:
             row = await cursor.fetchone()
             return dict(row) if row else None
+
+async def get_character_by_identifier(identifier: str | int):
+    ident_str = str(identifier).strip().lstrip("@")
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        if ident_str.isdigit():
+            async with db.execute("SELECT * FROM characters WHERE user_id = ? OR id = ?", (int(ident_str), int(ident_str))) as cursor:
+                row = await cursor.fetchone()
+                if row:
+                    return dict(row)
+        async with db.execute("SELECT * FROM characters WHERE LOWER(username) = ? OR LOWER(name) = ?", (ident_str.lower(), ident_str.lower())) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return dict(row)
+            async with db.execute("SELECT * FROM characters WHERE LOWER(name) LIKE ? OR LOWER(username) LIKE ?", (f"%{ident_str.lower()}%", f"%{ident_str.lower()}%")) as cursor2:
+                row2 = await cursor2.fetchone()
+                return dict(row2) if row2 else None
+
+async def give_player_item(character_id: int, item_name: str, slot_type: str = "weapon", attack: int = 150, defense: int = 50, rarity: str = "legendary"):
+    async with get_connection() as db:
+        await db.execute("""
+        INSERT INTO equipment (character_id, slot_type, item_name, rarity, attack, defense, durability, max_durability, is_equipped)
+        VALUES (?, ?, ?, ?, ?, ?, 999, 999, 1);
+        """, (character_id, slot_type, item_name, rarity, attack, defense))
+        await db.commit()
+        return True
 
 async def create_character(user_id: int, name: str, class_id: str = "warrior", invited_by: int = None, is_owner: bool = False):
     class_data = CLASSES.get(class_id, CLASSES["warrior"])
