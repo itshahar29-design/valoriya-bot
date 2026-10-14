@@ -7,6 +7,7 @@ BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 BOT_TOKEN = os.getenv("BOT_TOKEN", "")
+OWNER_ID = int(os.getenv("OWNER_ID", "0")) if os.getenv("OWNER_ID", "").strip().isdigit() else None
 DB_PATH = BASE_DIR / "ritsarlar.db"
 
 # O'yin doimiylari

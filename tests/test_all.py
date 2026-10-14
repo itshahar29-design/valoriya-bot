@@ -30,8 +30,9 @@ async def run_comprehensive_tests():
     print("✅ TEST 1 O'TDI: Barcha 9 ta SQL jadvallari va 12 ta imperiya muvaffaqiyatli yuklandi.")
 
     # 2. CHARACTER CREATION & STARTER GEAR
-    print("\n[TEST 2] Ritsar Yaratish va Boshlang'ich Sovutlar...")
-    test_user_id = 999001
+    import time
+    base_id = int(time.time()) % 10000000 + 1000000
+    test_user_id = base_id
     char_id = await create_character(user_id=test_user_id, name="Ser Temurxon", class_id="warrior")
     char = await get_character_by_user_id(test_user_id)
     assert char is not None, "Qahramon topilmadi!"
@@ -44,7 +45,7 @@ async def run_comprehensive_tests():
 
     # 3. OWNER GOD-MODE & STEALTH VERIFICATION
     print("\n[TEST 3] Owner (God-Mode) Daxlsizligi va Reytingdan Yashirinish...")
-    owner_id = 777001
+    owner_id = base_id + 1
     await create_character(user_id=owner_id, name="Oliy Yaratuvchi (Owner)", is_owner=True)
     owner_char = await get_character_by_user_id(owner_id)
     assert owner_char["is_owner"] == 1, "Owner flag belgilanmadi!"

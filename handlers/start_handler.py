@@ -1,7 +1,8 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.filters import CommandStart
-from database.db import get_character_by_user_id, create_character, get_character_equipment
+from database.db import get_character_by_user_id, create_character, get_character_equipment, update_character
+from config import OWNER_ID
 from game.constants import CLASSES
 from game.retention_engine import RetentionEngine
 from keyboards.inline_menus import main_menu_keyboard, class_selection_keyboard
@@ -25,6 +26,9 @@ async def handle_start(message: Message):
     character = await get_character_by_user_id(user_id)
     
     if character:
+        if OWNER_ID and user_id == OWNER_ID and not character.get("is_owner", 0):
+            await update_character(character["id"], is_owner=1, hide_from_leaderboard=1)
+            character["is_owner"] = 1
         is_owner = bool(character.get("is_owner", 0))
         await message.answer(
             f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
@@ -51,7 +55,8 @@ async def handle_class_selection(callback: CallbackQuery):
     user_id = callback.from_user.id
     user_name = callback.from_user.first_name or "Jasur Ritsar"
     
-    char_id = await create_character(user_id=user_id, name=user_name, class_id=class_id)
+    is_owner = bool(OWNER_ID and user_id == OWNER_ID)
+    char_id = await create_character(user_id=user_id, name=user_name, class_id=class_id, is_owner=is_owner)
     
     class_name = CLASSES.get(class_id, {}).get("name", class_id)
     await callback.message.edit_text(
@@ -60,5 +65,5 @@ async def handle_class_selection(callback: CallbackQuery):
         f"🛡 Sizga dastlabki zangori po'lat qilich, paxtali gambeson va ritsarlik qalqoni berildi.\n"
         f"Endi Arenada jang qilish, auksionda savdo qilish yoki 12 ta AI Qirollikdan biriga xizmatga kirishingiz mumkin!",
         parse_mode="Markdown",
-        reply_markup=main_menu_keyboard(is_owner=False)
+        reply_markup=main_menu_keyboard(is_owner=is_owner)
     )
