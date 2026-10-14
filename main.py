@@ -15,6 +15,7 @@ from handlers.tavern_handler import tavern_router
 from handlers.auction_pigeon_handler import auction_router
 from handlers.top_handler import top_router
 from handlers.owner_handler import owner_router
+from handlers.group_handler import group_router
 from handlers.chat_ai_handler import chat_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -64,6 +65,7 @@ async def main():
     dp.include_router(auction_router)
     dp.include_router(top_router)
     dp.include_router(owner_router)
+    dp.include_router(group_router)
     dp.include_router(chat_router)
 
     logging.info("🚀 Telegram Bot Polling boshlandi! Qirollik eshiklari ochiq.")
