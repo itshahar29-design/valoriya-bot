@@ -17,11 +17,15 @@ async def show_forge_menu(callback: CallbackQuery):
     
     buttons = []
     text = (
-        "🔨 *VALORIYA QIROVUL TEMIRCHISI (FORGE)* 🔨\n\n"
+        "🔨 *VALORIYA QIROVUL TEMIRCHISI (FORGE - DARK SOULS EDITION)* 🔨\n\n"
         "Bu yerda qurol va sovutlaringizni sehrli ruda yordamida **+1 dan +10 gacha** kuchaytirishingiz mumkin!\n"
         "Har bir kuchaytirish qurolga **+15 Zarba**, sovutga **+10 Himoya** beradi.\n\n"
+        "⚠️ *ZULMATNING TEMIRCHI QOIDALARI:*\n"
+        "• **+1 .. +3:** Xavfsiz (faqat oltin sarflanadi)\n"
+        "• **+4 .. +6:** Xavfli (omadsizlikda daraja -1 pasayishi mumkin)\n"
+        "• **+7 .. +10:** O'ta Xatarli (qurol maydalanib sinishi mumkin!)\n\n"
         f"🪙 Hamyoningizdagi oltin: *{char['gold']:,} 🪙*\n\n"
-        "Qaysi anjomingizni ustaxonaga qo'yasiz?"
+        "Qaysi anjomingizni bolg'a ostiga qo'yasiz?"
     )
 
     for item in equipped:

@@ -75,7 +75,57 @@ async def handle_natural_chat(message: Message):
         )
         return
 
-    # 5. REYTING INTENTLARI
+    # 5. ZULMAT TIZIMI: TABIB VA YARALAR INTENTLARI
+    if any(k in text for k in ["yara", "tabib", "davola", "shifokor", "singan", "travma", "og'riq"]):
+        from keyboards.inline_menus import InlineKeyboardMarkup, InlineKeyboardButton
+        btn = [[InlineKeyboardButton(text="🏥 Tabibxonaga Borish", callback_data="tavern_healer_menu")]]
+        await message.answer(
+            f"🩹 *Ser Artur:* 'Hazratim, tanangizdagi jarohatlarni ko'rib yuragim ezilmoqda! "
+            f"Mayxona burchagidagi keksa tabib o't-o'lanlar bilan singan suyaklarni davolay oladi. Darhol tabibxonaga boring!'",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=btn)
+        )
+        return
+
+    # 6. ZULMAT TIZIMI: AQL VA SANITY INTENTLARI
+    if any(k in text for k in ["aql", "sanity", "ruhiyat", "qo'rqdim", "vahima", "telbalik", "madness", "sharpalar"]):
+        from keyboards.inline_menus import InlineKeyboardMarkup, InlineKeyboardButton
+        from game.dark_engine import DarkEngine
+        sanity = char.get("sanity", 100)
+        badge, _, desc = DarkEngine.get_sanity_status(sanity)
+        btn = [[InlineKeyboardButton(text="🍷 Taverna Sharobi (Sanity +30)", callback_data="tavern_drink_ale")]]
+        await message.answer(
+            f"🧠 *Ser Artur:* 'Ruhiyatingiz: *{sanity}% [{badge}]*!\n{desc}\n\n"
+            f"Tavernada bir qadah qadimgi asal sharobi ichib aqlingizni joyiga keltiring, ser!'",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=btn)
+        )
+        return
+
+    # 7. ZULMAT TIZIMI: QONLI AHD VA IBLIS INTENTLARI
+    if any(k in text for k in ["ahd", "pact", "iblis", "morvath", "zulmat", "la'nat", "qonli ahd"]):
+        from keyboards.inline_menus import InlineKeyboardMarkup, InlineKeyboardButton
+        has_pact = char.get("bloodline_trait") == "demon_pact"
+        if has_pact:
+            btn = [[InlineKeyboardButton(text="🕯 Ibodatxonada Poklanish", callback_data="tavern_cleanse_menu")]]
+            await message.answer(
+                "🩸 *Ser Artur (Qo'rquv bilan pichirlab):*\n\n"
+                "'Hazratim, tomirlaringizdagi qora qon va iblis Morvath tamg'asi meni dahshatga solmoqda! "
+                "Iltimos, Muqaddas Ibodatxonaga boring va ruhingizni poklang!'",
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=btn)
+            )
+        else:
+            btn = [[InlineKeyboardButton(text="🩸 Qonli Ahd Qurbongohi", callback_data="tavern_pact_menu")]]
+            await message.answer(
+                "💀 *Ser Artur:* 'Iblis Morvath bilan qonli ahd haqida eshitganmisiz? "
+                "U +45 Dark ATK va dushman qonini so'rish kuchi beradi, lekin maksimal joningiz va aqlingizni yemiradi! Tavakkal qilasizmi?'",
+                parse_mode="Markdown",
+                reply_markup=InlineKeyboardMarkup(inline_keyboard=btn)
+            )
+        return
+
+    # 8. REYTING INTENTLARI
     if any(k in text for k in ["reyting", "top", "chempion", "kuchli", "kim birinchi"]):
         from handlers.top_handler import get_top_knights
         top_knights = await get_top_knights()
@@ -85,7 +135,7 @@ async def handle_natural_chat(message: Message):
         await message.answer(res, parse_mode="Markdown", reply_markup=main_menu_keyboard(is_owner))
         return
 
-    # 6. GOD-MODE INTENTLARI (Faqat Owner uchun)
+    # 9. GOD-MODE INTENTLARI (Faqat Owner uchun)
     if is_owner and any(k in text for k in ["god", "yaratuvchi", "admin", "qonli oy", "ajdaho", "rollback"]):
         await message.answer(
             "👑 *Ser Artur (Tiz cho'kib):*\n\n"

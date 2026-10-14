@@ -1,3 +1,4 @@
+import json
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import CommandStart
@@ -5,6 +6,7 @@ from database.db import get_character_by_user_id, create_character, get_characte
 from config import OWNER_ID, OWNER_USERNAME
 from game.constants import CLASSES
 from game.retention_engine import RetentionEngine
+from game.dark_engine import DarkEngine, WOUND_TYPES
 from keyboards.inline_menus import main_menu_keyboard, class_selection_keyboard
 from services.channel_sub import is_subscribed_to_channel
 
@@ -152,6 +154,25 @@ async def show_character_profile(callback: CallbackQuery):
     is_owner = bool(char.get("is_owner", 0)) or is_user_owner(user_id, username)
     status_str = "👑 *Valoriya Yaratuvchisi (Owner - God-Mode)*" if is_owner else "🛡 *Qasamyod qilgan Ritsar*"
     
+    sanity = char.get("sanity", 100)
+    sanity_badge, sanity_mood, _ = DarkEngine.get_sanity_status(sanity)
+
+    wounds_list = []
+    try:
+        w_raw = char.get("wounds_json", "[]")
+        wounds_list = json.loads(w_raw) if isinstance(w_raw, str) else list(w_raw)
+    except Exception:
+        wounds_list = []
+
+    if wounds_list:
+        w_names = [WOUND_TYPES.get(w, {}).get("name", w) for w in wounds_list]
+        wounds_display = "\n".join([f"  • {name}" for name in w_names])
+    else:
+        wounds_display = "  • _Jarohatlar yo'q (Tana butun)_"
+
+    has_pact = char.get("bloodline_trait") == "demon_pact"
+    pact_display = "🩸 *Iblis Morvath Ahdi* (+45 ATK, 20% Lifesteal, -25 Max HP)" if has_pact else "🌟 *Zulmatdan xoli (Ozod Ruh)*"
+
     text = (
         f"👤 *RITSAR SHAXSIY HUJJATI* 👤\n\n"
         f"Ism: *{char['name']}*\n"
@@ -162,9 +183,19 @@ async def show_character_profile(callback: CallbackQuery):
         f"⚡️ Stamina: *{char['stamina']}/{char['max_stamina']}*\n"
         f"🗡 Kuch (STR): *{char['strength']}* | 🏹 Chaqqonlik (AGI): *{char['agility']}*\n"
         f"🛡 Himoya (CON): *{char['constitution']}* | 🧠 Aql (INT): *{char['intelligence']}*\n\n"
-        f"🪙 Oltin: *{char['gold']}* | 💎 Qimmatbaho javohirlar: *{char['gems']}*\n"
+        f"🧠 *Ruhiyat (Sanity):* {sanity}% [{sanity_badge}]\n"
+        f"🩸 *Zulmat Ahdi:* {pact_display}\n"
+        f"🩹 *Faol Travmalar:* \n{wounds_display}\n\n"
+        f"🪙 Oltin: *{char['gold']:,}* | 💎 Qimmatbaho javohirlar: *{char['gems']}*\n"
         f"🐴 Tulpor: *{char['horse_name']}* (Bog'lanish: {char['horse_bond']}%)\n"
         f"🏆 Janglar: *{char['wins']}* G'alaba | *{char['losses']}* Mag'lubiyat"
     )
-    buttons = [[InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]]
+
+    buttons = []
+    if wounds_list:
+        buttons.append([InlineKeyboardButton(text="🏥 Tabibga Borish (Davolash)", callback_data="tavern_healer_menu")])
+    if sanity < 80:
+        buttons.append([InlineKeyboardButton(text="🍷 Taverna Sharobi (Sanity +30)", callback_data="tavern_drink_ale")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))

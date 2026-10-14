@@ -6,6 +6,8 @@ from database.db import (
 )
 from keyboards.inline_menus import inventory_qol_keyboard, main_menu_keyboard
 from game.constants import EQUIPMENT_SLOTS
+from game.dark_engine import DarkEngine
+import json
 
 inventory_router = Router()
 
@@ -25,15 +27,31 @@ async def show_inventory_menu(callback: CallbackQuery):
         item = equipped.get(slot_key)
         if item:
             durability_str = f"({item['durability']}/{item['max_durability']}🛡)"
+            if item["durability"] <= 0:
+                durability_str = "(💥 SINIQ - 0🛡)"
             slots_text.append(f"• *{slot_name}:* {item['item_name']} {durability_str}")
         else:
             slots_text.append(f"• *{slot_name}:* _Bo'sh_")
             
+    sanity = char.get("sanity", 100)
+    badge, _, _ = DarkEngine.get_sanity_status(sanity)
+    
+    wounds_count = 0
+    try:
+        w_raw = char.get("wounds_json", "[]")
+        w_list = json.loads(w_raw) if isinstance(w_raw, str) else list(w_raw)
+        wounds_count = len(w_list)
+    except Exception:
+        pass
+
+    wound_alert = f" | 🩸 *Travmalar:* {wounds_count} ta" if wounds_count > 0 else ""
+
     text = (
         f"🎒 *{char['name']} NING 8-SLOTLI ANJOMLARI* 🎒\n\n"
-        f"🪙 Oltin: *{char['gold']}* | 💎 Yoqut: *{char['gems']}*\n"
+        f"🪙 Oltin: *{char['gold']:,}* | 💎 Yoqut: *{char['gems']}*\n"
         f"❤️ HP: *{char['hp']}/{char['max_hp']}* | ⚡️ Stamina: *{char['stamina']}/100*\n"
-        f"🧠 Sanity: *{char['sanity']}%* | 🐎 Ot: *{char['horse_name']}* ({char['horse_bond']}% bog'lanish)\n\n"
+        f"🧠 Sanity: *{sanity}%* [{badge}]{wound_alert}\n"
+        f"🐎 Ot: *{char['horse_name']}* ({char['horse_bond']}% bog'lanish)\n\n"
         + "\n".join(slots_text) + "\n\n"
         "⚡️ *Tezkor Qulayliklar (QoL):*"
     )

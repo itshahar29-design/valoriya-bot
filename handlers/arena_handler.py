@@ -1,6 +1,6 @@
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
-from database.db import get_character_by_user_id, update_character
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from database.db import get_character_by_user_id, update_character, apply_defeat_penalty
 from game.battle_engine import BattleEngine
 from game.npc_engine import NPCEngine
 from game.retention_engine import RetentionEngine
@@ -22,18 +22,25 @@ async def start_arena_duel(callback: CallbackQuery):
     # Instant NPC Matchmaking
     bot_opponent = NPCEngine.generate_bot_knight(target_level=char["level"])
     
+    # Zulmat Tizimi: Haqiqiy statlar va travmalar hisobi
+    from game.dark_engine import DarkEngine
+    eff_stats = DarkEngine.calculate_effective_stats(char)
+
     # Jang sessiyasi
     ACTIVE_BATTLES[user_id] = {
         "player": {
             "name": char["name"],
-            "hp": char["hp"],
-            "max_hp": char["max_hp"],
+            "hp": min(char["hp"], eff_stats["eff_max_hp"]),
+            "max_hp": eff_stats["eff_max_hp"],
             "stamina": 100,
             "strength": char["strength"],
             "constitution": char["constitution"],
-            "agility": char["agility"],
+            "agility": eff_stats["eff_agi"],
             "weapon_attack": 12,
             "armor_defense": 8,
+            "sanity": char.get("sanity", 100),
+            "bloodline_trait": char.get("bloodline_trait", "noble_blood"),
+            "stamina_drain_round": eff_stats["stamina_drain_round"],
             "is_defending": False
         },
         "opponent": bot_opponent,
@@ -42,9 +49,15 @@ async def start_arena_duel(callback: CallbackQuery):
     }
 
     battle = ACTIVE_BATTLES[user_id]
+    
+    sanity_badge, _, sanity_desc = DarkEngine.get_sanity_status(char.get("sanity", 100))
+    wound_warn = f"\n⚠️ *Jarohatlar:* {eff_stats['wounds_count']} ta og'ir travma mavjud!" if eff_stats["wounds_count"] > 0 else ""
+    pact_warn = "\n🩸 *Zulmat Ahdi faol (+45 Dark ATK, 20% Lifesteal)!*" if eff_stats["has_blood_pact"] else ""
+
     await callback.message.edit_text(
         f"⚔️ *ARENA: 1v1 SHON-SHARAF DUELI (1-Raund)* ⚔️\n\n"
         f"👤 *Siz:* ❤️ {battle['player']['hp']}/{battle['player']['max_hp']} HP | ⚡️ {battle['player']['stamina']} Stamina\n"
+        f"🧠 Ruh holati: *{sanity_badge}* ({battle['player']['sanity']}%){wound_warn}{pact_warn}\n"
         f"🆚\n"
         f"🤖 *Raqib:* {bot_opponent['name']} (Lvl {bot_opponent['level']})\n"
         f"❤️ {bot_opponent['hp']}/{bot_opponent['max_hp']} HP | Xarakter: *{bot_opponent['persona'].upper()}*\n\n"
@@ -128,16 +141,32 @@ async def process_battle_turn(callback: CallbackQuery):
     else:
         _, opp_log, _ = BattleEngine.calculate_round(opp, p, target_zone=opp_zone, action=opp_action)
         
-    # Mag'lubiyat tekshiruvi
+    # Mag'lubiyat tekshiruvi (Zulmat Tizimi oqibatlari)
     if p["hp"] <= 0:
         del ACTIVE_BATTLES[user_id]
         char = await get_character_by_user_id(user_id)
-        await update_character(char["id"], losses=char["losses"] + 1, hp=char["max_hp"] // 2)
+        penalty = await apply_defeat_penalty(char["id"], is_dungeon=False)
+        
+        wound_txt = f"\n🩸 *ORTTIRILGAN OG'IR TRAVMA:* {penalty['new_wound']['name']}!\n_{penalty['new_wound']['desc']}_" if penalty["new_wound"] else "\n🩹 Baxtingizga suyaklaringiz darz ketmadi."
+        
+        defeat_msg = (
+            f"💀 *SHAVQATSIZ MAG'LUBIYAT! JANGDA QULADINGIZ!* 💀\n\n"
+            f"**{opp['name']}** qilichi bilan qalqoningizni yorib, sizni hushsiz qulatdi!\n\n"
+            f"💸 *Yo'qotilgan Oltin:* -{penalty['gold_lost']:,} 🪙 (Talonchilar shilib ketdi)\n"
+            f"🧠 *Aql/Sanity Zarari:* -{penalty['sanity_lost']}% (Hozirgi Sanity: {penalty['current_sanity']}%)\n"
+            f"🛡 *Anjomlar Eskirishi:* Egnidagi barcha anjomlar -{penalty['durability_lost']} chidamlilik yo'qotdi!{wound_txt}\n\n"
+            f"Tavernaga borib tabibga ko'rining yoki sharob bilan ruhingizni tinchlantiring!"
+        )
+        buttons = [
+            [InlineKeyboardButton(text="🏥 Tabibga Borish (Davolash)", callback_data="tavern_healer_menu")],
+            [InlineKeyboardButton(text="🍻 Taverna Sharobi (Sanity)", callback_data="menu_tavern")],
+            [InlineKeyboardButton(text="🔨 Qurollarni Tuzatish", callback_data="menu_forge")],
+            [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+        ]
         await callback.message.edit_text(
-            f"💀 *MAG'LUBIYAT! JANGDA QULDINGIZ!* 💀\n\n"
-            f"{opp['name']} sizga og'ir zarba berib qulatdi. Shifokorlar sizni qutqarib qoldi.",
+            defeat_msg,
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0)))
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
         )
         return
         

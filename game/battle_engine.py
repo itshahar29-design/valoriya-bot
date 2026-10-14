@@ -1,18 +1,35 @@
 import random
 from game.constants import HIT_ZONES
+from game.dark_engine import DarkEngine
 
 class BattleEngine:
     @staticmethod
     def calculate_round(attacker: dict, defender: dict, target_zone: str = "torso", action: str = "strike"):
         """
-        12-zonali kinetik zarba hisoblagichi.
+        12-zonali kinetik zarba hisoblagichi (Dark System bilan integratsiyalashgan).
         action: 'strike' (oddiy zarba), 'heavy_strike' (og'ir zarba), 'defend' (qalqon tutish), 'skill' (maxsus mahorat)
         """
         zone_info = HIT_ZONES.get(target_zone, HIT_ZONES["torso"])
         log = []
+
+        # 0. AQL (SANITY) VA TELBALIK TEKSHIRUVI (Zulmat Tizimi)
+        attacker_sanity = attacker.get("sanity", 100)
+        is_panicked, panic_log, sanity_dmg_mult = DarkEngine.check_sanity_battle_effect(attacker_sanity)
+        if panic_log:
+            log.append(panic_log)
+        if is_panicked:
+            # Raund boy berildi (hujum qila olmadi)
+            return 0, log, False
         
         # 1. Chidamlilik (Stamina) sarfi va tekshiruvi
         stamina_cost = 15 if action == "strike" else (30 if action == "heavy_strike" else 20)
+        
+        # Jarohatlar tufayli qo'shimcha charchoq
+        extra_drain = attacker.get("stamina_drain_round", 0)
+        if extra_drain > 0:
+            stamina_cost += extra_drain
+            log.append(f"🩸 Chuqur jarohat tufayli harakat og'irlashdi (+{extra_drain} Stamina ketdi).")
+
         is_exhausted = attacker.get("stamina", 100) <= 0
         
         if is_exhausted:
@@ -33,6 +50,12 @@ class BattleEngine:
             
         # 3. Zirh va Zarba Hisobi
         base_atk = attacker.get("strength", 15) * 1.5 + attacker.get("weapon_attack", 10)
+        
+        # Qonli Ahd (Demon Pact) Zulmat bonusi
+        has_demon_pact = attacker.get("bloodline_trait") == "demon_pact"
+        if has_demon_pact:
+            base_atk += 45
+
         base_def = defender.get("constitution", 15) * 0.8 + defender.get("armor_defense", 8)
         
         skill_multiplier = 1.0
@@ -49,7 +72,7 @@ class BattleEngine:
         # RNG o'zgaruvchanlik (0.9 dan 1.1 gacha)
         rng_factor = random.uniform(0.9, 1.1)
         
-        raw_damage = (base_atk * skill_multiplier * zone_info["multiplier"] * stamina_damage_penalty * crit_multiplier * rng_factor)
+        raw_damage = (base_atk * skill_multiplier * zone_info["multiplier"] * stamina_damage_penalty * crit_multiplier * sanity_dmg_mult * rng_factor)
         
         # Qalqon bloklash tekshiruvi
         defender_blocked = False
@@ -68,8 +91,15 @@ class BattleEngine:
         defender["hp"] = max(0, defender["hp"] - actual_damage)
         
         crit_str = " (💥 KRITIK ZARBA!)" if is_crit else ""
-        log.append(f"⚔️ {attacker['name']} dushmanning [{zone_info['name']}] qismiga {actual_damage} zarar yetkazdi!{crit_str}")
+        dark_str = " 🌑 [Zulmat Qahr-G'azabi]" if has_demon_pact else ""
+        log.append(f"⚔️ {attacker['name']} dushmanning [{zone_info['name']}] qismiga {actual_damage} zarar yetkazdi!{crit_str}{dark_str}")
         
+        # Qonli Ahd Lifesteal (Jon so'rish)
+        if has_demon_pact and actual_damage > 10:
+            leech_hp = int(actual_damage * 0.20)
+            attacker["hp"] = min(attacker.get("max_hp", 100), attacker.get("hp", 100) + leech_hp)
+            log.append(f"🩸 *QON SO'RISH:* Iblis kuchi dushmandan +{leech_hp} HP ni joningizga qo'shdi!")
+
         # Qon ketish ehtimoli
         if is_crit and zone_info["wound"] == "arterial_bleed":
             log.append(f"🩸 Dushmanning tomiri kesildi! Qon ketishi (Bleed) boshlandi.")

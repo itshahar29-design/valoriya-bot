@@ -1,7 +1,12 @@
+import json
 import random
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKeyboardButton
-from database.db import get_character_by_user_id, update_character, get_character_by_identifier
+from database.db import (
+    get_character_by_user_id, update_character, get_character_by_identifier,
+    restore_sanity, cure_wound, cure_all_wounds, sign_blood_pact, cleanse_blood_pact
+)
+from game.dark_engine import DarkEngine, WOUND_TYPES
 
 tavern_router = Router()
 
@@ -13,16 +18,34 @@ async def show_tavern_menu(callback: CallbackQuery):
     char = await get_character_by_user_id(user_id)
     if not char:
         return
-        
+
+    sanity = char.get("sanity", 100)
+    sanity_badge, _, _ = DarkEngine.get_sanity_status(sanity)
+
+    wounds_list = []
+    try:
+        w_raw = char.get("wounds_json", "[]")
+        wounds_list = json.loads(w_raw) if isinstance(w_raw, str) else list(w_raw)
+    except Exception:
+        wounds_list = []
+
+    has_pact = char.get("bloodline_trait") == "demon_pact"
+    pact_status = "\n🩸 *Zulmat Ahdi:* Iblis Morvath bilan ahd faol (+45 ATK)!" if has_pact else ""
+    wounds_status = f"\n🩹 *Jarohatlar:* {len(wounds_list)} ta bitmagan travma mavjud!" if wounds_list else "\n🟢 *Tanangiz:* Sog'lom va baquvvat."
+
     text = (
         "🍻 *SHAHAR TAVERNA VA QIMORXONASI* 🍻\n\n"
         "Mayxona qizigan! Ritsarlar sharob ichib, suyak tashlab qimor o'ynamoqda. "
-        "Burchakda esa xufyona o'g'rilar va sirli qimorbozlar o'tiribdi.\n\n"
+        "Burchakda esa xalq tabibi va qora qonli iblis sehrgari o'tiribdi.\n\n"
         f"🪙 Cho'ntagingizdagi Oltin: *{char['gold']:,} 🪙*\n"
-        f"❤️ Joningiz: *{char['hp']}/{char['max_hp']}*"
+        f"❤️ Joningiz: *{char['hp']}/{char['max_hp']}* | 🧠 Aql (Sanity): *{sanity_badge}* ({sanity}%){wounds_status}{pact_status}"
     )
     
     buttons = [
+        [
+            InlineKeyboardButton(text="🍷 Qadimgi Sharob (Sanity +30 - 50 🪙)", callback_data="tavern_drink_ale"),
+            InlineKeyboardButton(text=f"🏥 Tabibxona ({len(wounds_list)} Travma)", callback_data="tavern_healer_menu")
+        ],
         [
             InlineKeyboardButton(text="🎲 Suyak Tashlash (50 🪙)", callback_data="tavern_dice"),
             InlineKeyboardButton(text="🎰 Oltin Baraban (100 🪙)", callback_data="tavern_slots")
@@ -30,6 +53,10 @@ async def show_tavern_menu(callback: CallbackQuery):
         [
             InlineKeyboardButton(text="🍗 Shohona Ziyofat (Jon 100% - 30 🪙)", callback_data="tavern_eat"),
             InlineKeyboardButton(text="🤫 Mayxona Mish-Mishlari", callback_data="tavern_rumors")
+        ],
+        [
+            InlineKeyboardButton(text="🩸 Zulmat Qurbongohi (Qonli Ahd)", callback_data="tavern_pact_menu"),
+            InlineKeyboardButton(text="🕯 Muqaddas Ibodatxona", callback_data="tavern_cleanse_menu")
         ],
         [
             InlineKeyboardButton(text="🎯 Xufyona Cho'ntakkesarlik (O'g'rilik)", callback_data="tavern_steal_info")
@@ -213,3 +240,286 @@ async def process_pickpocket(message: Message):
             f"Sizni hibsga olishdi va **Qirollik Zindoniga** tashlashdi!",
             parse_mode="Markdown"
         )
+
+# =====================================================================
+# ZULMAT TIZIMI: AQL VA SANITY TIKLASH (SHAROB & MED)
+# =====================================================================
+@tavern_router.callback_query(F.data == "tavern_drink_ale")
+async def process_drink_ale(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    success, msg = await restore_sanity(char["id"], amount=30, cost=50)
+    await callback.answer(msg.replace("*", ""), show_alert=True)
+    await show_tavern_menu(callback)
+
+# =====================================================================
+# ZULMAT TIZIMI: SHAHAR TABIBXONASI (TRAVMA VA JAROHATLAR)
+# =====================================================================
+@tavern_router.callback_query(F.data == "tavern_healer_menu")
+async def show_healer_menu(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    wounds_list = []
+    try:
+        w_raw = char.get("wounds_json", "[]")
+        wounds_list = json.loads(w_raw) if isinstance(w_raw, str) else list(w_raw)
+    except Exception:
+        wounds_list = []
+
+    text = (
+        "🏥 *VALORIYA SHAHAR TABIBXONASI* 🏥\n\n"
+        "Keksa xalq tabibi qadimiy o'tlar, ilon zahri va sehrli malhamlar bilan ishlaydi.\n"
+        "Jangda olingan har qanday jarohat va singan suyaklarni shu yerda davolashingiz mumkin!\n\n"
+        f"🪙 Hamyoningiz: *{char['gold']:,} 🪙*\n"
+    )
+
+    buttons = []
+    if not wounds_list:
+        text += "\n✅ *Sizda hech qanday davolanmagan travma yo'q! Taningiz sog'lom va bardam.*"
+    else:
+        text += f"\n🩸 *Sizdagi faol og'ir jarohatlar ({len(wounds_list)} ta):*\n"
+        total_cost = 0
+        for w_id in wounds_list:
+            w_info = WOUND_TYPES.get(w_id, {"name": w_id, "desc": "Og'ir yara", "cure_cost": 150})
+            total_cost += w_info["cure_cost"]
+            text += f"• *{w_info['name']}:* {w_info['desc']} _(Davolash: {w_info['cure_cost']} 🪙)_\n"
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"🩹 {w_info['name']} ({w_info['cure_cost']} 🪙)",
+                    callback_data=f"cure_wound_{w_id}"
+                )
+            ])
+
+        if len(wounds_list) > 1:
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"✨ Barcha Jarohatlarni Davolash ({total_cost} 🪙)",
+                    callback_data="cure_all_wounds"
+                )
+            ])
+
+    buttons.append([InlineKeyboardButton(text="⬅️ Taverna", callback_data="menu_tavern")])
+    buttons.append([InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@tavern_router.callback_query(F.data.startswith("cure_wound_"))
+async def process_cure_single_wound(callback: CallbackQuery):
+    wound_id = callback.data.replace("cure_wound_", "")
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    success, msg = await cure_wound(char["id"], wound_id)
+    await callback.answer(msg.replace("*", ""), show_alert=True)
+    await show_healer_menu(callback)
+
+@tavern_router.callback_query(F.data == "cure_all_wounds")
+async def process_cure_all_wounds(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    success, msg = await cure_all_wounds(char["id"])
+    await callback.answer(msg.replace("*", ""), show_alert=True)
+    await show_healer_menu(callback)
+
+# =====================================================================
+# ZULMAT TIZIMI: QONLI AHD (BLOOD PACT - IBLIS MORVATH)
+# =====================================================================
+@tavern_router.callback_query(F.data == "tavern_pact_menu")
+async def show_blood_pact_menu(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    has_pact = char.get("bloodline_trait") == "demon_pact"
+    if has_pact:
+        text = (
+            "🩸 *QONLI AHD QURBONGOHI (FAOL)* 🩸\n\n"
+            "Siz allaqachon Iblis Morvath bilan qonli ahd tuzgansiz!\n"
+            "Tomirlaringizda qora olov oqmoqda.\n\n"
+            "⚡️ *Zulmat Quvvati:* +45 Dark ATK va Janglarda 20% Lifesteal!\n"
+            "💀 *Jazo:* -25 Max HP doimiy cheklov.\n\n"
+            "Ushbu ahddan qutulish faqat **Muqaddas Ibodatxonada** mumkin."
+        )
+        buttons = [
+            [InlineKeyboardButton(text="🕯 Muqaddas Ibodatxonaga Borish", callback_data="tavern_cleanse_menu")],
+            [InlineKeyboardButton(text="⬅️ Taverna", callback_data="menu_tavern")]
+        ]
+    else:
+        text = (
+            "🩸 *ZULMATNING QONLI QURBONGOHI (TAQIQLANGAN)* 🩸\n\n"
+            "Qorong'u burchakda qora plash kiygan kultist pichirlamoqda:\n"
+            "_\"Iblis Morvath o'z kuchini senga berishga tayyor, ritsar... Lekin har bir qudratning qonli to'lovi bor!\"_\n\n"
+            "⚡️ *SIZGA BERILADIGAN QUVVAT:*\n"
+            "• **+45 Dark Attack** (Barcha janglarda ulkan qora zarba)\n"
+            "• **20% Lifesteal** (Zarba berganingizda dushman jonini o'zingizga so'rib olasiz)\n\n"
+            "💀 *SHAVQATSIZ TO'LOV:*\n"
+            "• **-25 Doimiy Max HP** (Vujudingiz yemirilib boradi)\n"
+            "• **-30 Sanity** (Zulmat sharpalari vasvasasi)\n"
+            "• Qirollik ritsarlari sizga la'natlangan qotil deb qaraydi!\n\n"
+            "Ushbu qonli ahdni imzolashga tayyormisiz?"
+        )
+        buttons = [
+            [InlineKeyboardButton(text="🩸 Qonli Ahdni Imzolash (Tavakkal!)", callback_data="confirm_sign_pact")],
+            [InlineKeyboardButton(text="⬅️ Mayxonaga Qaytish", callback_data="menu_tavern")]
+        ]
+
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@tavern_router.callback_query(F.data == "confirm_sign_pact")
+async def confirm_sign_pact_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    success, msg = await sign_blood_pact(char["id"])
+    await callback.answer("🩸 Qora qon tomirlaringizga kirdi!", show_alert=True)
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Taverna", callback_data="menu_tavern")],
+        [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.edit_text(msg, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# =====================================================================
+# ZULMAT TIZIMI: MUQADDAS IBODATXONA (POKLANISH)
+# =====================================================================
+@tavern_router.callback_query(F.data == "tavern_cleanse_menu")
+async def show_cleanse_menu(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    has_pact = char.get("bloodline_trait") == "demon_pact"
+    text = (
+        "🕯 *VALORIYA MUQADDAS IBODATXONASI* 🕯\n\n"
+        "Shahar markazidagi oq toshli ibodatxonada shamlar yonib turibdi. "
+        "Bu yerda ritsarlar o'z ruhiyatini tozalaydi va qora afsunlarni yechadi.\n\n"
+        f"🪙 Sizdagi oltin: *{char['gold']:,} 🪙*\n"
+    )
+
+    buttons = []
+    if has_pact:
+        text += (
+            "🩸 *SIZNING RUHINGIZDA IBLIS LA'NATI MAVJUD!* 💀\n"
+            "Ruhoniylar 1,500 Oltin evaziga maxsus marosim o'tkazib, qonli ahdni parchalashi mumkin.\n"
+            "Bu sizning asl joningizni (+25 Max HP) va Sanityni 100% tiklaydi."
+        )
+        buttons.append([InlineKeyboardButton(text="🕯 Qonli Ahdni Bekor Qilish (1,500 🪙)", callback_data="confirm_cleanse_pact")])
+    else:
+        text += "\n✨ Ruhingiz toza, iblis ahdlari mavjud emas!"
+
+    buttons.append([InlineKeyboardButton(text="⬅️ Taverna", callback_data="menu_tavern")])
+    buttons.append([InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")] )
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@tavern_router.callback_query(F.data == "confirm_cleanse_pact")
+async def confirm_cleanse_pact_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    success, msg = await cleanse_blood_pact(char["id"])
+    if not success:
+        await callback.answer(msg, show_alert=True)
+        return
+
+    await callback.answer("🕯 Ruhingiz poklandi!", show_alert=True)
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Taverna", callback_data="menu_tavern")],
+        [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.edit_text(msg, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# =====================================================================
+# CHAT VA BUYRUQLAR (TEXT TRIGGERS: /pact, /tabib, /wounds, /sanity)
+# =====================================================================
+@tavern_router.message(F.text.regexp(r"^(!|\/)(pact|ahd|zulmat)"))
+async def text_command_pact(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.reply("Avval /start bosing!")
+        return
+
+    has_pact = char.get("bloodline_trait") == "demon_pact"
+    if has_pact:
+        await message.reply(
+            "🩸 *QONLI AHD STATUS:* Siz Iblis Morvath bilan shartnoma tuzgansiz!\n"
+            "Quvvat: +45 Dark ATK, 20% Lifesteal.\nBekor qilish uchun: `/cleanse` yoki Ibodatxonaga boring.",
+            parse_mode="Markdown"
+        )
+    else:
+        buttons = [
+            [InlineKeyboardButton(text="🩸 Qonli Ahd Menyusi", callback_data="tavern_pact_menu")],
+            [InlineKeyboardButton(text="🍻 Taverna", callback_data="menu_tavern")]
+        ]
+        await message.reply(
+            "🩸 *IBLIS MORVATHNING QONLI AHDI:* Kuch va o'lim shartnomasi!\n"
+            "Tafsilotlarni ko'rish va imzolash uchun quyidagi tugmani bosing:",
+            parse_mode="Markdown",
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+        )
+
+@tavern_router.message(F.text.regexp(r"^(!|\/)(cleanse|poklanish)"))
+async def text_command_cleanse(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.reply("Avval /start bosing!")
+        return
+
+    buttons = [[InlineKeyboardButton(text="🕯 Ibodatxonaga O'tish", callback_data="tavern_cleanse_menu")]]
+    await message.reply(
+        "🕯 *VALORIYA MUQADDAS IBODATXONASI:*\nRuhingizni poklash uchun ibodatxonaga tashrif buyuring:",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+
+@tavern_router.message(F.text.regexp(r"^(!|\/)(tabib|wounds|yaralar|davolan)"))
+async def text_command_healer(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.reply("Avval /start bosing!")
+        return
+
+    buttons = [[InlineKeyboardButton(text="🏥 Tabibxonaga Kirish", callback_data="tavern_healer_menu")]]
+    await message.reply(
+        "🏥 *SHAHAR TABIBXONASI:*\nSingan suyaklar va og'ir travmalarni davolash uchun tabibxonaga kiring:",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+
+@tavern_router.message(F.text.regexp(r"^(!|\/)(sanity|aql|ruhiyat)"))
+async def text_command_sanity(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.reply("Avval /start bosing!")
+        return
+
+    sanity = char.get("sanity", 100)
+    badge, mood, desc = DarkEngine.get_sanity_status(sanity)
+    buttons = [[InlineKeyboardButton(text="🍷 Taverna Sharobi (Sanity +30)", callback_data="tavern_drink_ale")]]
+    await message.reply(
+        f"🧠 *AQL VA RUHIYAT (SANITY) HOLATI:*\n\n"
+        f"Ko'rsatkich: *{sanity}%* [{badge}]\n"
+        f"Holat: {mood}\n\n"
+        f"📜 {desc}",
+        parse_mode="Markdown",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons)
+    )
+

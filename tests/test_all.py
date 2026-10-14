@@ -117,9 +117,60 @@ async def run_comprehensive_tests():
     assert snap_ok is True, "Snapshot yaratilmadi!"
     print("✅ TEST 9 O'TDI: 1-Soatlik dunyo arxivi (Snapshot) muvaffaqiyatli saqlandi.")
 
+    # 10. DARK SYSTEM (ZULMAT TIZIMI): HARDCORE MECHANICS
+    print("\n[TEST 10] Zulmat Tizimi: Sanity, Travmalar, Shavqatsiz Mag'lubiyat va Qonli Ahd...")
+    from database.db import (
+        apply_defeat_penalty, restore_sanity, cure_wound, cure_all_wounds,
+        sign_blood_pact, cleanse_blood_pact, upgrade_equipment, update_character
+    )
+    from game.dark_engine import DarkEngine
+
+    # 10.1 Defeat penalty
+    await update_character(char["id"], gold=500, sanity=100)
+    penalty = await apply_defeat_penalty(char["id"], is_dungeon=False)
+    assert penalty["gold_lost"] > 0, "Oltin yo'qotilmadi!"
+    assert penalty["current_sanity"] < 100, "Sanity kamaymadi!"
+    assert penalty["durability_lost"] >= 15, "Qurol chidamliligi kamaymadi!"
+    print(f"✅ TEST 10.1 (Mag'lubiyat Jazolari): -{penalty['gold_lost']} 🪙 Oltin, -{penalty['sanity_lost']}% Sanity, -{penalty['durability_lost']} Durability")
+
+    # 10.2 Sanity restoration
+    restored, r_msg = await restore_sanity(char["id"], amount=30, cost=50)
+    assert restored is True, "Sanity tiklanmadi!"
+    print(f"✅ TEST 10.2 (Sanity Tiklash): {r_msg}")
+
+    # 10.3 Blood pact
+    pact_ok, pact_msg = await sign_blood_pact(char["id"])
+    assert pact_ok is True, "Qonli ahd imzolanmadi!"
+    char_after_pact = await get_character_by_user_id(test_user_id)
+    assert char_after_pact["bloodline_trait"] == "demon_pact", "Trait o'zgarmadi!"
+    
+    # Blood pact combat test (Lifesteal)
+    pact_attacker = {
+        "name": "Iblis Ritsari", "strength": 20, "agility": 15, "stamina": 100,
+        "weapon_attack": 15, "bloodline_trait": "demon_pact", "hp": 50, "max_hp": 100
+    }
+    pact_defender = {"name": "Qurbon", "hp": 100, "constitution": 10, "armor_defense": 5}
+    dmg_pact, log_pact, _ = BattleEngine.calculate_round(pact_attacker, pact_defender)
+    assert dmg_pact > 50, "Dark ATK qo'shilmadi!"
+    assert pact_attacker["hp"] > 50, "Lifesteal ishlamadi!"
+    print(f"✅ TEST 10.3 (Qonli Ahd & Lifesteal): Zarar: {dmg_pact} DMG, Tiklangan jon: +{pact_attacker['hp'] - 50} HP")
+
+    # 10.4 Cleanse pact
+    await update_character(char["id"], gold=2000)
+    cleanse_ok, cl_msg = await cleanse_blood_pact(char["id"])
+    assert cleanse_ok is True, "Qonli ahd bekor qilinmadi!"
+    print("✅ TEST 10.4 (Ibodatxonada Poklanish): Qonli ahd muvaffaqiyatli bekor qilindi.")
+
+    # 10.5 High-Stakes Forge test
+    gear_items = await get_character_equipment(char["id"])
+    test_weapon = gear_items[0]
+    await update_character(char["id"], gold=5000)
+    forge_res, forge_msg = await upgrade_equipment(test_weapon["id"], char["id"])
+    print(f"✅ TEST 10.5 (Temirchi Tavakkali): {forge_msg[:60]}...")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 9 TA TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 TIZIM TO'LIQ ISHCHI VA BEXATO HOLATDA!")
+    print("🎉 BARCHA 10 TA TEST 100% MUVAFFAQIShLI O'TDI!")
+    print("👑 VALORIYA ZULMAT TIZIMI TO'LIQ ISHCHI VA HARDCORE HOLATDA!")
     print("=========================================================")
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import json
 import aiosqlite
+from typing import Tuple, Dict, List, Any
 from pathlib import Path
 from config import DB_PATH
 from game.constants import KINGDOMS, CLASSES, STARTER_GEAR
@@ -571,7 +572,7 @@ async def claim_daily_streak(character_id: int):
         return True, f"🎁 *TABRIKLAYMIZ!* Siz {streak}-kunlik sovg'ani oldingiz!\n\n{reward['text']}", streak
 
 # =====================================================================
-# BLACKSMITH FORGE (QUROLLARNI +1 ... +10 KUCHAYTIRISH)
+# BLACKSMITH FORGE (QUROLLARNI +1 ... +10 KUCHAYTIRISH - DARK SOULS EDITION)
 # =====================================================================
 
 async def upgrade_equipment(item_id: int, character_id: int):
@@ -599,10 +600,19 @@ async def upgrade_equipment(item_id: int, character_id: int):
         if char_gold < cost:
             return False, f"Oltin yetarli emas! Kuchaytirish narxi: {cost} 🪙 Oltin."
 
-        # Chance of success
-        success_rate = max(35, 100 - (current_plus * 8))
+        # Hardcore success rate scaling
+        if current_plus < 4:
+            success_rate = 85 - (current_plus * 10)
+        elif current_plus < 7:
+            success_rate = 50 - ((current_plus - 4) * 8)
+        else:
+            success_rate = 32
+
         import random
-        if random.randint(1, 100) <= success_rate:
+        roll = random.randint(1, 100)
+
+        # 1. G'ALABA: Muvaffaqiyatli kuchaytirish
+        if roll <= success_rate:
             new_plus = current_plus + 1
             clean_name = re.sub(r"\s*\+\d+$", "", name)
             new_name = f"{clean_name} +{new_plus}"
@@ -614,11 +624,54 @@ async def upgrade_equipment(item_id: int, character_id: int):
             UPDATE equipment SET item_name = ?, attack = ?, defense = ? WHERE id = ?;
             """, (new_name, new_atk, new_def, item_id))
             await db.commit()
-            return True, f"✨ *TEMIRCHI MUVOFAQIShI!* Anjom muvaffaqiyatli kuchaytirildi: *{new_name}* (+15 Zarba, +10 Himoya)!"
-        else:
-            await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?", (cost, character_id))
-            await db.commit()
-            return False, f"💨 *OMAD KELMADI!* Temirchi bolg'asi ostida ruda erib ketmadi. ({cost} Oltin sarflandi, lekin anjom buzilmadi)."
+            return True, f"✨ *TEMIRCHI MO'JIZASI!* Anjom muvaffaqiyatli kuchaytirildi: *{new_name}* (+15 Zarba, +10 Himoya)!"
+
+        # 2. MAG'LUBIYAT (ZULMAT TIZIMI XATARI)
+        await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?", (cost, character_id))
+        
+        # +7 va undan yuqori: 15% ehtimol bilan qurol darz ketishi (durability 0, +0 ga tushish)
+        if current_plus >= 7:
+            break_roll = random.randint(1, 100)
+            if break_roll <= 18:
+                clean_name = re.sub(r"\s*\+\d+$", "", name)
+                shattered_name = f"{clean_name} (Siniq)"
+                base_atk = max(5, item["attack"] - (current_plus * 15))
+                base_def = max(3, item["defense"] - (current_plus * 10))
+                await db.execute("""
+                UPDATE equipment SET item_name = ?, attack = ?, defense = ?, durability = 0 WHERE id = ?;
+                """, (shattered_name, base_atk, base_def, item_id))
+                await db.commit()
+                return False, f"⚡️ *DAHSHAT! QUROL SINDI VA MAYDALANDI!* 💥\n\nTemirchi bolg'asi ostida anjom haddan tashqari qizib darz ketdi! *{name}* sinib, chidamliligi 0 ga tushdi!"
+            
+            # Aks holda 45% daraja pasayishi (-1)
+            elif break_roll <= 65 and current_plus > 0:
+                new_plus = current_plus - 1
+                clean_name = re.sub(r"\s*\+\d+$", "", name)
+                new_name = f"{clean_name} +{new_plus}" if new_plus > 0 else clean_name
+                new_atk = max(5, item["attack"] - 15)
+                new_def = max(3, item["defense"] - 10)
+                await db.execute("""
+                UPDATE equipment SET item_name = ?, attack = ?, defense = ? WHERE id = ?;
+                """, (new_name, new_atk, new_def, item_id))
+                await db.commit()
+                return False, f"📉 *QUROL DARZ KETDI!* ({cost} 🪙 ketdi)\n\nKuchaytirish xato ketdi va anjom darajasi pasaydi: *{new_name}* (-15 Zarba)!"
+
+        # +4 dan +6 gacha: 25% ehtimol bilan daraja pasayishi (-1)
+        elif current_plus >= 4:
+            if random.randint(1, 100) <= 25:
+                new_plus = current_plus - 1
+                clean_name = re.sub(r"\s*\+\d+$", "", name)
+                new_name = f"{clean_name} +{new_plus}" if new_plus > 0 else clean_name
+                new_atk = max(5, item["attack"] - 15)
+                new_def = max(3, item["defense"] - 10)
+                await db.execute("""
+                UPDATE equipment SET item_name = ?, attack = ?, defense = ? WHERE id = ?;
+                """, (new_name, new_atk, new_def, item_id))
+                await db.commit()
+                return False, f"📉 *TEMIRCHI XATOSI!* Ruda erib ketmadi va anjom darajasi pasaydi: *{new_name}*!"
+
+        await db.commit()
+        return False, f"💨 *OMAD KELMADI!* Temirchi bolg'asi ostida ruda birlashmadi. ({cost} Oltin sarflandi, anjom buzilmadi)."
 
 # =====================================================================
 # PVE DUNGEON PROGRESS (5 BOSQICHLI ZINDONLAR)
@@ -645,5 +698,233 @@ async def advance_dungeon_floor(character_id: int, current_floor: int):
         ON CONFLICT(character_id) DO UPDATE SET max_floor = MAX(max_floor, excluded.max_floor);
         """, (character_id, current_floor + 1))
         await db.commit()
+
+# =====================================================================
+# DARK ENGINE DATABASE INTEGRATION (ZULMAT VA TRAVMA TIZIMI)
+# =====================================================================
+
+async def apply_defeat_penalty(character_id: int, is_dungeon: bool = False) -> dict:
+    """
+    Mag'lubiyat oqibatlari:
+    - Oltin yo'qotish (15% Arena, 25% Zindon)
+    - Sanity (Aql) pasayishi (-15 Arena, -25 Zindon)
+    - Kiyimdagi barcha qurol/sovutlar chidamliligi (Durability) -15..-25 ga tushishi
+    - Og'ir travma (Wound) orttirish
+    """
+    from game.dark_engine import WOUND_TYPES
+    import random
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        # 1. Oltin yo'qotish
+        loss_pct = 0.25 if is_dungeon else 0.15
+        gold_drop = int(char["gold"] * loss_pct)
+        if char["gold"] > 0 and gold_drop == 0:
+            gold_drop = min(char["gold"], 20)
+        new_gold = max(0, char["gold"] - gold_drop)
+
+        # 2. Sanity pasayishi
+        sanity_drop = 25 if is_dungeon else 15
+        new_sanity = max(0, char.get("sanity", 100) - sanity_drop)
+
+        # 3. Travma (Wound) orttirish
+        wounds_list = []
+        try:
+            w_raw = char.get("wounds_json", "[]")
+            wounds_list = json.loads(w_raw) if isinstance(w_raw, str) else list(w_raw)
+        except Exception:
+            wounds_list = []
+
+        wound_chance = 0.85 if is_dungeon else 0.60
+        new_wound_inflicted = None
+        available_wounds = [w for w in WOUND_TYPES.keys() if w not in wounds_list]
+
+        if random.random() <= wound_chance and available_wounds:
+            new_wound_key = random.choice(available_wounds)
+            wounds_list.append(new_wound_key)
+            new_wound_inflicted = WOUND_TYPES[new_wound_key]
+
+        # 4. Qurollarning eskirishi / darz ketishi (Durability loss)
+        durability_drop = random.randint(15, 25)
+        await db.execute("""
+        UPDATE equipment 
+        SET durability = MAX(0, durability - ?)
+        WHERE character_id = ? AND is_equipped = 1;
+        """, (durability_drop, character_id))
+
+        # 5. O'yinchi holatini yangilash (Jon max_hp ning 25% qismida qoladi)
+        res_hp = max(1, char["max_hp"] // 4)
+        await db.execute("""
+        UPDATE characters SET
+            gold = ?,
+            sanity = ?,
+            hp = ?,
+            losses = losses + 1,
+            wounds_json = ?
+        WHERE id = ?;
+        """, (new_gold, new_sanity, res_hp, json.dumps(wounds_list), character_id))
+        await db.commit()
+
+        return {
+            "gold_lost": gold_drop,
+            "sanity_lost": sanity_drop,
+            "current_sanity": new_sanity,
+            "durability_lost": durability_drop,
+            "new_wound": new_wound_inflicted,
+            "total_wounds": len(wounds_list),
+            "res_hp": res_hp
+        }
+
+async def cure_wound(character_id: int, wound_id: str) -> Tuple[bool, str]:
+    from game.dark_engine import WOUND_TYPES
+    wound_info = WOUND_TYPES.get(wound_id)
+    if not wound_info:
+        return False, "Noma'lum jarohat turi!"
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT gold, wounds_json FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Qahramon topilmadi!"
+            char = dict(row)
+
+        cost = wound_info["cure_cost"]
+        if char["gold"] < cost:
+            return False, f"Oltin yetarli emas! Davolash narxi: {cost} 🪙 Oltin."
+
+        wounds = []
+        try:
+            wounds = json.loads(char["wounds_json"])
+        except Exception:
+            wounds = []
+
+        if wound_id not in wounds:
+            return False, "Sizda bunday jarohat yo'q!"
+
+        wounds.remove(wound_id)
+        await db.execute("""
+        UPDATE characters SET gold = gold - ?, wounds_json = ? WHERE id = ?;
+        """, (cost, json.dumps(wounds), character_id))
+        await db.commit()
+        return True, f"✨ *JAROHAT DAVOLANDI!* Tabib malham surtib *{wound_info['name']}* jarohatini davoladi! ({cost} 🪙 to'landi)"
+
+async def cure_all_wounds(character_id: int) -> Tuple[bool, str]:
+    from game.dark_engine import WOUND_TYPES
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT gold, wounds_json FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Qahramon topilmadi!"
+            char = dict(row)
+
+        wounds = []
+        try:
+            wounds = json.loads(char["wounds_json"])
+        except Exception:
+            wounds = []
+
+        if not wounds:
+            return True, "Sizda hech qanday davolanmagan jarohat yo'q, tanangiz sog'lom!"
+
+        total_cost = sum(WOUND_TYPES.get(w, {}).get("cure_cost", 150) for w in wounds)
+        if char["gold"] < total_cost:
+            return False, f"Barcha jarohatlarni davolash uchun {total_cost} 🪙 kerak! Hamyoningizda: {char['gold']} 🪙."
+
+        await db.execute("""
+        UPDATE characters SET gold = gold - ?, wounds_json = '[]' WHERE id = ?;
+        """, (total_cost, character_id))
+        await db.commit()
+        return True, f"✨ *BOSH TABIB MO'JIZASI!* Barcha {len(wounds)} ta og'ir jarohatlar to'liq davolandi! ({total_cost} 🪙 sarflandi)"
+
+async def restore_sanity(character_id: int, amount: int, cost: int) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT gold, sanity FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Qahramon topilmadi!"
+            char = dict(row)
+
+        if char["gold"] < cost:
+            return False, f"Oltin yetarli emas! Narxi: {cost} 🪙."
+
+        current_sanity = char.get("sanity", 100)
+        if current_sanity >= 100:
+            return False, "Ruhingiz va aqlingiz allaqachon 100% to'la va sokin!"
+
+        new_sanity = min(100, current_sanity + amount)
+        await db.execute("""
+        UPDATE characters SET gold = gold - ?, sanity = ? WHERE id = ?;
+        """, (cost, new_sanity, character_id))
+        await db.commit()
+        return True, f"🍷 *AQIL VA RUH TIKLANDI!* Sizning Sanity ko'rsatkichingiz: *{new_sanity}%* ga ko'tarildi! ({cost} 🪙 sarflandi)"
+
+async def sign_blood_pact(character_id: int) -> Tuple[bool, str]:
+    """
+    Qonli Ahd: Iblis Morvath bilan shartnoma.
+    +45 Dark ATK, 20% Lifesteal evaziga -25 Max HP va Sanity yo'qotish.
+    """
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if char.get("bloodline_trait") == "demon_pact":
+            return False, "Siz allaqachon Qonli Ahd imzolagansiz! Ruhingiz Zulmatga tegishli."
+
+        new_max_hp = max(50, char["max_hp"] - 25)
+        new_hp = min(char["hp"], new_max_hp)
+        new_sanity = max(10, char.get("sanity", 100) - 30)
+
+        await db.execute("""
+        UPDATE characters SET
+            bloodline_trait = 'demon_pact',
+            max_hp = ?,
+            hp = ?,
+            sanity = ?
+        WHERE id = ?;
+        """, (new_max_hp, new_hp, new_sanity, character_id))
+        await db.commit()
+        return True, (
+            "🩸 *QONLI AHD IMZOLANDI! (IBLIS MORVATH)* 🩸\n\n"
+            "Qora qon tomirlaringizga oqib kirdi!\n"
+            "⚡️ *In'om:* +45 Dark ATK va Janglarda 20% Qon So'rish (Lifesteal)!\n"
+            "💀 *To'lov:* Maksimal joningiz -25 ga kamaydi va Sanity 30% yo'qotildi!\n"
+            "Shahardagi tabib va savdogarlar sizdan nafrat bilan chetlanadi."
+        )
+
+async def cleanse_blood_pact(character_id: int) -> Tuple[bool, str]:
+    cost = 1500
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if char.get("bloodline_trait") != "demon_pact":
+            return False, "Sizda hech qanday Zulmat Ahdi yo'q, ruhingiz ozod!"
+
+        if char["gold"] < cost:
+            return False, f"Ibodatxonada tavba qilish va ahdni buzish uchun {cost} 🪙 Oltin kerak!"
+
+        new_max_hp = char["max_hp"] + 25
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold - ?,
+            bloodline_trait = 'noble_blood',
+            max_hp = ?,
+            sanity = 100
+        WHERE id = ?;
+        """, (cost, new_max_hp, character_id))
+        await db.commit()
+        return True, (
+            "🕯 *MUQADDAS POKLANISH MO'JIZASI!* 🕯\n\n"
+            "Ibodatxona ruhoniylari qadimgi duolar bilan tanangizdagi zulmat qonini tozaladi!\n"
+            "Maksimal joningiz qaytarildi (+25 Max HP) va Sanity 100% tiklandi."
+        )
 
 
