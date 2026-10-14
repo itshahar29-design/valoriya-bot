@@ -20,6 +20,11 @@ from handlers.chat_ai_handler import chat_router
 from handlers.daily_handler import daily_router
 from handlers.forge_handler import forge_router
 from handlers.dungeon_handler import dungeon_router
+from handlers.guild_handler import guild_router
+from handlers.profession_handler import profession_router
+from handlers.caravan_handler import caravan_router
+from handlers.horse_race_handler import horse_race_router
+from handlers.tournament_handler import tournament_router
 from game.npc_broadcaster import npc_periodic_broadcaster_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -72,6 +77,11 @@ async def main():
     dp.include_router(forge_router)
     dp.include_router(dungeon_router)
     dp.include_router(owner_router)
+    dp.include_router(guild_router)
+    dp.include_router(profession_router)
+    dp.include_router(caravan_router)
+    dp.include_router(horse_race_router)
+    dp.include_router(tournament_router)
     dp.include_router(group_router)
     dp.include_router(chat_router)
 

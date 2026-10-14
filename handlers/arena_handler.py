@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from database.db import get_character_by_user_id, update_character, apply_defeat_penalty
+from database.db import get_character_by_user_id, update_character, apply_defeat_penalty, award_referral_cashback
 from game.battle_engine import BattleEngine
 from game.npc_engine import NPCEngine
 from game.retention_engine import RetentionEngine
@@ -104,6 +104,7 @@ async def process_battle_turn(callback: CallbackQuery):
             wins=char["wins"] + 1,
             honor=char["honor"] + 25
         )
+        await award_referral_cashback(char["id"], loot_gold)
         
         # Tasodifiy Dervish sovg'asi (Dopamin qopqoni)
         has_dervish, gift, dervish_msg = RetentionEngine.check_random_dervish_encounter()

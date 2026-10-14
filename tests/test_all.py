@@ -1,5 +1,6 @@
 import asyncio
 import sys
+import json
 from pathlib import Path
 
 # Fix Windows console emoji encoding
@@ -168,9 +169,68 @@ async def run_comprehensive_tests():
     forge_res, forge_msg = await upgrade_equipment(test_weapon["id"], char["id"])
     print(f"✅ TEST 10.5 (Temirchi Tavakkali): {forge_msg[:60]}...")
 
+    # 11. ULKAN YANGI TIZIMLAR: GILDIYA, REFERAL, SHAXTA & ALXIMIYA, TAXT
+    print("\n[TEST 11] 6 Ta Yangi Mega-Tizim (Gildiyalar, Referal, Shaxta, Alximiya, Taxt)...")
+    from database.db import (
+        create_guild, join_guild, deposit_guild_treasury, get_guild_info,
+        get_all_castles, siege_castle, handle_referral_signup, award_referral_cashback,
+        get_referral_stats, mine_resources, brew_potion, use_potion,
+        get_current_king, challenge_king
+    )
+
+    # 11.1 Guild creation & deposit
+    await update_character(char["id"], gold=10000, guild_id=None)
+    g_name = f"Bo'rilar_{int(time.time()) % 100000}"
+    guild_ok, g_msg = await create_guild(char["id"], g_name)
+    assert guild_ok is True, f"Gildiya tuzilmadi: {g_msg}"
+    dep_ok, d_msg = await deposit_guild_treasury(char["id"], 500)
+    assert dep_ok is True, "Xazinaga oltin qo'shilmadi!"
+    print(f"✅ TEST 11.1 (Gildiya & Xazina): {g_msg} | {d_msg}")
+
+    # 11.2 Castle siege
+    castles = await get_all_castles()
+    assert len(castles) >= 3, "Qal'alar bazada yo'q!"
+    siege_res, s_msg = await siege_castle(char["id"], castles[0]["id"])
+    print(f"✅ TEST 11.2 (Qal'a Qamali): {s_msg[:50]}...")
+
+    # 11.3 Referral system & cashback
+    ref_user_id = base_id + 500
+    ref_ok, inv_name, b_gold = await handle_referral_signup(new_user_id=ref_user_id, referrer_user_id=test_user_id)
+    assert ref_ok is True, "Referal ro'yxatga olinmadi!"
+    await award_referral_cashback(char["id"], 1000)
+    ref_stats = await get_referral_stats(test_user_id)
+    assert ref_stats["count"] >= 1, "Referal soni hisoblanmadi!"
+    print(f"✅ TEST 11.3 (Referal & Keshbek): Taklif qilinganlar: {ref_stats['count']} ta, Keshbek: {ref_stats['gold_earned']} 🪙")
+
+    # 11.4 Mining & Alchemy
+    mine_ok, m_msg, profs = False, "", {}
+    for _ in range(5):
+        await update_character(char["id"], stamina=100, hp=100)
+        mine_ok, m_msg, profs = await mine_resources(char["id"])
+        if mine_ok:
+            break
+    assert mine_ok is True, "Shaxtada ruda olinmadi!"
+    print(f"✅ TEST 11.4 (Shaxta Qazish): {m_msg[:50]}...")
+    
+    # Brew potion
+    profs["iron_ore"] = 5
+    profs["herbs"] = 5
+    await update_character(char["id"], professions_json=json.dumps(profs))
+    brew_ok, b_msg = await brew_potion(char["id"], "rage")
+    assert brew_ok is True, "Damlama tayyorlanmadi!"
+    use_ok, u_msg = await use_potion(char["id"], "rage")
+    assert use_ok is True, "Damlama ichilmadi!"
+    print(f"✅ TEST 11.5 (Alximiya Damlamasi): {b_msg} | {u_msg}")
+
+    # 11.5 King Throne challenge
+    await update_character(char["id"], level=5)
+    king_challenge, k_msg = await challenge_king(char["id"])
+    current_king = await get_current_king()
+    print(f"✅ TEST 11.6 (Valoriya Oliy Taxti): {k_msg[:50]}... Hozirgi Qirol: {current_king.get('king_name', 'Bo\'sh')}")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 10 TA TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 VALORIYA ZULMAT TIZIMI TO'LIQ ISHCHI VA HARDCORE HOLATDA!")
+    print("🎉 BARCHA 11 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print("👑 VALORIYA QIT'ASI TO'LIQ VA BEKAMU-KO'ST HOLATDA TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":

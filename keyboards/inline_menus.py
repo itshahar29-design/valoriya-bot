@@ -20,6 +20,14 @@ def main_menu_keyboard(is_owner: bool = False):
             InlineKeyboardButton(text="🍻 Taverna & Qimor", callback_data="menu_tavern")
         ],
         [
+            InlineKeyboardButton(text="🏰 Gildiya & Qal'alar", callback_data="menu_guild"),
+            InlineKeyboardButton(text="⛏ Shaxta & Alximiya", callback_data="menu_professions")
+        ],
+        [
+            InlineKeyboardButton(text="👥 Do'stlarni Taklif Qilish", callback_data="menu_referral"),
+            InlineKeyboardButton(text="👑 Oliy Taxt & Turnir", callback_data="menu_tournament")
+        ],
+        [
             InlineKeyboardButton(text="👤 Ritsar Profili", callback_data="menu_profile"),
             InlineKeyboardButton(text="🏆 Reyting (Top)", callback_data="menu_top")
         ]

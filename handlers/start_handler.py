@@ -2,7 +2,10 @@ import json
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.filters import CommandStart
-from database.db import get_character_by_user_id, create_character, get_character_equipment, update_character
+from database.db import (
+    get_character_by_user_id, create_character, get_character_equipment,
+    update_character, handle_referral_signup, get_referral_stats
+)
 from config import OWNER_ID, OWNER_USERNAME
 from game.constants import CLASSES
 from game.retention_engine import RetentionEngine
@@ -11,6 +14,8 @@ from keyboards.inline_menus import main_menu_keyboard, class_selection_keyboard
 from services.channel_sub import is_subscribed_to_channel
 
 start_router = Router()
+
+PENDING_REFERRALS = {}
 
 def is_user_owner(user_id: int, username: str | None) -> bool:
     clean_username = (username or "").lower().lstrip("@")
@@ -51,6 +56,7 @@ async def handle_start(message: Message):
     if len(args) > 1 and args[1].startswith("ref_"):
         try:
             invited_by = int(args[1].replace("ref_", ""))
+            PENDING_REFERRALS[user_id] = invited_by
         except ValueError:
             pass
 
@@ -130,8 +136,24 @@ async def handle_class_selection(callback: CallbackQuery):
     user_name = callback.from_user.first_name or "Jasur Ritsar"
     
     is_owner = is_user_owner(user_id, username)
-    char_id = await create_character(user_id=user_id, name=user_name, class_id=class_id, is_owner=is_owner)
+    invited_by = PENDING_REFERRALS.pop(user_id, None)
+    char_id = await create_character(user_id=user_id, name=user_name, class_id=class_id, invited_by=invited_by, is_owner=is_owner)
     
+    # Referrer bonus
+    if invited_by:
+        ok, inv_name, bonus = await handle_referral_signup(user_id, invited_by)
+        if ok:
+            try:
+                await callback.bot.send_message(
+                    invited_by,
+                    f"🎉 *YANGI DO'ST QASAMYOD QILDI!* 👥\n\n"
+                    f"Siz taklif qilgan ritsar *{user_name}* saflarimizga qo'shildi!\n"
+                    f"Xazinangizga: **+{bonus} 🪙 Oltin** va **+1 💎 Qimmatbaho Javohir** qo'shildi!",
+                    parse_mode="Markdown"
+                )
+            except Exception:
+                pass
+
     class_name = CLASSES.get(class_id, {}).get("name", class_id)
     await callback.message.edit_text(
         f"🎉 *TABRIKLAYMIZ! QASAMYOD QABUL QILINDI!* 🎉\n\n"
@@ -199,3 +221,60 @@ async def show_character_profile(callback: CallbackQuery):
     buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
 
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# =====================================================================
+# REFERAL TIZIMI: MENYU VA BUYRUQLAR
+# =====================================================================
+@start_router.callback_query(F.data == "menu_referral")
+async def show_referral_menu(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await callback.answer("Avval /start bosing!", show_alert=True)
+        return
+
+    stats = await get_referral_stats(user_id)
+    bot_me = await callback.bot.get_me()
+    ref_link = f"https://t.me/{bot_me.username}?start=ref_{user_id}"
+
+    text = (
+        "👥 *VALORIYA VIRUSLI REFERAL TIZIMI* 👥\n\n"
+        "O'z do'stlaringiz va birodarlaringizni Valoriya qirolligiga taklif qiling va cheksiz boylikka ega bo'ling!\n\n"
+        "🎁 *Sizga beriladigan mukofotlar:*\n"
+        "• Har bir qo'shilgan do'stingiz uchun: **+500 🪙 Oltin** va **+1 💎 Qimmatbaho Javohir**!\n"
+        "• Do'stingiz janglarda yutgan barcha oltinlarning **5% qismi sizga passiv keshbek** bo'lib tushadi!\n\n"
+        f"📊 *Sizning statistikangiz:*\n"
+        f"• Taklif qilingan ritsarlar: *{stats['count']} ta*\n"
+        f"• Ishlab topilgan passiv oltin: *{stats['gold_earned']:,} 🪙*\n\n"
+        f"🔗 *Sizning shaxsiy taklif havolangiz:*\n`{ref_link}`\n\n"
+        "Havolani nusxalab, do'stlaringiz va guruhlarga yuboring!"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="📢 Do'stlarga Ulashish", url=f"https://t.me/share/url?url={ref_link}&text=Valoriya%20qirolliklar%20urushiga%20qo%27shil%20va%20ritsar%20bo%27l!")],
+        [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@start_router.message(F.text.regexp(r"^(!|\/)(ref|referal|taklif)"))
+async def text_command_referral(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.reply("Avval /start bosing!")
+        return
+
+    stats = await get_referral_stats(user_id)
+    bot_me = await message.bot.get_me()
+    ref_link = f"https://t.me/{bot_me.username}?start=ref_{user_id}"
+
+    text = (
+        "👥 *VALORIYA REFERAL HAVOLASI* 👥\n\n"
+        f"Har bir taklif uchun: **+500 🪙 Oltin** va **+1 💎 Javohir**!\n"
+        f"Taklif qilinganlar: *{stats['count']} ta* | Topilgan oltin: *{stats['gold_earned']:,} 🪙*\n\n"
+        f"🔗 *Havolangiz:*\n`{ref_link}`"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="📢 Do'stlarga Ulashish", url=f"https://t.me/share/url?url={ref_link}&text=Valoriya%20qirolliklar%20urushiga%20qo%27shil%20va%20ritsar%20bo%27l!")],
+        [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+    ]
+    await message.reply(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))

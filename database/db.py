@@ -191,6 +191,9 @@ async def init_db():
             leader_id INTEGER,
             level INTEGER DEFAULT 1,
             treasury INTEGER DEFAULT 0,
+            castle_owned TEXT DEFAULT NULL,
+            castle_tax_collected INTEGER DEFAULT 0,
+            members_count INTEGER DEFAULT 1,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
         """)
@@ -204,6 +207,29 @@ async def init_db():
         );
         """)
 
+        # 14. Castles Table (Qal'alar & Soliqlar)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS castles (
+            id TEXT PRIMARY KEY,
+            name TEXT NOT NULL,
+            owner_guild_id INTEGER DEFAULT NULL,
+            defense_power INTEGER DEFAULT 500,
+            daily_tax INTEGER DEFAULT 1500,
+            last_tax_claim TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        # 15. Tournament & Throne (Oliy Taxt)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS tournament_throne (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            king_character_id INTEGER DEFAULT NULL,
+            crown_title TEXT DEFAULT 'Valoriya Oliy Hukmdori',
+            reign_started TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            defense_wins INTEGER DEFAULT 0
+        );
+        """)
+
         # Migrations if needed
         for col_def in [
             ("username", "TEXT DEFAULT NULL"),
@@ -212,12 +238,42 @@ async def init_db():
             ("buff_multiplier", "REAL DEFAULT 1.0"),
             ("last_daily_claim", "TEXT DEFAULT NULL"),
             ("daily_streak", "INTEGER DEFAULT 0"),
-            ("guild_id", "INTEGER DEFAULT NULL")
+            ("guild_id", "INTEGER DEFAULT NULL"),
+            ("referral_count", "INTEGER DEFAULT 0"),
+            ("referral_gold_earned", "INTEGER DEFAULT 0"),
+            ("professions_json", "TEXT DEFAULT '{\"mining_level\": 1, \"alchemy_level\": 1, \"iron_ore\": 0, \"gold_ore\": 0, \"mithril_ore\": 0, \"herbs\": 0, \"potions\": {}}'"),
+            ("active_buff_potion", "TEXT DEFAULT NULL"),
+            ("buff_potion_battles", "INTEGER DEFAULT 0"),
+            ("is_king", "INTEGER DEFAULT 0")
         ]:
             try:
                 await db.execute(f"ALTER TABLE characters ADD COLUMN {col_def[0]} {col_def[1]};")
             except Exception:
                 pass
+
+        for col_def in [
+            ("castle_owned", "TEXT DEFAULT NULL"),
+            ("castle_tax_collected", "INTEGER DEFAULT 0"),
+            ("members_count", "INTEGER DEFAULT 1")
+        ]:
+            try:
+                await db.execute(f"ALTER TABLE guilds ADD COLUMN {col_def[0]} {col_def[1]};")
+            except Exception:
+                pass
+
+        # Seed castles if not existing
+        for c_id, c_name, c_tax in [
+            ("dragonstone", "Ajdaho Qal'asi", 3000),
+            ("iron_fortress", "Temir Qo'rg'on", 2000),
+            ("frost_keep", "Muzli Arsh", 1500)
+        ]:
+            await db.execute("""
+            INSERT OR IGNORE INTO castles (id, name, daily_tax) VALUES (?, ?, ?);
+            """, (c_id, c_name, c_tax))
+
+        await db.execute("""
+        INSERT OR IGNORE INTO tournament_throne (id, crown_title) VALUES (1, 'Valoriya Oliy Hukmdori');
+        """)
 
         # Seed kingdoms if not existing
         for k_id, k_data in KINGDOMS.items():
@@ -926,5 +982,414 @@ async def cleanse_blood_pact(character_id: int) -> Tuple[bool, str]:
             "Ibodatxona ruhoniylari qadimgi duolar bilan tanangizdagi zulmat qonini tozaladi!\n"
             "Maksimal joningiz qaytarildi (+25 Max HP) va Sanity 100% tiklandi."
         )
+
+# =====================================================================
+# 1. GILDIYALAR VA QAL'ALAR (GUILDS & CASTLE SIEGES)
+# =====================================================================
+
+async def create_guild(leader_character_id: int, guild_name: str) -> Tuple[bool, str]:
+    guild_name = guild_name.strip()
+    if len(guild_name) < 3 or len(guild_name) > 30:
+        return False, "Gildiya nomi 3 tadan 30 tagacha belgidan iborat bo'lishi kerak!"
+
+    cost = 1000
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT gold, guild_id, name FROM characters WHERE id = ?", (leader_character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if char["guild_id"]:
+            return False, "Siz allaqachon biror gildiya a'zosisiz! Avval undan chiqing."
+
+        if char["gold"] < cost:
+            return False, f"Gildiya tuzish uchun {cost:,} 🪙 Oltin kerak! Sizda: {char['gold']:,} 🪙."
+
+        try:
+            cursor = await db.execute("""
+            INSERT INTO guilds (name, leader_id, level, treasury, members_count)
+            VALUES (?, ?, 1, 200, 1);
+            """, (guild_name, leader_character_id))
+            guild_id = cursor.lastrowid
+            
+            await db.execute("UPDATE characters SET gold = gold - ?, guild_id = ? WHERE id = ?", (cost, guild_id, leader_character_id))
+            await db.commit()
+            return True, f"🏰 *TABRIKLAYMIZ!* '{guild_name}' nomli buyuk ritsarlar gildiyasi tuzildi! Bosh qarorgoh ochildi."
+        except Exception as e:
+            return False, f"Ushbu nomdagi gildiya allaqachon mavjud! Boshqa nom tanlang."
+
+async def join_guild(character_id: int, guild_name: str) -> Tuple[bool, str]:
+    guild_name = guild_name.strip()
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM guilds WHERE LOWER(name) = ?", (guild_name.lower(),)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, f"'{guild_name}' nomli gildiya topilmadi!"
+            guild = dict(row)
+
+        async with db.execute("SELECT guild_id, name FROM characters WHERE id = ?", (character_id,)) as cur2:
+            char = dict(await cur2.fetchone())
+
+        if char["guild_id"]:
+            return False, "Siz allaqachon boshqa gildiya a'zosisiz!"
+
+        await db.execute("UPDATE characters SET guild_id = ? WHERE id = ?", (guild["id"], character_id))
+        await db.execute("UPDATE guilds SET members_count = members_count + 1 WHERE id = ?", (guild["id"],))
+        await db.commit()
+        return True, f"🛡 *QASAMYOD QABUL QILINDI!* Siz '{guild['name']}' gildiyasiga rasman qabul qilindingiz!"
+
+async def deposit_guild_treasury(character_id: int, amount: int) -> Tuple[bool, str]:
+    if amount <= 0:
+        return False, "Miqdor musbat bo'lishi kerak!"
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT gold, guild_id FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if not char["guild_id"]:
+            return False, "Siz biror gildiyaga a'zo emassiz!"
+
+        if char["gold"] < amount:
+            return False, f"Sizda yetarli oltin yo'q! Balans: {char['gold']:,} 🪙."
+
+        await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?", (amount, character_id))
+        await db.execute("UPDATE guilds SET treasury = treasury + ? WHERE id = ?", (amount, char["guild_id"]))
+        await db.commit()
+        return True, f"💰 *Gildiya xazinasiga +{amount:,} 🪙 Oltin qo'shildi!*"
+
+async def get_guild_info(guild_id: int) -> dict | None:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM guilds WHERE id = ?", (guild_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return None
+            guild = dict(row)
+        
+        async with db.execute("SELECT id, name, level, wins FROM characters WHERE guild_id = ?", (guild_id,)) as cur2:
+            members = [dict(r) for r in await cur2.fetchall()]
+            guild["members"] = members
+            return guild
+
+async def get_all_castles() -> list:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("""
+        SELECT c.*, g.name as owner_guild_name 
+        FROM castles c
+        LEFT JOIN guilds g ON c.owner_guild_id = g.id;
+        """) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+async def siege_castle(character_id: int, castle_id: str) -> Tuple[bool, str]:
+    import random
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if not char["guild_id"]:
+            return False, "Qal'ani qamal qilish uchun biror gildiya a'zosi bo'lishingiz shart!"
+
+        async with db.execute("SELECT * FROM castles WHERE id = ?", (castle_id,)) as cur2:
+            row = await cur2.fetchone()
+            if not row:
+                return False, "Bunday qal'a mavjud emas!"
+            castle = dict(row)
+
+        if castle["owner_guild_id"] == char["guild_id"]:
+            return False, "Bu qal'a allaqachon sizning gildiyangizga tegishli!"
+
+        async with db.execute("SELECT * FROM guilds WHERE id = ?", (char["guild_id"],)) as cur3:
+            guild = dict(await cur3.fetchone())
+
+        # Qamal jangi: 50% g'alaba ehtimoli (darajaga bog'liq)
+        if random.random() < 0.55:
+            # G'alaba: Qal'a egallandi!
+            await db.execute("UPDATE castles SET owner_guild_id = ? WHERE id = ?", (guild["id"], castle_id))
+            await db.execute("UPDATE guilds SET castle_owned = ? WHERE id = ?", (castle["name"], guild["id"]))
+            loot = castle["daily_tax"] // 2
+            await db.execute("UPDATE guilds SET treasury = treasury + ? WHERE id = ?", (loot, guild["id"]))
+            await db.commit()
+            return True, (
+                f"🏰 *QAL'A QAMALI G'ALABASI!* 🏆\n\n"
+                f"'{guild['name']}' jangchilari devorlarni yorib o'tib, **{castle['name']}** ni zabt etdi!\n"
+                f"Qal'a xazinasidan +{loot:,} 🪙 o'lja gildiyaga qo'shildi!\n"
+                f"Endi har kuni {castle['daily_tax']:,} 🪙 passiv soliq gildiyangizga tushadi!"
+            )
+        else:
+            loss_hp = max(10, char["hp"] // 2)
+            await db.execute("UPDATE characters SET hp = ? WHERE id = ?", (loss_hp, character_id))
+            await db.commit()
+            return False, f"🩸 *QAMAL QAYTARILDI!* Qal'a kamonchilari va soqchilari hujumingizni to'xtatdi! Siz og'ir yaralandingiz."
+
+# =====================================================================
+# 2. VIRUSLI REFERAL TIZIMI (REFERRALS & PASSIVE CASHBACK)
+# =====================================================================
+
+async def handle_referral_signup(new_user_id: int, referrer_user_id: int) -> Tuple[bool, str, int]:
+    if new_user_id == referrer_user_id:
+        return False, "O'zingizni referal qila olmaysiz!", 0
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT id, name, gold, gems FROM characters WHERE user_id = ?", (referrer_user_id,)) as cur:
+            referrer = await cur.fetchone()
+            if not referrer:
+                return False, "Taklif qiluvchi topilmadi!", 0
+            ref_dict = dict(referrer)
+
+        # Referrerga +500 Oltin va +1 Gem
+        bonus_gold = 500
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold + ?,
+            gems = gems + 1,
+            referral_count = COALESCE(referral_count, 0) + 1,
+            referral_gold_earned = COALESCE(referral_gold_earned, 0) + ?
+        WHERE id = ?;
+        """, (bonus_gold, bonus_gold, ref_dict["id"]))
+        await db.commit()
+        return True, ref_dict["name"], bonus_gold
+
+async def award_referral_cashback(earner_character_id: int, earned_gold: int):
+    """O'yinchi jangda oltin yutsa, uni chaqirgan ritsarga 5% keshbek tushadi."""
+    if earned_gold <= 0:
+        return
+    cashback = max(1, int(earned_gold * 0.05))
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT invited_by_user_id FROM characters WHERE id = ?", (earner_character_id,)) as cur:
+            row = await cur.fetchone()
+            if not row or not row[0]:
+                return
+            referrer_user_id = row[0]
+
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold + ?,
+            referral_gold_earned = COALESCE(referral_gold_earned, 0) + ?
+        WHERE user_id = ?;
+        """, (cashback, cashback, referrer_user_id))
+        await db.commit()
+
+async def get_referral_stats(user_id: int) -> dict:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT referral_count, referral_gold_earned FROM characters WHERE user_id = ?", (user_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return {"count": 0, "gold_earned": 0}
+            return {
+                "count": row["referral_count"] or 0,
+                "gold_earned": row["referral_gold_earned"] or 0
+            }
+
+# =====================================================================
+# 3. SHAXTA VA ALXIMIYA (MINING & CRAFTING)
+# =====================================================================
+
+async def get_player_professions(character_id: int) -> dict:
+    async with get_connection() as db:
+        async with db.execute("SELECT professions_json FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            raw = row[0] if row and row[0] else "{}"
+            try:
+                data = json.loads(raw)
+            except Exception:
+                data = {}
+            default = {
+                "mining_level": 1, "alchemy_level": 1,
+                "iron_ore": 0, "gold_ore": 0, "mithril_ore": 0,
+                "herbs": 0, "potions": {"rage": 0, "healing": 0, "void_poison": 0}
+            }
+            default.update(data)
+            return default
+
+async def mine_resources(character_id: int) -> Tuple[bool, str, dict]:
+    import random
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT stamina, gold FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if char["stamina"] < 20:
+            return False, "Charchagansiz (Stamina kamida 20 bo'lishi kerak)! Tavernada ovqatlaning.", {}
+
+        profs = await get_player_professions(character_id)
+        
+        # 10% g'or qulashi xavfi (Dark System)
+        if random.random() < 0.12:
+            await db.execute("UPDATE characters SET stamina = stamina - 20, hp = MAX(10, hp - 20) WHERE id = ?", (character_id,))
+            await db.commit()
+            return False, "⚠️ *G'ORDA QULASH!* Shaxta shiftidan tosh qulab sizni jarohatladi (-20 HP). Ruda olinmadi!", {}
+
+        iron_found = random.randint(1, 4)
+        gold_found = 1 if random.random() < 0.35 else 0
+        mithril_found = 1 if random.random() < 0.15 else 0
+        herbs_found = random.randint(1, 2)
+
+        profs["iron_ore"] = profs.get("iron_ore", 0) + iron_found
+        profs["gold_ore"] = profs.get("gold_ore", 0) + gold_found
+        profs["mithril_ore"] = profs.get("mithril_ore", 0) + mithril_found
+        profs["herbs"] = profs.get("herbs", 0) + herbs_found
+
+        await db.execute("""
+        UPDATE characters SET
+            stamina = stamina - 20,
+            professions_json = ?
+        WHERE id = ?;
+        """, (json.dumps(profs), character_id))
+        await db.commit()
+
+        msg = f"⛏ *SHAXTADA RUDA QAZIB OLINDI!* (-20 Stamina)\n"
+        msg += f"• 🔩 Temir rudasi: +{iron_found}\n"
+        if gold_found:
+            msg += f"• 🪙 Oltin rudasi: +{gold_found}\n"
+        if mithril_found:
+            msg += f"• ✨ Sehrli Mithril: +{mithril_found}\n"
+        msg += f"• 🌿 Shifobaxsh O'tlar: +{herbs_found}"
+
+        return True, msg, profs
+
+async def brew_potion(character_id: int, potion_type: str) -> Tuple[bool, str]:
+    profs = await get_player_professions(character_id)
+    potions = profs.get("potions", {"rage": 0, "healing": 0, "void_poison": 0})
+
+    if potion_type == "rage":
+        # 2 Temir + 1 O't
+        if profs.get("iron_ore", 0) < 2 or profs.get("herbs", 0) < 1:
+            return False, "Resurs yetarli emas! Kerak: 2 ta Temir rudasi va 1 ta O't."
+        profs["iron_ore"] -= 2
+        profs["herbs"] -= 1
+        potions["rage"] = potions.get("rage", 0) + 1
+        name = "🧪 G'azab Damlamasi (+30% Zarba)"
+    elif potion_type == "healing":
+        # 3 O't + 1 Oltin ruda
+        if profs.get("herbs", 0) < 3 or profs.get("gold_ore", 0) < 1:
+            return False, "Resurs yetarli emas! Kerak: 3 ta O't va 1 ta Oltin rudasi."
+        profs["herbs"] -= 3
+        profs["gold_ore"] -= 1
+        potions["healing"] = potions.get("healing", 0) + 1
+        name = "🧪 Hayot Eliksiri (Jonni 100% tiklash)"
+    elif potion_type == "void_poison":
+        # 1 Mithril + 2 O't
+        if profs.get("mithril_ore", 0) < 1 or profs.get("herbs", 0) < 2:
+            return False, "Resurs yetarli emas! Kerak: 1 ta Mithril va 2 ta O't."
+        profs["mithril_ore"] -= 1
+        profs["herbs"] -= 2
+        potions["void_poison"] = potions.get("void_poison", 0) + 1
+        name = "🧪 Zulmat Zaxari (+40 Qo'shimcha Zahar Zarbasi)"
+    else:
+        return False, "Noma'lum damlama turi!"
+
+    profs["potions"] = potions
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET professions_json = ? WHERE id = ?", (json.dumps(profs), character_id))
+        await db.commit()
+
+    return True, f"✨ *ALXIMIYA MUVOFAQIShI!* Siz *{name}* damlamasini tayyorladingiz!"
+
+async def use_potion(character_id: int, potion_type: str) -> Tuple[bool, str]:
+    profs = await get_player_professions(character_id)
+    potions = profs.get("potions", {})
+
+    if potions.get(potion_type, 0) <= 0:
+        return False, "Sizda ushbu damlamadan mavjud emas! Avval alximiyada tayyorlang."
+
+    potions[potion_type] -= 1
+    profs["potions"] = potions
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if potion_type == "healing":
+            await db.execute("UPDATE characters SET hp = max_hp, stamina = 100, professions_json = ? WHERE id = ?", (json.dumps(profs), character_id))
+            await db.commit()
+            return True, "🧪 *HAYOT ELIKSIRI ICHILDI!* Jon va Stamina to'liq 100% tiklandi!"
+        elif potion_type == "rage":
+            await db.execute("""
+            UPDATE characters SET
+                active_buff_potion = 'rage',
+                buff_potion_battles = 3,
+                professions_json = ?
+            WHERE id = ?;
+            """, (json.dumps(profs), character_id))
+            await db.commit()
+            return True, "🔥 *G'AZAB DAMLAMASI ICHILDI!* Keyingi 3 ta jangda zarbangizga +30% quvvat qo'shiladi!"
+        elif potion_type == "void_poison":
+            await db.execute("""
+            UPDATE characters SET
+                active_buff_potion = 'void_poison',
+                buff_potion_battles = 3,
+                professions_json = ?
+            WHERE id = ?;
+            """, (json.dumps(profs), character_id))
+            await db.commit()
+            return True, "💀 *ZULMAT ZAXARI QUROLGA SURTILDI!* Keyingi 3 ta jangda zarbalaringiz dushmanga zahar yetkazadi!"
+
+    return False, "Damlama qo'llanilmadi."
+
+# =====================================================================
+# 4. VALORIYA OLIY TAXTI VA TURNIR (THRONE & TOURNAMENT)
+# =====================================================================
+
+async def get_current_king() -> dict:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("""
+        SELECT t.*, c.name as king_name, c.level, c.wins, c.user_id as king_user_id
+        FROM tournament_throne t
+        LEFT JOIN characters c ON t.king_character_id = c.id
+        WHERE t.id = 1;
+        """) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else {}
+
+async def challenge_king(challenger_character_id: int) -> Tuple[bool, str]:
+    import random
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        king_info = await get_current_king()
+        king_char_id = king_info.get("king_character_id")
+
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (challenger_character_id,)) as cur:
+            challenger = dict(await cur.fetchone())
+
+        if challenger["level"] < 3:
+            return False, "Taxtga da'vogarlik qilish uchun kamida 3-daraja bo'lishingiz kerak!"
+
+        if king_char_id == challenger_character_id:
+            return False, "Siz allaqachon Valoriya Qirolisiz! Taxt sizning qo'lingizda."
+
+        if not king_char_id:
+            # Taxt bo'sh, darhol egallash
+            await db.execute("UPDATE tournament_throne SET king_character_id = ?, reign_started = CURRENT_TIMESTAMP WHERE id = 1", (challenger_character_id,))
+            await db.execute("UPDATE characters SET is_king = 1 WHERE id = ?", (challenger_character_id,))
+            await db.commit()
+            return True, f"👑 *BO'SH TAXT EGALLANDI!* Siz Valoriya Qiroli deb e'lon qilindingiz!"
+
+        # Taxt egasi bilan duel
+        if random.random() < 0.50:
+            # G'alaba: Yangi qirol!
+            await db.execute("UPDATE characters SET is_king = 0 WHERE id = ?", (king_char_id,))
+            await db.execute("UPDATE characters SET is_king = 1 WHERE id = ?", (challenger_character_id,))
+            await db.execute("UPDATE tournament_throne SET king_character_id = ?, reign_started = CURRENT_TIMESTAMP, defense_wins = 0 WHERE id = 1", (challenger_character_id,))
+            await db.commit()
+            return True, (
+                f"👑 *YANGI VALORIYA QIROLI TUG'ILDI!* ⚔️\n\n"
+                f"Siz sobiq qirol ustidan qonli g'alaba qozonib, Oltin Tojni boshiga kiydingiz!\n"
+                f"Butun qirolliklar sizning oldingizda tiz cho'kmoqda!"
+            )
+        else:
+            await db.execute("UPDATE tournament_throne SET defense_wins = defense_wins + 1 WHERE id = 1")
+            await db.execute("UPDATE characters SET hp = MAX(10, hp // 2) WHERE id = ?", (challenger_character_id,))
+            await db.commit()
+            return False, f"🩸 *DUELDA MAG'LUBIYAT!* Amaldagi qirol o'zining afsonaviy zarbasi bilan da'vongizni chippakka chiqardi!"
+
 
 
