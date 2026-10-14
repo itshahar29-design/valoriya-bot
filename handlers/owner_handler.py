@@ -4,7 +4,7 @@ from aiogram.types import CallbackQuery, Message, InlineKeyboardMarkup, InlineKe
 from database.db import (
     get_connection, get_character_by_user_id, update_character,
     create_world_snapshot, get_world_telemetry, give_global_airdrop, get_active_groups,
-    get_character_by_identifier, give_player_item
+    get_character_by_identifier, give_player_item, strip_player_equipment, reset_player_character
 )
 from keyboards.inline_menus import owner_god_mode_keyboard, main_menu_keyboard
 from config import OWNER_ID, OWNER_USERNAME
@@ -540,4 +540,405 @@ async def admin_unjail_player(message: Message):
         f"Ritsar *{target_char['name']}* Yaratuvchining saxovati va marhamati bilan zindondan ozod etildi!",
         parse_mode="Markdown"
     )
+
+# =====================================================================
+# 16. CHAQMOQ VA JAZO: SMITE (/kill, !chaqmoq, !ur)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(kill|chaqmoq|ur)"))
+async def admin_smite_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/kill @username` yoki reply qilib `/kill`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], hp=1, stamina=0)
+    await message.reply(
+        f"⚡️ *OSMON CHAQMOG'I URILDI!* ⚡️\n\n"
+        f"Oliy Yaratuvchi barmog'ini silkitishi bilan osmondan moviy chaqmoq tushdi!\n"
+        f"Ritsar *{target_char['name']}* hushidan ketib yerga quladi! (Jon: 1/1 HP)",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 17. TO'LIQ DAVOLASH: HEAL (/heal, !jon, !tuzat)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(heal|jon|tuzat)"))
+async def admin_heal_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+    else:
+        target_char = char
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/heal @username`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], hp=target_char["max_hp"], stamina=target_char["max_stamina"], wounds_json="[]")
+    await message.reply(
+        f"✨ *ILOHIY DAVOLASH MO''JIZASI!* ✨\n\n"
+        f"Ritsar *{target_char['name']}* ustiga ilohiy nur yog'ildi!\n"
+        f"Barcha jarohatlar bitdi, jon va charchoq 100% to'liq tiklandi! (❤️ {target_char['max_hp']}/{target_char['max_hp']} HP)",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 18. QUROLSIZLANTIRISH / SOVUTLARNI YECHISH (/strip, !yech)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(strip|yech)"))
+async def admin_strip_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/strip @username`", parse_mode="Markdown")
+        return
+
+    await strip_player_equipment(target_char["id"])
+    await message.reply(
+        f"🪓 *RITSAR QUROLSIZLANTIRILDI!* 🪓\n\n"
+        f"Ritsar *{target_char['name']}* ning barcha qurollari, sovutlari va qalqonlari tortib olindi!\n"
+        f"U maydonda yalangoyoq holda qoldi.",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 19. ISM O'ZGARTIRISH / TROLL NOM BERISH (/rename, !nom, !laqab)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(rename|nom|laqab)"))
+async def admin_rename_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    new_name = "Eshakboqar Ritsar"
+    args = message.text.split(maxsplit=2)
+    
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+        if len(args) > 1:
+            new_name = " ".join(args[1:])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        new_name = args[2]
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/rename @username Yangi Ism`", parse_mode="Markdown")
+        return
+
+    old_name = target_char["name"]
+    await update_character(target_char["id"], name=new_name)
+    await message.reply(
+        f"🏷 *RITSAR ISMI O'ZGARTIRILDI!* 👑\n\n"
+        f"Oldingi ism: *{old_name}*\n"
+        f"Yangi qirollik ismi: *{new_name}* deb rasman e'lon qilindi!",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 20. AFSONAVIY TULPOR SOVG'A QILISH (/give_horse, !tulpor)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_horse|tulpor)"))
+async def admin_give_horse(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    horse_name = "Qanotli Pegas"
+    args = message.text.split(maxsplit=2)
+    
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+        if len(args) > 1:
+            horse_name = " ".join(args[1:])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        horse_name = args[2]
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/give_horse @username Qanotli Bo'ron`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], horse_name=horse_name, horse_bond=100)
+    await message.reply(
+        f"🐴 *SHOHONA TULPOR SOVG'A QILINDI!* 👑\n\n"
+        f"Ritsar *{target_char['name']}* ga afsonaviy *'{horse_name}'* (Sadoqat: 100%) sovg'a qilindi!",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 21. ILOHIY BARAKA (2X STAT BUFF) (/bless, !baraka)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(bless|baraka)"))
+async def admin_bless_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/bless @username`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], buff_multiplier=2.0)
+    await message.reply(
+        f"🌟 *ILOHIY BARAKA IN'OM ETILDI!* 🌟\n\n"
+        f"Ritsar *{target_char['name']}* ga Yaratuvchi barakasi berildi: Barcha janglarda **2x Zarba va Himoya** kuchiga ega bo'ldi!",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 22. QORA LA'NAT (0.5X STAT DEBUFF) (/curse, !lanat)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(curse|lanat)"))
+async def admin_curse_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/curse @username`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], buff_multiplier=0.5)
+    await message.reply(
+        f"💀 *QORA LA'NAT YOG'ILDI!* 💀\n\n"
+        f"Ritsar *{target_char['name']}* qora sehr bilan la'natlandi: Uning qudrati 50% ga zaiflashtirildi!",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 23. SUKUT SAQLASH / CHATDAN TO'SIQ (/mute, !jim, /unmute, !gapir)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(mute|jim)"))
+async def admin_mute_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/mute @username`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], is_muted=1)
+    await message.reply(f"🔇 *Ritsar {target_char['name']} ga sukut saqlash amri berildi!* Bot uning xabarlariga javob bermaydi.", parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(unmute|gapir_ber)"))
+async def admin_unmute_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/unmute @username`", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], is_muted=0)
+    await message.reply(f"🔊 *Ritsar {target_char['name']} ga yana so'zlash huquqi berildi!*", parse_mode="Markdown")
+
+# =====================================================================
+# 24. PROFILNI TO'LIQ NOLGA TUSHIRISH (/wipe_user, !reset, !nolga)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(wipe_user|reset|nolga)"))
+async def admin_wipe_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    target_char = None
+    args = message.text.split()
+    if message.reply_to_message:
+        target_uid = message.reply_to_message.from_user.id
+        target_char = await get_character_by_user_id(target_uid)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `/wipe_user @username`", parse_mode="Markdown")
+        return
+
+    await reset_player_character(target_char["id"])
+    await message.reply(
+        f"💥 *PROFIL TO'LIQ NOLGA TUSHIRILDI!* 💥\n\n"
+        f"Ritsar *{target_char['name']}* ning barcha darajasi, qurollari va xazinasi tozalab tashlandi (1-Daraja, 100 Oltin).",
+        parse_mode="Markdown"
+    )
+
+# =====================================================================
+# 25. GLOBAL QIROLLIKLAR URUSHI BOSHLASH (/start_war, !urush)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(start_war|urush)"))
+async def admin_start_kingdom_war(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    groups = await get_active_groups()
+    for g in groups:
+        try:
+            await message.bot.send_message(
+                g["chat_id"],
+                "⚔️ *QIT'ADA BUYUK QIROLLIKLAR URUSHI BOSHLANDI!* ⚔️\n\n"
+                "🏰 Imperator Valter V va Sulton Arslonxon o'rtasida qonli to'qnashuv boshlandi!\n"
+                "Barcha ritsarlar o'z imperiyasi uchun qon to'kishga chaqiriladi! `!duel` deb yozing!",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            pass
+
+    await message.reply("⚔️ Barcha guruhlarda Buyuk Urush e'lon qilindi!", parse_mode="Markdown")
+
+# =====================================================================
+# 26. GLOBAL QIROLLIK YARMARKASI (/start_fair, !yarmarka)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(start_fair|yarmarka)"))
+async def admin_start_fair(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    groups = await get_active_groups()
+    for g in groups:
+        try:
+            await message.bot.send_message(
+                g["chat_id"],
+                "🎪 *VALORIYA BUYUK QIROLLIK YARMARKASI BOSHLANDI!* 🎪\n\n"
+                "Barcha tavernalarda ichimliklar va taomlar bepul, auksion soliqlari 0% ga tushirildi!\n"
+                "Bayram sharafiga har bir mehmonga xushxabar!",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            pass
+
+    await message.reply("🎪 Buyuk Yarmarka festivali butun qit'ada yoqildi!", parse_mode="Markdown")
+
+# =====================================================================
+# 27. MASTER GOD-MODE YO'RIQNOMASI (/god_help, !god_help)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(god_help|owner_help)"))
+async def admin_master_help(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    text = (
+        "👑 *VALORIYA YARATUVCHISI (GOD-MODE) MASTER BUYRUQLAR KITOBI* 👑\n\n"
+        "*(Har qanday buyruqni @username bilan yoki o'yinchining xabariga Reply qilib ishlatishingiz mumkin)*\n\n"
+        "💰 **MOLIYAVIY BOSHQARUV:**\n"
+        "• `/give_gold @username 5000` — Istalgancha oltin berish\n"
+        "• `/take_gold @username 2000` — Oltinini musodara qilish\n\n"
+        "🗡 **QUROL VA SOVUTLAR:**\n"
+        "• `/give_item @username [qurol nomi]` — Mifik qurol hadya qilish\n"
+        "• `/strip @username` — Barcha kiygan qurol/sovutlarini yechib olish\n"
+        "• `/give_horse @username [tulpor nomi]` — Afsonaviy tulpor sovg'a qilish\n\n"
+        "⚡️ **JAZO VA MARHAMAT:**\n"
+        "• `/kill @username` — Chaqmoq bilan urib joni 1 HP qilish\n"
+        "• `/heal @username` — Joni va staminasini 100% tiklash\n"
+        "• `/bless @username` — 2x Kuch va Himoya berish\n"
+        "• `/curse @username` — 50% ga kuchini zaiflashtirish\n"
+        "• `/jail @username` — Qirollik zindoniga tashlash\n"
+        "• `/unjail @username` — Zindondan ozod qilish\n"
+        "• `/rename @username [Yangi_Ism]` — Ritsar ismini o'zgartirish\n"
+        "• `/mute @username` — Chatda gapirishini taqiqlash\n"
+        "• `/unmute @username` — Gapirish huquqini qaytarish\n"
+        "• `/wipe_user @username` — Profilini to'liq 1-darajaga tushirish\n\n"
+        "🌍 **DUNYO VA IMPERIYA OFATLARI:**\n"
+        "• `/start_war` — Imperiyalar o'rtasida katta urush boshlash\n"
+        "• `/start_fair` — Butun qit'ada bepul yarmarka festivalini yoqish\n"
+        "• `!qonli_oy` — Qonli oyni yoqish\n"
+        "• `!ajdaho` — Reyd ajdaho tushirish\n"
+        "• `!oltin_yomgiri` — 2x o'lja rejimini yoqish\n\n"
+        "Barcha buyruqlar bir zumda amalga oshadi!"
+    )
+    await message.reply(text, parse_mode="Markdown")
+
 

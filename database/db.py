@@ -183,6 +183,14 @@ async def init_db():
             await db.execute("ALTER TABLE characters ADD COLUMN is_jailed INTEGER DEFAULT 0;")
         except Exception:
             pass
+        try:
+            await db.execute("ALTER TABLE characters ADD COLUMN is_muted INTEGER DEFAULT 0;")
+        except Exception:
+            pass
+        try:
+            await db.execute("ALTER TABLE characters ADD COLUMN buff_multiplier REAL DEFAULT 1.0;")
+        except Exception:
+            pass
 
         # Seed kingdoms if not existing
         for k_id, k_data in KINGDOMS.items():
@@ -243,6 +251,26 @@ async def give_player_item(character_id: int, item_name: str, slot_type: str = "
         INSERT INTO equipment (character_id, slot_type, item_name, rarity, attack, defense, durability, max_durability, is_equipped)
         VALUES (?, ?, ?, ?, ?, ?, 999, 999, 1);
         """, (character_id, slot_type, item_name, rarity, attack, defense))
+        await db.commit()
+        return True
+
+async def strip_player_equipment(character_id: int):
+    async with get_connection() as db:
+        await db.execute("DELETE FROM equipment WHERE character_id = ?", (character_id,))
+        await db.commit()
+        return True
+
+async def reset_player_character(character_id: int):
+    async with get_connection() as db:
+        await db.execute("""
+        UPDATE characters SET
+            level = 1, xp = 0, gold = 100, gems = 0,
+            hp = 100, max_hp = 100, stamina = 100, max_stamina = 100,
+            strength = 15, agility = 10, constitution = 12, intelligence = 10,
+            wounds_json = '[]', wins = 0, losses = 0, is_jailed = 0, is_muted = 0
+        WHERE id = ?;
+        """, (character_id,))
+        await db.execute("DELETE FROM equipment WHERE character_id = ?", (character_id,))
         await db.commit()
         return True
 
