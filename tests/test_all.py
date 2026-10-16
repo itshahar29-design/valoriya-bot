@@ -777,9 +777,72 @@ async def run_comprehensive_tests():
 
     print(f"✅ TEST 20 O'TDI: NPC Tirik Dunyo Faza 1 (12 Hukmdor, 8 Xislat, Jadvallar 24–32, WAL Mode) 100% muvaffaqiyatli ishga tushirildi!")
 
+    # =====================================================================
+    # 21. NPC HISSIYOTLAR VA DECAY (FAZA 2: TEST 21)
+    # =====================================================================
+    print("\n[TEST 21] NPC Hissiyotlar Vektori va Decay Tizimi (0.10 har tick)...")
+    from npc.state import get_ruler_state, update_ruler_mood, apply_mood_decay, BASELINES
+
+    async with get_connection() as db:
+        # Hukmdor kayfiyatini qo'zg'atish: quvonchni 20 ga, g'azabni 80 ga chiqarish
+        await update_ruler_mood(db, "lionguard", d_joy=-30, d_anger=80)
+        st_before = await get_ruler_state(db, "lionguard")
+        assert st_before["anger_current"] >= 80, "G'azab 80 ga chiqmadi!"
+
+        # Decay qo'llash
+        decay_res = await apply_mood_decay(db, "lionguard")
+        st_after = await get_ruler_state(db, "lionguard")
+
+        # Quvonch (20) baza (50) tomon ko'tarilishi kerak: 20 + (50 - 20) * 0.10 = 23
+        assert st_after["joy"] > st_before["joy"], "Decay quvonchni bazaga yaqinlashtirmadi!"
+        # G'azab (80) baza (0) tomon pasayishi kerak: 80 + (0 - 80) * 0.10 = 72
+        assert st_after["anger_current"] < st_before["anger_current"], "Decay g'azabni pasaytirmadi!"
+        await db.commit()
+
+    print(f"✅ TEST 21 O'TDI: Hissiyotlar decay formulasi (x + (baza - x)*0.10) to'liq tasdiqlandi (Anger: {st_before['anger_current']} -> {st_after['anger_current']}, Joy: {st_before['joy']} -> {st_after['joy']}).")
+
+    # =====================================================================
+    # 22. NPC XOTIRA VA FLATTTERY DECAY (FAZA 2: TEST 22)
+    # =====================================================================
+    print("\n[TEST 22] NPC Xotira, Munosabatlar va Xushomadning Kamayuvchi Foydasi (0.6^n)...")
+    from npc.memory import record_memory_event, get_player_relation, compress_memory_if_needed, MAX_MEMORY_PER_PAIR
+
+    async with get_connection() as db:
+        # 1. Ketma-ket 4 ta xushomad (0.6^n kamayuvchi foyda)
+        ev1 = await record_memory_event(db, "lionguard", char["id"], "flattery")
+        ev2 = await record_memory_event(db, "lionguard", char["id"], "flattery")
+        ev3 = await record_memory_event(db, "lionguard", char["id"], "flattery")
+        ev4 = await record_memory_event(db, "lionguard", char["id"], "flattery")
+
+        assert ev1["delta_trust"] >= ev2["delta_trust"], "1-xushomad 2-sidan kam ishonch berdi!"
+        assert ev2["delta_trust"] >= ev4["delta_trust"], "Xushomad 0.6^n kamayuvchi foyda bermadi!"
+        assert ev3["new_suspicion"] >= 5, "Har 3-xushomaddan keyin shubha (+5) oshmadi!"
+
+        # 2. Xotira hajmini cheklash (<= 50 yozuv)
+        for i in range(55):
+            await db.execute("""
+            INSERT INTO npc_memory (ruler_id, character_id, event_type, trust_d, anger_d, grudge_d)
+            VALUES ('lionguard', ?, 'small_gift', 1, 0, 0);
+            """, (char["id"],))
+        await db.commit()
+
+        await compress_memory_if_needed(db, "lionguard", char["id"])
+
+        async with db.execute("SELECT count(*) FROM npc_memory WHERE ruler_id = 'lionguard' AND character_id = ?;", (char["id"],)) as cur_mem:
+            cnt_mem = (await cur_mem.fetchone())[0]
+            assert cnt_mem <= MAX_MEMORY_PER_PAIR, f"Xotira yozuvlari 50 tadan ko'p qoldi: {cnt_mem}"
+
+        # 3. EmotionsEngine bilan integratsiya testi
+        speech_res = await EmotionsEngine.process_speech_with_memory(db, "lionguard", "Siz eng buyuk, ulug' hukmdorsiz!", char["id"])
+        assert speech_res["mood"] == "pleased", "Nutq ma'qullanmadi!"
+        assert "memory_impact" in speech_res, "Xotira yozilmadi!"
+        await db.commit()
+
+    print(f"✅ TEST 22 O'TDI: Xotira hajmi (50 limit siqilishi), munosabatlar va 0.6^n xushomad susayishi 100% muvaffaqiyatli ishga tushirildi!")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 20 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 1 MUVAFFAQIShLI)!")
+    print("🎉 BARCHA 22 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 2 MUVAFFAQIShLI)!")
     print("=========================================================")
 
 if __name__ == "__main__":

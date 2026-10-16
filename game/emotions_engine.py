@@ -81,3 +81,25 @@ class EmotionsEngine:
             "reward_gold": 0,
             "reply": f"👑 {k_data['ruler']}: 'Gapingni eshitdim. Valoriya qit'asida sharaf va qudrat o'z mehnating bilan qozoniladi!'"
         }
+
+    @staticmethod
+    async def process_speech_with_memory(db, kingdom_id: str, speech_text: str, character_id: int):
+        """
+        O'yinchi nutqini tahlil qiladi va natijani npc_memory hamda npc_relations ga yozadi.
+        """
+        result = EmotionsEngine.evaluate_player_speech(kingdom_id, speech_text)
+        try:
+            from npc.memory import record_memory_event
+            event_type = None
+            if result["mood"] == "rage":
+                event_type = "insult"
+            elif result["mood"] in ["pleased", "neutral_pleased"]:
+                event_type = "flattery"
+
+            if event_type:
+                mem_impact = await record_memory_event(db, kingdom_id, character_id, event_type, {"speech": speech_text})
+                result["memory_impact"] = mem_impact
+        except Exception:
+            pass
+        return result
+
