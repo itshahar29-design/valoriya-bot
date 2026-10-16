@@ -49,9 +49,10 @@ class BattleEngine:
         attacker_agi = attacker.get("agility", 10)
         dodge_chance = max(5, min(40, (defender_agi - attacker_agi) // 2 + 10))
         
-        if has_frost_rune:
+        if has_frost_rune or defender.get("is_defending", False):
             dodge_chance = 0
-            log.append("❄️ [Muz Runasi]: Dushman muzlab qoldi, zarbadan qochish imkoniyati 0%!")
+            if has_frost_rune:
+                log.append("❄️ [Muz Runasi]: Dushman muzlab qoldi, zarbadan qochish imkoniyati 0%!")
 
         if random.randint(1, 100) <= dodge_chance and action != "skill":
             log.append(f"💨 {defender['name']} chaqqonlik bilan chetga sakrab zarbadan qochib qoldi!")

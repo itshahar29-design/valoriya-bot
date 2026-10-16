@@ -317,6 +317,26 @@ async def init_db():
         );
         """)
 
+        # 22. Promo Redemptions (Reklama va Kodlar)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS promo_redemptions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            character_id INTEGER NOT NULL,
+            code TEXT NOT NULL,
+            redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(character_id, code)
+        );
+        """)
+
+        # 23. Abyssal Tower Progress (100 Qavatli Minora)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS tower_progress (
+            character_id INTEGER PRIMARY KEY,
+            max_floor INTEGER DEFAULT 1,
+            completed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
         # Migrations if needed
         for col_def in [
             ("username", "TEXT DEFAULT NULL"),
@@ -337,7 +357,9 @@ async def init_db():
             ("trade_inventory_json", "TEXT DEFAULT '{}'"),
             ("runes_inventory_json", "TEXT DEFAULT '{\"fire_rune\": 0, \"frost_rune\": 0, \"lightning_rune\": 0}'"),
             ("last_wheel_spin", "TEXT DEFAULT NULL"),
-            ("active_expedition_json", "TEXT DEFAULT NULL")
+            ("active_expedition_json", "TEXT DEFAULT NULL"),
+            ("prestige_level", "INTEGER DEFAULT 0"),
+            ("ad_campaign_tag", "TEXT DEFAULT NULL")
         ]:
             try:
                 await db.execute(f"ALTER TABLE characters ADD COLUMN {col_def[0]} {col_def[1]};")
@@ -2503,6 +2525,196 @@ async def claim_expedition(character_id: int) -> Tuple[bool, str, Dict[str, Any]
     await unlock_achievement(character_id, "traveler", "🧭 Dunyo Sayyohi")
 
     return True, f"🎉 *EKSPEDITSIYA MUVOFAQIShLI YAKUNLANDI!* Qahramon qaytib keldi:\n• 💰 +{rewards['gold']:,} 🪙 Oltin\n• 🌟 +{rewards['xp']} EXP\n• 🐾 Hamroh tajribasi: +{rewards['pet_exp']} EXP", rewards
+
+
+# =====================================================================
+# 60+ KUNLIK ENDGAME: PROMO-KODLAR, PRESTIJ VA CHEKSIZ MINORA
+# =====================================================================
+
+async def redeem_promo_code(character_id: int, code: str) -> Tuple[bool, str, dict]:
+    from game.promo_engine import get_promo_info
+    promo = get_promo_info(code)
+    if not promo:
+        return False, "❌ Promokod topilmadi yoki kiritishda xatolik yuz berdi! To'g'ri kodni kiriting.", {}
+
+    clean_code = code.strip().upper()
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT id FROM promo_redemptions WHERE character_id = ? AND code = ?;", (character_id, clean_code)) as cur:
+            if await cur.fetchone():
+                return False, f"⚠️ Siz ushbu *{clean_code}* promokodini allaqachon ishlatgansiz!", {}
+
+        async with db.execute("SELECT id, gold, gems FROM characters WHERE id = ?;", (character_id,)) as cur2:
+            char = await cur2.fetchone()
+            if not char:
+                return False, "Qahramon topilmadi!", {}
+
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold + ?,
+            gems = gems + ?,
+            ad_campaign_tag = ?
+        WHERE id = ?;
+        """, (promo["gold"], promo["gems"], promo["campaign"], character_id))
+
+        await db.execute("""
+        INSERT INTO promo_redemptions (character_id, code)
+        VALUES (?, ?);
+        """, (character_id, clean_code))
+
+        await db.commit()
+
+    await unlock_achievement(character_id, "promo_redeemer", "🎁 Sovg'alar Egasi")
+    await add_battle_pass_exp(character_id, 40)
+
+    msg = (
+        f"🎉 *PROMOKOD MUVAFFAQIYATLI FAOL-LASHTIRILDI!* 🎉\n\n"
+        f"Kodingiz: *{clean_code}*\n"
+        f"• 💰 Oltin: +{promo['gold']:,} 🪙\n"
+        f"• 💎 Javohir: +{promo['gems']} 💎\n"
+        f"• 📜 Tavsif: {promo['desc']}\n\n"
+        f"⚔️ Valoriya saflariga xush kelibsiz, jangchi!"
+    )
+    return True, msg, promo
+
+
+async def perform_ascension(character_id: int) -> Tuple[bool, str]:
+    from game.ascension_engine import PRESTIGE_TIERS, can_ascend
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?;", (character_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Qahramon topilmadi!"
+            char = dict(row)
+
+        cur_prestige = char.get("prestige_level", 0) or 0
+        can_asc, reason = can_ascend(char)
+        if not can_asc:
+            return False, reason
+
+        next_tier = cur_prestige + 1
+        tier_data = PRESTIGE_TIERS[next_tier]
+
+        bonus_gems = tier_data["bonus_gems"]
+        bonus_gold = 5000
+
+        await db.execute("""
+        UPDATE characters SET
+            level = 1,
+            xp = 0,
+            prestige_level = ?,
+            gems = gems + ?,
+            gold = gold + ?
+        WHERE id = ?;
+        """, (next_tier, bonus_gems, bonus_gold, character_id))
+        await db.commit()
+
+    await unlock_achievement(character_id, f"ascension_{next_tier}", f"🌟 Prestij {next_tier} Fotihi")
+    await add_battle_pass_exp(character_id, 100)
+
+    msg = (
+        f"🌌 *QAHRAMONLIK ASCENSION (QAYTA TUG'ILISH) RO'Y BERDI!* 🌌\n\n"
+        f"Siz *{tier_data['name']}* darajasiga erishdingiz!\n"
+        f"• 👑 Unvon: *{tier_data['title']}*\n"
+        f"• ⚡️ Doimiy Jang Multiplikatori: *{tier_data['stat_mult']}x* (Barcha xususiyatlarga!)\n"
+        f"• 💎 Sovg'a Javohirlar: +{bonus_gems} 💎\n"
+        f"• 💰 Boshlang'ich Oltin: +{bonus_gold:,} 🪙\n\n"
+        f"Sizning darajangiz 1 ga qaytdi, ammo endi siz oddiy ritsar emassiz, balki olamlar bo'ylab afsonaga aylangan Valoriya Yengilmasisiz!"
+    )
+    return True, msg
+
+
+async def get_tower_floor_progress(character_id: int) -> int:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT max_floor FROM tower_progress WHERE character_id = ?;", (character_id,)) as cur:
+            row = await cur.fetchone()
+            if row and row["max_floor"] is not None:
+                return int(row["max_floor"])
+            return 1
+
+
+async def advance_tower_floor(character_id: int) -> Tuple[bool, str, dict]:
+    from game.tower_engine import generate_tower_floor, TOWER_MILESTONES
+    from game.ascension_engine import PRESTIGE_TIERS
+
+    cur_floor = await get_tower_floor_progress(character_id)
+    if cur_floor > 100:
+        return False, "👑 Siz 100-qavatli Behad Tub Minora (Abyssal Tower) ni to'liq zabt etgansiz! Oliy Afsona unvoni egasisiz.", {}
+
+    floor_data = generate_tower_floor(cur_floor)
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?;", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        prestige_lvl = char.get("prestige_level", 0) or 0
+        stat_mult = PRESTIGE_TIERS.get(prestige_lvl, {}).get("stat_mult", 1.0)
+
+        player_atk = int((char.get("strength", 15) * 2 + char.get("level", 1) * 3) * stat_mult)
+        player_def = int((char.get("constitution", 15) * 1.5 + char.get("level", 1) * 2) * stat_mult)
+        player_hp = char["hp"]
+
+        enemy_hp = floor_data["hp"]
+        enemy_atk = floor_data["atk"]
+        enemy_def = floor_data["def"]
+
+        p_dmg = max(5, player_atk - enemy_def)
+        e_dmg = max(5, enemy_atk - player_def)
+
+        turns_to_kill_enemy = (enemy_hp + p_dmg - 1) // p_dmg
+        turns_to_kill_player = (player_hp + e_dmg - 1) // e_dmg
+
+        is_win = turns_to_kill_player >= turns_to_kill_enemy
+
+        if is_win:
+            next_floor = cur_floor + 1
+            await db.execute("""
+            INSERT INTO tower_progress (character_id, max_floor, completed_at)
+            VALUES (?, ?, CURRENT_TIMESTAMP)
+            ON CONFLICT(character_id) DO UPDATE SET max_floor = ?, completed_at = CURRENT_TIMESTAMP;
+            """, (character_id, next_floor, next_floor))
+
+            gold_reward = floor_data["gold_reward"]
+            xp_reward = floor_data["xp_reward"]
+            bonus_gems = 0
+            if floor_data["is_boss"]:
+                bonus_gems = TOWER_MILESTONES.get(cur_floor, {}).get("reward_gems", 10)
+
+            await db.execute("""
+            UPDATE characters SET
+                gold = gold + ?,
+                xp = xp + ?,
+                gems = gems + ?
+            WHERE id = ?;
+            """, (gold_reward, xp_reward, bonus_gems, character_id))
+
+            await db.commit()
+
+            msg = (
+                f"🏆 *{cur_floor}-QAVAT ZABT ETILDI!* 🏆\n\n"
+                f"Siz *{floor_data['name']}* ustidan buyuk g'alabaga erishdingiz!\n"
+                f"• 💰 Oltin: +{gold_reward:,} 🪙\n"
+                f"• 🌟 EXP: +{xp_reward} Tajriba\n"
+            )
+            if bonus_gems:
+                msg += f"• 💎 Boss Xazinasi: +{bonus_gems} Javohir!\n"
+            msg += f"\nKeyingi manzil: *{next_floor}-Qavat*!"
+
+            await unlock_achievement(character_id, f"tower_floor_{cur_floor}", f"🗼 Minora {cur_floor}-qavat")
+            await add_battle_pass_exp(character_id, 30)
+
+            return True, msg, floor_data
+        else:
+            new_hp = max(1, player_hp // 2)
+            await db.execute("UPDATE characters SET hp = ? WHERE id = ?;", (new_hp, character_id))
+            await db.commit()
+            return False, f"💀 *MAG'LUBIYAT!* {floor_data['name']} zarbasi juda og'ir bo'ldi. Kuch to'plang, anjomlaringizni kuchaytiring va qayta urinib ko'ring!", floor_data
+
 
 
 

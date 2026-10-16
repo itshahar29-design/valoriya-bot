@@ -1408,3 +1408,228 @@ async def cb_expedition_claim_action(callback: CallbackQuery):
     await callback.answer(msg, show_alert=True)
     await cb_expeditions_menu(callback)
 
+
+# =====================================================================
+# 23. PROMO-KODLAR VA REKLAMA TRAFIGI (PROMO CODES & AD CAMPAIGNS)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🎁 Promokod") | F.text.startswith("/promo") | F.text.startswith("/code"))
+@menu_buttons_router.callback_query(F.data == "menu_promo")
+async def cb_promo_menu(event_obj):
+    message = event_obj if isinstance(event_obj, Message) else event_obj.message
+    user_id = event_obj.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import redeem_promo_code
+    from game.promo_engine import OFFICIAL_PROMO_CODES
+
+    # Agar xabar orqali to'g'ridan-to'g'ri kod yozilgan bo'lsa: masalan "/promo VALORIYA2026"
+    if isinstance(event_obj, Message) and len(event_obj.text.split()) > 1:
+        code_input = event_obj.text.split()[1].strip()
+        success, msg, _ = await redeem_promo_code(char["id"], code_input)
+        await message.answer(msg, parse_mode="Markdown")
+        return
+
+    text = (
+        "🎁 *VALORIYA RASMIY PROMOKODLAR & START PAKETLARI* 💎\n\n"
+        "Reklama va hamkorlik orqali kelgan yangi va faxriy jangchilar uchun maxsus sovg'alar!\n"
+        "Bir marta bosish orqali start bonusini oling yoki `/promo KOD` buyrug'ini yuboring:\n\n"
+    )
+
+    buttons = []
+    for code_k, code_v in OFFICIAL_PROMO_CODES.items():
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"🎁 {code_k} (+{code_v['gold']:,} 🪙 | +{code_v['gems']} 💎)",
+                callback_data=f"promo_claim_{code_k}"
+            )
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    if isinstance(event_obj, Message):
+        await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    else:
+        await message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("promo_claim_"))
+async def cb_promo_claim_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    code_to_claim = callback.data.replace("promo_claim_", "")
+    from database.db import redeem_promo_code
+    success, msg, _ = await redeem_promo_code(char["id"], code_to_claim)
+    await callback.answer(msg, show_alert=True)
+    await cb_promo_menu(callback)
+
+
+# =====================================================================
+# 24. PRESTIJ VA QAHRAMONLIK ASCENSION (PRESTIGE X - 60+ DAYS ENDGAME)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🌟 Prestij") | (F.text == "/prestige") | (F.text == "/ascend"))
+@menu_buttons_router.callback_query(F.data == "menu_prestige")
+async def cb_prestige_menu(event_obj):
+    message = event_obj if isinstance(event_obj, Message) else event_obj.message
+    user_id = event_obj.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from game.ascension_engine import PRESTIGE_TIERS, can_ascend
+
+    cur_p = char.get("prestige_level", 0) or 0
+    cur_tier_info = PRESTIGE_TIERS.get(cur_p, {"name": "Oddiy Ritsar", "stat_mult": 1.0, "title": "Boshlang'ich"})
+    can_asc, reason = can_ascend(char)
+
+    text = (
+        "🌟 *VALORIYA PRESTIJ VA ASCENSION (60+ KUNLIK ENDGAME)* 🌌\n\n"
+        "50-darajaga yetgan qahramonlar qayta tug'ilish (Ascension) orqali o'z kuchlarini "
+        "ko'p karra oshirib, butun server bo'ylab afsonaviy unvonlarga ega bo'lishadi.\n\n"
+        f"👑 *Hozirgi Holatingiz:*\n"
+        f"• Prestij Darajasi: *{cur_tier_info['name']}*\n"
+        f"• Unvoningiz: *{cur_tier_info['title']}*\n"
+        f"• Doimiy Multiplikator: *{cur_tier_info['stat_mult']}x* zarba va himoya\n"
+        f"• Hozirgi Darajangiz: *Lvl {char['level']}/50*\n\n"
+    )
+
+    if cur_p < 10:
+        next_t = PRESTIGE_TIERS[cur_p + 1]
+        text += (
+            f"🎯 *Keyingi Bosqich: {next_t['name']}*\n"
+            f"• Zarba & Himoya: *{next_t['stat_mult']}x* (+{int((next_t['stat_mult'] - cur_tier_info['stat_mult'])*100)}% o'sish)\n"
+            f"• Sovg'a: *+{next_t['bonus_gems']} 💎 Javohir* va 5,000 🪙 Oltin!\n"
+            f"• Shart: *50-Darajaga erishish*\n\n"
+            f"📌 *Holat:* {reason}\n"
+        )
+    else:
+        text += "👑 *TABRIKLAYMIZ!* Siz eng oliy Prestij X (Mutloq) darajasidasiz!\n"
+
+    buttons = []
+    if can_asc:
+        buttons.append([InlineKeyboardButton(text="🌟 Qayta Tug'ilishni Boshlash (Ascend)", callback_data="prestige_confirm_action")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    if isinstance(event_obj, Message):
+        await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    else:
+        await message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "prestige_confirm_action")
+async def cb_prestige_confirm_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import perform_ascension
+    success, msg = await perform_ascension(char["id"])
+    await callback.answer("Ascension muvaffaqiyatli bajarildi!" if success else "Xatolik!", show_alert=True)
+    if success:
+        await callback.message.answer(msg, parse_mode="Markdown")
+    await cb_prestige_menu(callback)
+
+
+# =====================================================================
+# 25. 100 QAVATLI CHEKSIZ TUBSIZLIK MINORASI (ABYSSAL TOWER)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🗼 100 Qavatli Minora") | (F.text == "/tower"))
+@menu_buttons_router.callback_query(F.data == "menu_tower")
+async def cb_tower_menu(event_obj):
+    message = event_obj if isinstance(event_obj, Message) else event_obj.message
+    user_id = event_obj.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import get_tower_floor_progress
+    from game.tower_engine import generate_tower_floor, TOWER_MILESTONES
+
+    cur_floor = await get_tower_floor_progress(char["id"])
+    floor_data = generate_tower_floor(cur_floor)
+
+    boss_tag = "👑 [MILESTONE BOSS QAVATI]" if floor_data["is_boss"] else "⚔️ Oddiy Qavat"
+
+    text = (
+        f"🗼 *CHEKSIZ TUBSIZLIK MINORASI (ABYSSAL TOWER)* 🗼\n\n"
+        f"100 qavatli vertikal sinov! Har 10-qavatda qudratli lordlar va afsonaviy xazinasi kutmoqda.\n\n"
+        f"📍 *Sizning Hozirgi Manzilingiz:* {cur_floor}-Qavat / 100\n"
+        f"👾 *Dushman:* {floor_data['name']}\n"
+        f"🏷 Turi: *{boss_tag}*\n"
+        f"❤️ Jon: *{floor_data['hp']} HP* | 🗡 Zarba: *{floor_data['atk']}* | 🛡 Himoya: *{floor_data['def']}*\n"
+        f"💰 Mukofot: +{floor_data['gold_reward']:,} 🪙 | 🌟 +{floor_data['xp_reward']} EXP\n"
+    )
+
+    buttons = [
+        [InlineKeyboardButton(text=f"⚔️ {cur_floor}-Qavatni Zabt Etish", callback_data="tower_fight_action")],
+        [InlineKeyboardButton(text="📜 10 Ta Buyuk Bosslar Ro'yxati", callback_data="tower_bosses_list")],
+        [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ]
+
+    if isinstance(event_obj, Message):
+        await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    else:
+        await message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "tower_fight_action")
+async def cb_tower_fight_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import advance_tower_floor
+    success, msg, _ = await advance_tower_floor(char["id"])
+    await callback.answer("Jang yakunlandi!", show_alert=False)
+    await callback.message.answer(msg, parse_mode="Markdown")
+    await cb_tower_menu(callback)
+
+@menu_buttons_router.callback_query(F.data == "tower_bosses_list")
+async def cb_tower_bosses_list(callback: CallbackQuery):
+    from game.tower_engine import TOWER_MILESTONES
+    text = "👑 *100 QAVATLI MINORANING 10 TA BOSSLARI:* 👑\n\n"
+    for fl, m in TOWER_MILESTONES.items():
+        text += f"• *{m['name']}* (+{m['reward_gold']:,} 🪙 | +{m['reward_gems']} 💎) - Unvon: `{m['title']}`\n"
+
+    buttons = [[InlineKeyboardButton(text="⬅️ Minoraga Qaytish", callback_data="menu_tower")]]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+
+# =====================================================================
+# 26. RUNALAR SINTEZI VA R長NOZUVLAR (RUNEWORDS - 100,000+ ENCHANTMENTS)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🔮 Runalar Sintezi") | (F.text == "/runewords"))
+@menu_buttons_router.callback_query(F.data == "menu_runewords")
+async def cb_runewords_menu(event_obj):
+    message = event_obj if isinstance(event_obj, Message) else event_obj.message
+    from game.runewords_engine import ANCIENT_RUNES, FAMOUS_RUNEWORDS, get_runewords_matrix_size
+
+    stats = get_runewords_matrix_size()
+    text = (
+        "🔮 *VALORIYA RUNALAR VA RUNOZUVLAR SINTEZI (RUNEWORDS)* ⚡️\n\n"
+        "20 ta qadimiy runa va ularning qurolga o'rnatilish ketma-ketligi orqali yangi afsonaviy "
+        "kuchlar kashf etiladi!\n\n"
+        f"📊 *Sintez Matritsasi Ko'rsatkichlari:*\n"
+        f"• 📜 Qadimiy Runalar: *{stats['ancient_runes']} ta*\n"
+        f"• 🔗 3-Teshikli Kombinatsiyalar: *{stats['socket_combinations']:,} ta*\n"
+        f"• ✨ Jami Elementar Sehrlar: *{stats['total_enchantments']:,}+ ta kombinatsiya!*\n\n"
+        "🌟 *Mashhur Qadimiy Runozuvlar (Retseptlar):*\n"
+    )
+
+    for combo, rw in FAMOUS_RUNEWORDS.items():
+        runes_str = " + ".join([r.upper() for r in combo])
+        text += f"• *{runes_str}* ➔ *{rw['name']}*\n  _{rw['bonus_desc']}_\n\n"
+
+    buttons = [
+        [InlineKeyboardButton(text="🔨 Temirchiga O'tish", callback_data="menu_forge")],
+        [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ]
+
+    if isinstance(event_obj, Message):
+        await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    else:
+        await message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+

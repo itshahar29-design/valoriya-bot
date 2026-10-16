@@ -47,6 +47,14 @@ def main_menu_keyboard(is_owner: bool = False):
         [
             InlineKeyboardButton(text="👤 Profil & 🪪 Karta", callback_data="menu_profile"),
             InlineKeyboardButton(text="🏆 Reyting (Top)", callback_data="menu_top")
+        ],
+        [
+            InlineKeyboardButton(text="🗼 100 Qavatli Minora", callback_data="menu_tower"),
+            InlineKeyboardButton(text="🎁 Promokodlar", callback_data="menu_promo")
+        ],
+        [
+            InlineKeyboardButton(text="🌟 Prestij (Ascension)", callback_data="menu_prestige"),
+            InlineKeyboardButton(text="🔮 Runalar Sintezi (100k)", callback_data="menu_runewords")
         ]
     ]
     if is_owner:

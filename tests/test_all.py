@@ -632,11 +632,103 @@ async def run_comprehensive_tests():
 
     print(f"✅ TEST 18 O'TDI: Barcha Retention tizimlari (Battle Pass, Omad G'ildiragi, AFK Ekspeditsiyalar) 100% muvaffaqiyatli ishga tushirildi!")
 
+    # =====================================================================
+    # 19. 60+ KUNLIK ENDGAME VA 100,000+ KONTENT MATRITSASI:
+    #     PROMO-ENGINE, PRESTIGE X, 100-FLOOR ABYSSAL TOWER & RUNEWORDS
+    # =====================================================================
+    print("\n[TEST 19] 60+ Kunlik Endgame & 100k+ Kontent Matritsasi (Promo, Prestige X, Tower, Runewords)...")
+    from game.promo_engine import OFFICIAL_PROMO_CODES, get_promo_info
+    from game.ascension_engine import PRESTIGE_TIERS, can_ascend
+    from game.tower_engine import generate_tower_floor, TOWER_MILESTONES
+    from game.runewords_engine import ANCIENT_RUNES, FAMOUS_RUNEWORDS, synthesize_runes, get_runewords_matrix_size
+    from database.db import (
+        redeem_promo_code, perform_ascension, get_tower_floor_progress,
+        advance_tower_floor
+    )
+
+    # 1. Promo Engine & Marketing Ad Ingestion (Reklama Trafigi)
+    assert len(OFFICIAL_PROMO_CODES) >= 6, "Rasmiy promokodlar kam!"
+    p_info = get_promo_info("VALORIYA2026")
+    assert p_info is not None, "VALORIYA2026 topilmadi!"
+    assert p_info["gold"] == 2500, "Promokod oltini noto'g'ri!"
+
+    # Promokodni aktivlashtirish
+    promo_ok, promo_msg, promo_data = await redeem_promo_code(char["id"], "VALORIYA2026")
+    assert promo_ok, f"Promokod ishlamadi: {promo_msg}"
+    assert promo_data["campaign"] == "official_launch", "Kampaniya tegi saqlanmadi!"
+
+    # Qayta ishlatib bo'lmasligini tekshirish (Anti-Abuse)
+    promo_again_ok, promo_again_msg, _ = await redeem_promo_code(char["id"], "VALORIYA2026")
+    assert not promo_again_ok, "Bir xil promokod ikkinchi marta ishlatildi!"
+    print(f"   🎁 Reklama Promokod Dvigateli: {len(OFFICIAL_PROMO_CODES)} ta rasmiy start paketi (Aktivlashtirildi: VALORIYA2026, Anti-Abuse: OK)")
+
+    # 2. Prestige / Ascension Tizimi (10 Tiers - 60+ Days Endgame Loop)
+    assert len(PRESTIGE_TIERS) == 10, f"Prestij darajalari 10 ta emas ({len(PRESTIGE_TIERS)})!"
+    assert PRESTIGE_TIERS[10]["stat_mult"] == 6.00, "Prestij X multiplikatori 6.00x emas!"
+
+    # 50-darajadan pastda qayta tug'ilish rad etilishi kerak
+    can_prestige_low, p_low_reason = can_ascend({"level": 25, "prestige_level": 0})
+    assert not can_prestige_low, "25-darajada qayta tug'ilishga ruxsat berildi!"
+
+    # Sun'iy ravishda 50-daraja o'rnatib Ascension qilish
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET level = 50, strength = 150, constitution = 100 WHERE id = ?;", (char["id"],))
+        await db.commit()
+
+    ascend_ok, ascend_msg = await perform_ascension(char["id"])
+    assert ascend_ok, f"Ascension bajarilmadi: {ascend_msg}"
+
+    char_after_asc = await get_character_by_user_id(test_user_id)
+    assert char_after_asc["prestige_level"] == 1, "Prestige 1 ga ko'tarilmadi!"
+    assert char_after_asc["level"] == 1, "Daraja 1 ga qaytmadi!"
+    print(f"   🌟 Prestij & Qayta Tug'ilish: 10 ta Tier (Ascension I amalga oshirildi, Multiplikator: 1.20x, Sovg'a: +100 💎)")
+
+    # 3. 100 Qavatli Cheksiz Tubsizlik Minorasi (Abyssal Tower)
+    assert len(TOWER_MILESTONES) == 10, "Minora bosslari 10 ta emas!"
+    floor_10 = generate_tower_floor(10)
+    assert floor_10["is_boss"] is True, "10-qavat boss emas!"
+    assert floor_10["hp"] > 500, "Boss HP si kam!"
+
+    tower_fl_init = await get_tower_floor_progress(char["id"])
+    assert tower_fl_init >= 1, "Minora qavati 1 dan kam!"
+
+    # 1-qavat jangini o'tkazish
+    tower_fight_ok, tower_msg, tower_data = await advance_tower_floor(char["id"])
+    assert tower_fight_ok, f"1-qavat jangida g'alaba qozonilmadi: {tower_msg}"
+    tower_fl_after = await get_tower_floor_progress(char["id"])
+    assert tower_fl_after == tower_fl_init + 1, "Minora qavati ko'tarilmadi!"
+    print(f"   🗼 100 Qavatli Abyssal Tower: 10 ta Milestone Boss (Zabt etildi: {tower_fl_init}-qavat, Yangi manzil: {tower_fl_after}-qavat)")
+
+    # 4. R長nozuvlar & Runalar Sintezi (100,000+ Permutations & Syntheses)
+    rw_matrix = get_runewords_matrix_size()
+    assert rw_matrix["ancient_runes"] == 20, f"Qadimiy runalar 20 ta emas ({rw_matrix['ancient_runes']})!"
+    assert rw_matrix["socket_combinations"] == 8000, f"Teshik kombinatsiyalari 8000 ta emas ({rw_matrix['socket_combinations']})!"
+    assert rw_matrix["total_enchantments"] >= 100000, f"Sehrlar 100,000 dan kam ({rw_matrix['total_enchantments']})!"
+
+    # Mashhur Ancient Pledge runozuvini sintez qilish
+    syn_pledge = synthesize_runes(["ral", "ort", "tal"])
+    assert syn_pledge["is_runeword"] is True, "Ancient Pledge tanilmadi!"
+    assert syn_pledge["total_def"] > 40, "Ancient Pledge mudofaasi kam!"
+
+    # Olamlar Hukmdori (Breath of the Dying) runozuvi
+    syn_botd = synthesize_runes(["zod", "fal", "ith"])
+    assert syn_botd["is_runeword"] is True, "Breath of the Dying tanilmadi!"
+    assert syn_botd["total_atk"] >= 100, "Zarba kam!"
+
+    # Oddiy 3-runali sintez
+    syn_custom = synthesize_runes(["el", "eld", "tir"])
+    assert syn_custom["is_runeword"] is False, "Oddiy kombinatsiya runeword deb tanildi!"
+    assert syn_custom["total_atk"] > 0, "Oddiy sintez zarbasi 0!"
+    print(f"   🔮 Runozuvlar (Runewords): {rw_matrix['ancient_runes']} ta Runa x 3 Socket = {rw_matrix['socket_combinations']:,} formula | Jami: {rw_matrix['total_enchantments']:,}+ ta effekt!")
+
+    print(f"✅ TEST 19 O'TDI: 60+ Kunlik Endgame Loop (Prestige X, 100-Floor Tower, 100k+ Runewords, Promo-Engine) 100% muvaffaqiyatli ishga tushirildi!")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 18 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print(f"👑 VALORIYA: FOYDALANUVCHILARNI MAXSUS ENGAGE QILUVCHI GRAND MMORPG!")
+    print("🎉 BARCHA 19 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: 60+ KUNLIK CHEKSIZ MMORPG VA REKLAMA TRAFIGI MOTOR!")
     print("=========================================================")
 
 if __name__ == "__main__":
     asyncio.run(run_comprehensive_tests())
+
 
