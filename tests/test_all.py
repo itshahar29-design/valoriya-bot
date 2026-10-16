@@ -399,9 +399,36 @@ async def run_comprehensive_tests():
     assert cleared_cnt >= 1, "Bozor tozalanmadi!"
     print(f"✅ TEST 13.7 (Bozor Reset): {cleared_cnt} ta faol listinglar bekor qilindi.")
 
+    # =====================================================================
+    # 14. ASOSIY MENYU TUGMALARI (PERSISTENT REPLY KEYBOARDS)
+    # =====================================================================
+    print("\n[TEST 14] Doimiy Pastki Menyu Tugmalari (ReplyKeyboardMarkup)...")
+    from keyboards.reply_keyboards import main_reply_keyboard
+    from handlers.menu_buttons_handler import menu_buttons_router
+
+    kb_player = main_reply_keyboard(is_owner=False)
+    kb_owner = main_reply_keyboard(is_owner=True)
+
+    # O'yinchi menyusida kamida 14 ta asosiy tugma bo'lishi kerak
+    player_buttons = [btn.text for row in kb_player.keyboard for btn in row]
+    assert "⚔️ Arena (1v1)" in player_buttons, "Arena tugmasi yo'q!"
+    assert "🛒 Jonli Bozor (P2P)" in player_buttons, "Bozor tugmasi yo'q!"
+    assert "📜 Kvestlar & Yutuqlar" in player_buttons, "Kvestlar tugmasi yo'q!"
+    assert "⛏ Shaxta & Alximiya" in player_buttons, "Shaxta tugmasi yo'q!"
+    assert "🐫 Karvon Savdosi" in player_buttons, "Karvon tugmasi yo'q!"
+    assert "🏰 Gildiya & Qal'alar" in player_buttons, "Gildiya tugmasi yo'q!"
+    assert "👑 Oliy Taxt" in player_buttons, "Oliy Taxt tugmasi yo'q!"
+    assert "👤 Profil & Karta" in player_buttons, "Profil & Karta tugmasi yo'q!"
+    assert "👑 OLIY BOSHQARUV (God-Mode)" not in player_buttons, "Owner tugmasi oddiy o'yinchiga ko'rinib qoldi!"
+
+    # Owner menyusida esa God-Mode tugmasi bo'lishi kerak
+    owner_buttons = [btn.text for row in kb_owner.keyboard for btn in row]
+    assert "👑 OLIY BOSHQARUV (God-Mode)" in owner_buttons, "Owner uchun God-Mode tugmasi yo'q!"
+    print(f"✅ TEST 14 O'TDI: Doimiy menyu tugmalari (O'yinchi: {len(player_buttons)} ta, Owner: {len(owner_buttons)} ta) muvaffaqiyatli tekshirildi.")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 13 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 VALORIYA QIT'ASI VA OWNER GOD-MODE TO'LIQ TAYYOR!")
+    print("🎉 BARCHA 14 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print("👑 VALORIYA QIT'ASI, DOIMIY TUGMALAR VA GOD-MODE TO'LIQ TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":

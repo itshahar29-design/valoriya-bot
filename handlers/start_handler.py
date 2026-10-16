@@ -11,6 +11,7 @@ from game.constants import CLASSES
 from game.retention_engine import RetentionEngine
 from game.dark_engine import DarkEngine, WOUND_TYPES
 from keyboards.inline_menus import main_menu_keyboard, class_selection_keyboard
+from keyboards.reply_keyboards import main_reply_keyboard
 from services.channel_sub import is_subscribed_to_channel
 
 start_router = Router()
@@ -78,12 +79,18 @@ async def handle_start(message: Message):
         jail_notice = ""
         if character.get("is_jailed", 0):
             jail_notice = "\n\n⛓ *DIQQAT: Siz Qirollik Zindoniga tashlangansiz!* Yaratuvchi ozod etmagunicha harakatlaringiz cheklangan."
+        
         await message.answer(
             f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
-            f"🏰 Daraja: *{character['level']}* | 🪙 Oltin: *{character['gold']}*\n"
+            f"🏰 Daraja: *{character['level']}* | 🪙 Oltin: *{character['gold']:,}*\n"
             f"⚔️ Kasb: *{character['class_id'].upper()}* | ❤️ Jon: *{character['hp']}/{character['max_hp']}*{jail_notice}\n\n"
-            f"Valoriya qit'asida qanday harbiy buyruq berasiz?",
+            f"Valoriya qit'asida qanday harbiy buyruq berasiz?\n"
+            f"Pastdagi tugmalar orqali istalgan bo'limni bir zumda ochishingiz mumkin:",
             parse_mode="Markdown",
+            reply_markup=main_reply_keyboard(is_owner)
+        )
+        await message.answer(
+            "🏰 *Valoriya Harbiy Bosh Shtabi:*",
             reply_markup=main_menu_keyboard(is_owner)
         )
     else:
@@ -110,6 +117,12 @@ async def process_check_sub(callback: CallbackQuery):
     character = await get_character_by_user_id(user_id)
     if character:
         is_owner = bool(character.get("is_owner", 0)) or is_user_owner(user_id, username)
+        await callback.message.answer(
+            f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
+            f"Harbiy boshqaruv paneli faollashtirildi.",
+            parse_mode="Markdown",
+            reply_markup=main_reply_keyboard(is_owner)
+        )
         await callback.message.edit_text(
             f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
             f"🏰 Daraja: *{character['level']}* | 🪙 Oltin: *{character['gold']}*\n"
@@ -155,6 +168,10 @@ async def handle_class_selection(callback: CallbackQuery):
                 pass
 
     class_name = CLASSES.get(class_id, {}).get("name", class_id)
+    await callback.message.answer(
+        f"👑 *Qasamyod qabul qilindi, {user_name}!* Harbiy buyruqlar paneli faollashtirildi.",
+        reply_markup=main_reply_keyboard(is_owner=is_owner)
+    )
     await callback.message.edit_text(
         f"🎉 *TABRIKLAYMIZ! QASAMYOD QABUL QILINDI!* 🎉\n\n"
         f"Siz *{class_name}* sifatida Valoriya qit'asiga qadam qo'ydingiz!\n\n"

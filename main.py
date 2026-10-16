@@ -8,6 +8,7 @@ from database.db import init_db
 
 # Handlers import
 from handlers.start_handler import start_router
+from handlers.menu_buttons_handler import menu_buttons_router
 from handlers.arena_handler import arena_router
 from handlers.kingdom_handler import kingdom_router
 from handlers.inventory_handler import inventory_router
@@ -70,6 +71,7 @@ async def main():
 
     # Routers registration
     dp.include_router(start_router)
+    dp.include_router(menu_buttons_router)
     dp.include_router(arena_router)
     dp.include_router(kingdom_router)
     dp.include_router(inventory_router)
