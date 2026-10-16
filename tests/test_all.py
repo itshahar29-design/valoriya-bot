@@ -445,31 +445,40 @@ async def run_comprehensive_tests():
     print(f"✅ TEST 14 O'TDI: Doimiy menyu tugmalari (O'yinchi: {len(player_buttons)} ta, Owner: {len(owner_buttons)} ta) muvaffaqiyatli tekshirildi.")
 
     # =====================================================================
-    # 15. 100X KONTENT ENSIKLOPEDIYASI: BESTIARIY, ANJOMLAR, SARGUZASHTLAR
+    # 15. 1000+ KONTENT ENSIKLOPEDIYASI: 200 ANJOM, BESTIARIY, ALXIMIYA, KVESTLAR
     # =====================================================================
-    print("\n[TEST 15] 100x Kontent Kengaytmasi (Bestiariy, 10-Qavat Zindon, 100+ Anjomlar, Qo'lyozmalar)...")
+    print("\n[TEST 15] 1,000+ Kontent Kengaytmasi (200 ta Anjom, Bestiariy, Alximiya, Kvestlar)...")
     from game.bestiary import BESTIARY_DATA
     from game.items_db import ITEMS_CATALOG
     from game.events_engine import EventsEngine, WILDERNESS_EVENTS
-    from game.lore_db import TAVERN_RUMORS, ANCIENT_SCROLLS
+    from game.lore_db import TAVERN_RUMORS, ANCIENT_SCROLLS, TREASURE_MAPS
+    from game.alchemy_db import ORES_DATABASE, HERBS_DATABASE, POTIONS_DATABASE, RUNES_RECIPES
+    from game.quest_db import MAIN_CAMPAIGN_QUESTS, GLOBAL_BOUNTIES
+    from game.dark_engine import WOUND_TYPES
     from database.db import DUNGEON_FLOORS
 
-    assert len(BESTIARY_DATA) >= 10, "Bestiariyda maxluqlar kam!"
-    assert len(ITEMS_CATALOG) >= 25, "Anjomlar katalogida buyumlar kam!"
+    assert len(ITEMS_CATALOG) == 200, f"Anjomlar soni 200 ta emas ({len(ITEMS_CATALOG)})!"
+    assert len(BESTIARY_DATA) >= 40, "Bestiariyda maxluqlar kam!"
     assert len(DUNGEON_FLOORS) >= 10, "Zindon qavatlari 10 taga yetmadi!"
-    assert len(WILDERNESS_EVENTS) >= 5, "Sahro sarguzashtlari yetarli emas!"
-    assert len(ANCIENT_SCROLLS) >= 3, "Qadimiy qo'lyozmalar yo'q!"
+    assert len(WILDERNESS_EVENTS) >= 15, "Sahro sarguzashtlari 15 taga yetmadi!"
+    assert len(ORES_DATABASE) == 25, "Rudalar soni 25 ta emas!"
+    assert len(HERBS_DATABASE) >= 20, "Alximik o'tlar kam!"
+    assert len(POTIONS_DATABASE) >= 14, "Eliksirlar kam!"
+    assert len(MAIN_CAMPAIGN_QUESTS) == 25, "Asosiy kampaniya kvestlari 25 ta emas!"
+    assert len(GLOBAL_BOUNTIES) == 10, "Qidiruvdagi jinoyatchilar 10 ta emas!"
+    assert len(TREASURE_MAPS) == 5, "Xazina xaritalari 5 ta emas!"
+    assert len(WOUND_TYPES) == 15, "Zulmat travmalari 15 ta emas!"
 
     # Tasodifiy sahro sarguzashti testi
     ev = EventsEngine.get_random_event()
     assert ev["id"] in [e["id"] for e in WILDERNESS_EVENTS], "Sarguzasht topilmadi!"
     res_text, changes = EventsEngine.resolve_event("event_shrine", "pray", char)
     assert changes["hp"] > 0, "Ilohiy buloq joni tiklamadi!"
-    print(f"✅ TEST 15 O'TDI: {len(BESTIARY_DATA)} ta maxluq, {len(ITEMS_CATALOG)} ta anjom, 10 qavatli zindon, {len(WILDERNESS_EVENTS)} ta interaktiv sarguzasht muvaffaqiyatli tekshirildi.")
+    print(f"✅ TEST 15 O'TDI: {len(ITEMS_CATALOG)} ta anjom, {len(BESTIARY_DATA)} ta maxluq, {len(ORES_DATABASE)} ta ruda, {len(POTIONS_DATABASE)} ta eliksir, {len(MAIN_CAMPAIGN_QUESTS)} ta kvest, {len(WILDERNESS_EVENTS)} ta sarguzasht muvaffaqiyatli tekshirildi.")
 
     print("\n=========================================================")
     print("🎉 BARCHA 15 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 VALORIYA QIT'ASI 100X KONTENT VA MASSIV ARXIV BILAN TAYYOR!")
+    print("👑 VALORIYA: 1,000+ ELEMENTDAN IBORAT GRAND MMORPG TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":

@@ -1,119 +1,567 @@
 # =====================================================================
-# VALORIYA: MAXLUQOTLAR VA DUSHMANLAR ENSIKLOPEDIYASI (BESTIARY)
+# VALORIYA: MAXLUQOTLAR VA DUSHMANLAR ENSIKLOPEDIYASI (46 TA NOYOB ENTITY)
 # =====================================================================
 
 BESTIARY_DATA = {
-    # -----------------------------------------------------------------
-    # ODDY VA O'RMON MAXLUQLARI (TIER 1)
-    # -----------------------------------------------------------------
-    "goblin_scout": {
-        "id": "goblin_scout", "name": "👺 G'or Goblini Izquvari", "danger": "⭐️ (1/10)",
-        "habitat": "Toshli g'orlar va qorong'i o'rmonlar",
-        "hp": 90, "atk": 16, "def": 5, "weakness": "Olov va Muqaddas Nur",
-        "desc": "Bo'yi 1 metrdan oshmaydigan, makkor va to'da bo'lib hujum qiluvchi maxluq. "
-                "Yolg'iz ritsarlarga orqadan tosh va zaharli nayzalar bilan hujum qiladi.",
-        "loot": "Temir parchasi, 25-45 🪙 Oltin, Goblin suyagi."
+    "dungeon_rat": {
+        "id": "dungeon_rat",
+        "name": "🐀 Vabo Tarqatuvchi Katta Kalamush",
+        "danger": "⭐️ (1/10)",
+        "habitat": "Zindon 1-qavati va yerto'lalar",
+        "hp": 80,
+        "atk": 14,
+        "def": 3,
+        "weakness": "Olov va Muqaddas Nur",
+        "desc": "Zindon quduqlarida suyak g'ajuvchi, zaharli tishlarga ega yirik kalamush.",
+        "loot": "10-25 🪙 Oltin, Kalamush terisi"
     },
-    "dire_wolf": {
-        "id": "dire_wolf", "name": "🐺 Qora Dasht Bo'risi", "danger": "⭐️⭐️ (2/10)",
-        "habitat": "Dasht Bo'rilari Xonligi kengliklari",
-        "hp": 140, "atk": 24, "def": 8, "weakness": "Bo'yin zarbasi va Olov",
-        "desc": "Oddiy bo'ridan ikki barobar yirikroq, tishlari po'lat sovutni teshib yuboradigan yirtqich. "
-                "Ular kechalari to'lin oy ostida ovga chiqadi.",
-        "loot": "Qimmatbaho bo'ri mo'ynasi, Bo'ri qoziq tishi, 50-80 🪙 Oltin."
+    "dungeon_skeleton": {
+        "id": "dungeon_skeleton",
+        "name": "💀 Tirik Skelet Soqchisi",
+        "danger": "⭐️ (1/10)",
+        "habitat": "Zindon 1-qavati va qabristonlar",
+        "hp": 110,
+        "atk": 18,
+        "def": 6,
+        "weakness": "Zarbali cho'qmorlar",
+        "desc": "Zanglagan qilich va qalqon ko'targan, suyaklari tirik jonsiz askar.",
+        "loot": "30-50 🪙 Oltin, Suyak kukuni"
     },
-    "swamp_crawler": {
-        "id": "swamp_crawler", "name": "🕷 Botqoqlik Zaharli O'rgimchagi", "danger": "⭐️⭐️ (2/10)",
-        "habitat": "Qora botqoqlik va tumanli daryo bo'ylari",
-        "hp": 160, "atk": 28, "def": 6, "weakness": "Olov va Momaqaldiroq",
-        "desc": "Odam bo'yidek keladigan ulkan o'rgimchak. Nishonini yopishqoq to'r bilan bog'lab, "
-                "falajlovchi neyrotoksin zahari bilan qurbonini eritib ichadi.",
-        "loot": "Zaharli o'rgimchak bezi, Ipak tola, 70-110 🪙 Oltin."
+    "dungeon_zombie": {
+        "id": "dungeon_zombie",
+        "name": "🧟 Chirigan Go'rkov Zombi",
+        "danger": "⭐️ (1/10)",
+        "habitat": "Zindon 1-qavati",
+        "hp": 130,
+        "atk": 16,
+        "def": 4,
+        "weakness": "Bosh zarbasi va Olov",
+        "desc": "Og'ir va sekin harakatlanadi, ammo qattiq tishlab qon oqizadi.",
+        "loot": "35-60 🪙 Oltin, Chirigan mato"
     },
-    "desert_bandit": {
-        "id": "desert_bandit", "name": "🗡 Sahro Qaroqchisi Qonxo'r", "danger": "⭐️⭐️⭐️ (3/10)",
-        "habitat": "Karvon yo'llari va Qum barxanlari",
-        "hp": 210, "atk": 34, "def": 14, "weakness": "Og'ir qalqon va Bosh zarbasi",
-        "desc": "Karvonlarni talash bilan tirikchilik qiluvchi qonundan tashqari kimsalar. "
-                "Egik shamshir va engil kiyimlarda qum bo'ronlaridan foydalanib pistirma qo'yadi.",
-        "loot": "Sharq ziravorlari, 150-250 🪙 Oltin, Qaroqchi shamshiri."
+    "boss_crypt_keeper": {
+        "id": "boss_crypt_keeper",
+        "name": "👑 Go'rkovlar Oqsoqoli Gorrik (1-Qavat Bossi)",
+        "danger": "⭐️⭐️ (2/10)",
+        "habitat": "Zindon 1-qavati arshi",
+        "hp": 300,
+        "atk": 32,
+        "def": 12,
+        "weakness": "Bo'yin zarbasi va Muqaddas Nur",
+        "desc": "Zindonning birinchi darvozasini qo'riqlovchi yovvoyi bahaybat go'rkov.",
+        "loot": "250-400 🪙 Oltin, Temir Zirh, 1-Qavat Kaliti"
     },
-    "skeleton_warrior": {
-        "id": "skeleton_warrior", "name": "💀 Qadimiy Qabr Skelet Jangchisi", "danger": "⭐️⭐️⭐️ (3/10)",
-        "habitat": "Kultepa qabristoni va yerosti daxmalari",
-        "hp": 220, "atk": 36, "def": 22, "weakness": "Og'ir Bolg'alar (Zarba) va Muqaddas Nur",
-        "desc": "Yuz yillar avval jang maydonida halok bo'lgan va qora sehr bilan tiriltirilgan jonsiz suyaklar. "
-                "Ularga qilich va nayza deyarli ta'sir qilmaydi, faqat og'ir cho'qmorlar bilan parchalash mumkin.",
-        "loot": "Zangori xouberk halqalari, 120-190 🪙 Oltin, Suyak kukuni."
+    "mummy_soldier": {
+        "id": "mummy_soldier",
+        "name": "🩹 Qadimiy Qonli Mumiyo",
+        "danger": "⭐️⭐️ (2/10)",
+        "habitat": "Zindon 2-qavati",
+        "hp": 160,
+        "atk": 24,
+        "def": 10,
+        "weakness": "🔥 Olov Runasi",
+        "desc": "Doka bilan o'ralgan, tanasidan zaharli chang sochuvchi qadimiy jasad.",
+        "loot": "50-80 🪙 Oltin, Qadimiy kanop"
     },
-
-    # -----------------------------------------------------------------
-    # O'RTA VA ELITA DUSHMANLAR (TIER 2)
-    # -----------------------------------------------------------------
-    "frost_troll": {
-        "id": "frost_troll", "name": "❄️ Muzlik Gigant Trolli", "danger": "⭐️⭐️⭐️⭐️ (4/10)",
-        "habitat": "Muzli Cho'qqilar va Ayoz tog'lari",
-        "hp": 450, "atk": 48, "def": 18, "weakness": "🔥 Olov Runasi va Yonuvchi Neft",
-        "desc": "Uch metrlik bahaybat mahluq. Uning terisi toshdek qalin va tanasidagi har qanday yara "
-                "bir necha soniyada qayta bitadi (Regeneratsiya). Faqat olov uning bitishini to'xtatadi.",
-        "loot": "Troll yuragi, Qattiq muz kristallari, 300-500 🪙 Oltin."
+    "cave_bat_swarm": {
+        "id": "cave_bat_swarm",
+        "name": "🦇 Qonxo'r Ko'rshapalaklar To'dasi",
+        "danger": "⭐️⭐️ (2/10)",
+        "habitat": "Zindon 2-qavati g'orlari",
+        "hp": 140,
+        "atk": 26,
+        "def": 6,
+        "weakness": "Keng qamrovli qilich zarbasi",
+        "desc": "Shovqin solib osmondan ko'zlarga hamla qiluvchi maxluqlar.",
+        "loot": "40-75 🪙 Oltin, Qora qanot"
+    },
+    "stone_gargoyle": {
+        "id": "stone_gargoyle",
+        "name": "🗿 Tosh Qanotli Gargulya",
+        "danger": "⭐️⭐️ (2/10)",
+        "habitat": "Zindon 2-qavati arklari",
+        "hp": 200,
+        "atk": 28,
+        "def": 20,
+        "weakness": "Titan bolg'asi",
+        "desc": "Kechasi tiriladigan, terisi toshdek qattiq qanotli yirtqich.",
+        "loot": "80-120 🪙 Oltin, Tosh kristall"
+    },
+    "boss_mummy_lord": {
+        "id": "boss_mummy_lord",
+        "name": "👑 Fir'avn Qabrining Qonxo'r Lordi (2-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️ (3/10)",
+        "habitat": "Zindon 2-qavati sarkofagi",
+        "hp": 450,
+        "atk": 42,
+        "def": 18,
+        "weakness": "🔥 Olov va Muqaddas qilich",
+        "desc": "Ming yillik la'nat bilan uyg'ongan mumiyolar podshosi.",
+        "loot": "500-750 🪙 Oltin, Oltin Amulet, 2-Qavat Kaliti"
+    },
+    "mad_alchemist": {
+        "id": "mad_alchemist",
+        "name": "🧪 Telba Qon Alximigi",
+        "danger": "⭐️⭐️⭐️ (3/10)",
+        "habitat": "Zindon 3-qavati laboratoriyasi",
+        "hp": 220,
+        "atk": 36,
+        "def": 12,
+        "weakness": "Chaqqonlik va nayza",
+        "desc": "Zaharli kolbalar va kislota uloqtiruvchi o'z aqlini yo'qotgan olim.",
+        "loot": "90-150 🪙 Oltin, Alximik eliksir"
+    },
+    "mutant_ghoul": {
+        "id": "mutant_ghoul",
+        "name": "🩸 Mutatsiyalangan Ghoul",
+        "danger": "⭐️⭐️⭐️ (3/10)",
+        "habitat": "Zindon 3-qavati yerto'lalari",
+        "hp": 250,
+        "atk": 40,
+        "def": 14,
+        "weakness": "Kumush Damashq Estoki",
+        "desc": "Alximik tajribalari natijasida vujudga kelgan go'shtxo'r yirtqich.",
+        "loot": "100-180 🪙 Oltin, Zaharli tish"
+    },
+    "flesh_abomination": {
+        "id": "flesh_abomination",
+        "name": "🥩 Choklangan Go'sht Maxluqi",
+        "danger": "⭐️⭐️⭐️ (3/10)",
+        "habitat": "Zindon 3-qavati",
+        "hp": 320,
+        "atk": 38,
+        "def": 16,
+        "weakness": "Olovli flamberge",
+        "desc": "O'nlab insonlar tanasidan yig'ib tikilgan bahaybat go'sht devori.",
+        "loot": "130-220 🪙 Oltin, Qonli ruda"
+    },
+    "boss_butcher": {
+        "id": "boss_butcher",
+        "name": "🪓 Qonli Qassob Butcher (3-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️ (4/10)",
+        "habitat": "Zindon 3-qavati so'yish xonasi",
+        "hp": 650,
+        "atk": 52,
+        "def": 22,
+        "weakness": "Bo'yin tomiri va muzlatish",
+        "desc": "Ikki qo'lida bahaybat qassob boltasi bilan harakatlanuvchi qonxo'r dev.",
+        "loot": "800-1200 🪙 Oltin, Qassob Boltasi, 3-Qavat Kaliti"
+    },
+    "labyrinth_scout": {
+        "id": "labyrinth_scout",
+        "name": "🐂 Shoxli Labirint Qo'riqchisi",
+        "danger": "⭐️⭐️⭐️⭐️ (4/10)",
+        "habitat": "Zindon 4-qavati",
+        "hp": 300,
+        "atk": 44,
+        "def": 20,
+        "weakness": "Ko'z zonasiga zarba",
+        "desc": "Labirint burchaklaridan pistirma qo'yuvchi buqa yuzli jangchi.",
+        "loot": "150-250 🪙 Oltin, Minotavr shoxi"
     },
     "shadow_stalker": {
-        "id": "shadow_stalker", "name": "🌑 Zulmat Sharpasi (Kamera Qotili)", "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
-        "habitat": "Tumanli Qasr va Zindonlarning 3-qavati",
-        "hp": 380, "atk": 62, "def": 12, "weakness": "☀️ Nur Ibodatxonasi Sehrlari",
-        "desc": "Fizik tanaga deyarli ega bo'lmagan, soyalardan paydo bo'luvchi qora mavjudot. "
-                "U o'yinchining aqlini (Sanity) bir zumda so'rib olib telba qiladi.",
-        "loot": "Soya essensiyasi, Sehrli qora mato, 400-650 🪙 Oltin."
+        "id": "shadow_stalker",
+        "name": "🌑 Tumanli Soyalar Pichoqbozi",
+        "danger": "⭐️⭐️⭐️⭐️ (4/10)",
+        "habitat": "Zindon 4-qavati soyalari",
+        "hp": 280,
+        "atk": 48,
+        "def": 15,
+        "weakness": "Yorug'lik qalqoni",
+        "desc": "Devorlar orasida erib ketuvchi qotil sharpalar.",
+        "loot": "160-270 🪙 Oltin, Soya matosi"
     },
-    "wyvern_scout": {
-        "id": "wyvern_scout", "name": "🦅 Qoya Vivernasi (Uchuvchi Yirtqich)", "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
-        "habitat": "Tog' cho'qqilari va Olov qal'asi atrofi",
-        "hp": 520, "atk": 58, "def": 25, "weakness": "Qanotiga kamon zarbasi va Muz",
-        "desc": "Ikki oyoqli va bahaybat qanotli ajdahosimon yirtqich. Dumidagi zaharli tikan bilan "
-                "ritsarni parchalab, o'z iniga olib qochadi.",
-        "loot": "Viverna qanot terisi, Zaharli dumi, 500-800 🪙 Oltin."
+    "iron_sentinel": {
+        "id": "iron_sentinel",
+        "name": "🤖 Temir Zanjirli Golem",
+        "danger": "⭐️⭐️⭐️⭐️ (4/10)",
+        "habitat": "Zindon 4-qavati darvozalari",
+        "hp": 380,
+        "atk": 42,
+        "def": 30,
+        "weakness": "Momaqaldiroq bolg'asi",
+        "desc": "Labirint qadimiy mexanizmlari bilan boshqariladigan temir jangchi.",
+        "loot": "200-300 🪙 Oltin, Temir plastinka"
     },
-    "iron_golem": {
-        "id": "iron_golem", "name": "🗿 Qadimiy Temir Golem", "danger": "⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)",
-        "habitat": "Temir Bastion xarobalari va yerosti ustaxonalari",
-        "hp": 750, "atk": 65, "def": 55, "weakness": "⚡️ Chaqmoq Runasi va Sehrli portlash",
-        "desc": "Sehrli ruda bilan harakatlantiriladigan ulkan po'lat haykal. "
-                "U og'riq sezmaydi, charchamaydi va har bir qadami yerni larzaga keltiradi.",
-        "loot": "Sof Mithril bo'lagi, 3x Temir rudasi, 700-1100 🪙 Oltin."
+    "boss_minotaur_king": {
+        "id": "boss_minotaur_king",
+        "name": "👑 Labirint Hukmdori Asterion (4-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
+        "habitat": "Zindon 4-qavati markazi",
+        "hp": 900,
+        "atk": 62,
+        "def": 26,
+        "weakness": "Oyoq paylarini uzish",
+        "desc": "To'rt metrlik bahaybat qora buqa dev. Uning bolg'a zarbasidan butun yer larzaga keladi.",
+        "loot": "1200-1800 🪙 Oltin, Minotavr Bolg'asi, 4-Qavat Kaliti"
     },
-
-    # -----------------------------------------------------------------
-    # AFSONAVIY ZINDON VA DUNYO BOSSLARI (TIER 3 & 4)
-    # -----------------------------------------------------------------
-    "boss_goblin_king": {
-        "id": "boss_goblin_king", "name": "👑 Goblinlar Oliy Hukmdori Grik", "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
-        "habitat": "1-Zindon: Zulmat G'ori",
-        "hp": 280, "atk": 35, "def": 20, "weakness": "Yurak va Bo'yin zarbalari",
-        "desc": "Barcha g'or o'g'rilarining podshohi. O'ldirilgan ritsarlar suyaklaridan yasalgan toj kiyadi.",
-        "loot": "👑 Grikning Oltin Qadahi, Kamon, 450 🪙 Oltin."
+    "frost_skeleton": {
+        "id": "frost_skeleton",
+        "name": "❄️ Muzlagan Qabr Skeleti",
+        "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
+        "habitat": "Zindon 5-qavati",
+        "hp": 350,
+        "atk": 50,
+        "def": 24,
+        "weakness": "🔥 Olov Flamberg",
+        "desc": "Suyaklari ko'k muz bilan qoplangan, zarbasi dushmanni qotiruvchi jangchi.",
+        "loot": "200-320 🪙 Oltin, Muz kristalli"
     },
-    "boss_black_knight": {
-        "id": "boss_black_knight", "name": "⚔️ La'nati Qora Ritsar Mordred", "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)",
-        "habitat": "3-Zindon: Tashlandiq Qasr",
-        "hp": 750, "atk": 75, "def": 45, "weakness": "Qalqon teshuvchi Chaqmoq",
-        "desc": "O'z qiroliga xiyonat qilgani uchun abadiy qora sovut ichiga qamalgan la'natli ritsar.",
-        "loot": "🛡 La'natli Qora Qalqon, 1,500 🪙 Oltin, 5 💎 Javohir."
+    "polar_wolf": {
+        "id": "polar_wolf",
+        "name": "🐺 Oq Muz Tog' Bo'risi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
+        "habitat": "Zindon 5-qavati qoyalari",
+        "hp": 380,
+        "atk": 54,
+        "def": 20,
+        "weakness": "Ko'krak zirhi teshish",
+        "desc": "Qor bo'roni ichida ovozsiz harakatlanuvchi gigant oq bo'ri.",
+        "loot": "220-350 🪙 Oltin, Oq mo'yna"
     },
-    "boss_red_dragon": {
-        "id": "boss_red_dragon", "name": "🐉 Mag'rur Olov Ajdahosi Ignis", "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)",
-        "habitat": "Ajdaho Qoyasi va Global Reydlar",
-        "hp": 1800, "atk": 125, "def": 65, "weakness": "❄️ Muz Runasi va Qorin sohasi",
-        "desc": "Ming yillik uyqudan uyg'ongan ulkan qizil ajdaho. Uning nafasi butun shaharlarni "
-                "kulga aylantirishga qodir. Terisidan afsonaviy imperator sovutlari yasaladi.",
-        "loot": "🐉 Ajdaho Yuragi, Qizil tangachalar sovuti, 5,000 🪙 Oltin, 25 💎 Javohir."
+    "frost_golem": {
+        "id": "frost_golem",
+        "name": "🧊 Muz Bloklari Golemi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️ (5/10)",
+        "habitat": "Zindon 5-qavati darasi",
+        "hp": 480,
+        "atk": 46,
+        "def": 35,
+        "weakness": "Magma cho'qmori",
+        "desc": "Ming yillik qalin muzdan hosil bo'lgan tog' gavdasi.",
+        "loot": "250-400 🪙 Oltin, Moviy sapfir"
     },
-    "boss_malakor_lich": {
-        "id": "boss_malakor_lich", "name": "💀 Boqiy Lich Malakor - Zulmat Egasi", "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)",
-        "habitat": "Valoriya Taqiqlangan Zindoni (5-Qavat)",
-        "hp": 2500, "atk": 160, "def": 80, "weakness": "☀️ Muqaddas Quyosh Nuri",
-        "desc": "O'lim ustidan g'alaba qozongan qadimiy qora sehrgar. Uning ko'zlariga qaragan har qanday "
-                "ritsar bir zumda o'z aqlini yo'qotadi.",
-        "loot": "🩸 Malakor O'rog'i, Zulmat Uzugi, 10,000 🪙 Oltin, 50 💎 Javohir."
+    "boss_ice_queen": {
+        "id": "boss_ice_queen",
+        "name": "👑 Muz Taxti Hukmdori Freya (5-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)",
+        "habitat": "Zindon 5-qavati arshi",
+        "hp": 1200,
+        "atk": 75,
+        "def": 30,
+        "weakness": "🔥 Doimiy Olov Hujumi",
+        "desc": "Muzli go'zallik va o'lim timsoli. Butun zalni muzlatuvchi bo'ron chaqiradi.",
+        "loot": "2000-3000 🪙 Oltin, Freya Toji, 5-Qavat Kaliti"
+    },
+    "magma_snake": {
+        "id": "magma_snake",
+        "name": "🐍 Qizigan Lava Iloni",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)",
+        "habitat": "Zindon 6-qavati magma ko'li",
+        "hp": 420,
+        "atk": 60,
+        "def": 25,
+        "weakness": "❄️ Muz Gleyvasi",
+        "desc": "Erib oqayotgan toshlar orasida suzuvchi, olov purkovchi bahaybat ilon.",
+        "loot": "300-450 🪙 Oltin, Magma toshi"
+    },
+    "fire_demon_grunt": {
+        "id": "fire_demon_grunt",
+        "name": "🔥 Do'zax Uchquni Iblis Askari",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)",
+        "habitat": "Zindon 6-qavati",
+        "hp": 450,
+        "atk": 65,
+        "def": 28,
+        "weakness": "Muqaddas qilich",
+        "desc": "Tanasidan tutun va olov taralib turuvchi do'zaxi jangchi.",
+        "loot": "320-480 🪙 Oltin, Iblis suyagi"
+    },
+    "charred_knight": {
+        "id": "charred_knight",
+        "name": "💀 Kuygan Qora Ritsar",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️ (6/10)",
+        "habitat": "Zindon 6-qavati ko'priklari",
+        "hp": 500,
+        "atk": 62,
+        "def": 34,
+        "weakness": "Titan yoruvchi bolg'a",
+        "desc": "Lavaga qulab kuyib ketgan ammo joni tanasini tark etmagan qora ritsar.",
+        "loot": "350-520 🪙 Oltin, Obsidiyan ruda"
+    },
+    "boss_flame_lord": {
+        "id": "boss_flame_lord",
+        "name": "👑 Magma Lordi Ignis (6-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)",
+        "habitat": "Zindon 6-qavati vulqon og'zi",
+        "hp": 1600,
+        "atk": 88,
+        "def": 38,
+        "weakness": "❄️ Muzli Runik Nayza",
+        "desc": "Qizigan lavadan iborat titan maxluq. Har zarbasida olovli tosh yog'diradi.",
+        "loot": "3000-4500 🪙 Oltin, Ignis Zirhi, 6-Qavat Kaliti"
+    },
+    "beholder_scout": {
+        "id": "beholder_scout",
+        "name": "👁 Bir Ko'zli Bo'shliq Shari",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)",
+        "habitat": "Zindon 7-qavati",
+        "hp": 520,
+        "atk": 72,
+        "def": 30,
+        "weakness": "Ko'z markaziga kamon o'qi",
+        "desc": "Osmonda muallaq suzib, ko'zidan halokatli nurlar yog'diruvchi maxluq.",
+        "loot": "400-600 🪙 Oltin, Ko'z gavhari"
+    },
+    "mind_flayer": {
+        "id": "mind_flayer",
+        "name": "🧠 Aql So'ruvchi Ilonbosh",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)",
+        "habitat": "Zindon 7-qavati ziyoratgohi",
+        "hp": 560,
+        "atk": 78,
+        "def": 28,
+        "weakness": "Tezkor stilet zarbalari",
+        "desc": "Inson miyasini va xotirasini so'rib telba qilib qo'yuvchi maxluq.",
+        "loot": "450-650 🪙 Oltin, Telbalik changi"
+    },
+    "void_spider_queen": {
+        "id": "void_spider_queen",
+        "name": "🕷 Qora Bo'shliq O'rgimchak Onasi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (7/10)",
+        "habitat": "Zindon 7-qavati to'rlari",
+        "hp": 620,
+        "atk": 75,
+        "def": 35,
+        "weakness": "Olovli flamberg",
+        "desc": "Kichik qora o'rgimchaklar to'dasini tug'ib jang maydoniga tashlaydi.",
+        "loot": "480-700 🪙 Oltin, Qora ipak"
+    },
+    "boss_vokzul": {
+        "id": "boss_vokzul",
+        "name": "👑 Ming Ko'zli Vok'zul (7-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (8/10)",
+        "habitat": "Zindon 7-qavati tubi",
+        "hp": 2100,
+        "atk": 98,
+        "def": 42,
+        "weakness": "Barcha ko'zlarini birma-bir o'yish",
+        "desc": "Ko'rgan odamning Sanity ko'rsatkichini bir zumda 0 ga tushiruvchi dahshat.",
+        "loot": "4500-6500 🪙 Oltin, Vokzul Talismani, 7-Qavat Kaliti"
+    },
+    "dread_rider": {
+        "id": "dread_rider",
+        "name": "🐎 Qora Otliq O'lim Elchisi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (8/10)",
+        "habitat": "Zindon 8-qavati maydoni",
+        "hp": 680,
+        "atk": 85,
+        "def": 40,
+        "weakness": "Otning oyoqlarini kesish",
+        "desc": "Qora alangali ot ustida o'roq bilan jang qiluvchi otliq.",
+        "loot": "550-800 🪙 Oltin, Qora yugan"
+    },
+    "fallen_paladin": {
+        "id": "fallen_paladin",
+        "name": "✝️ Qasamyodini Buzgan Qora Paladin",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (8/10)",
+        "habitat": "Zindon 8-qavati cherkovi",
+        "hp": 750,
+        "atk": 88,
+        "def": 48,
+        "weakness": "Qon oqizuvchi xanjar",
+        "desc": "Iblisga ruhini sotgan bir paytlardagi muqaddas ritsar.",
+        "loot": "600-900 🪙 Oltin, Qora Qalqon"
+    },
+    "shadow_executioner": {
+        "id": "shadow_executioner",
+        "name": "🪓 Qora Qal'a Jallodi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (8/10)",
+        "habitat": "Zindon 8-qavati dor maydoni",
+        "hp": 820,
+        "atk": 92,
+        "def": 44,
+        "weakness": "Boshga kritik zarba",
+        "desc": "Uch metrlik bahaybat jallod, bosh uzish bo'yicha usta.",
+        "loot": "650-950 🪙 Oltin, Jallod Niqobi"
+    },
+    "boss_general_kaelen": {
+        "id": "boss_general_kaelen",
+        "name": "👑 Qora Legions Generali Kaelen (8-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)",
+        "habitat": "Zindon 8-qavati taxt zali",
+        "hp": 2800,
+        "atk": 115,
+        "def": 52,
+        "weakness": "Qalqonini sindirish va bo'yin",
+        "desc": "O'lmas qora armiyaning bosh qo'mondoni, yuzlab ritsarlarni qatl etgan shaxs.",
+        "loot": "6000-8500 🪙 Oltin, General Qilichi, 8-Qavat Kaliti"
+    },
+    "hellhound_pack": {
+        "id": "hellhound_pack",
+        "name": "🐕 Do'zax Ikki Boshli Qonli Tazisi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)",
+        "habitat": "Zindon 9-qavati eshigi",
+        "hp": 780,
+        "atk": 95,
+        "def": 38,
+        "weakness": "❄️ Muzli zarbalar",
+        "desc": "Og'zidan olov va zahar purkovchi do'zax qo'riqchisi.",
+        "loot": "700-1000 🪙 Oltin, Do'zax suyagi"
+    },
+    "succubus_witch": {
+        "id": "succubus_witch",
+        "name": "😈 Qanotli Suksub Sehrgari",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)",
+        "habitat": "Zindon 9-qavati qasri",
+        "hp": 720,
+        "atk": 102,
+        "def": 35,
+        "weakness": "Ko'zini bog'lab jang qilish",
+        "desc": "Ritsarlarni o'z vasvasasi bilan chalg'itib o'z joniga qasd qildiruvchi iblis.",
+        "loot": "750-1100 🪙 Oltin, Qora marvarid"
+    },
+    "torture_overseer": {
+        "id": "torture_overseer",
+        "name": "⛓ Temir Zanjirli Qiynoq Ustasi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (9/10)",
+        "habitat": "Zindon 9-qavati qiynoqxonasi",
+        "hp": 880,
+        "atk": 98,
+        "def": 46,
+        "weakness": "Tomir uzish",
+        "desc": "Qizigan qisqichlar va tikanli zanjirlar bilan qiynoqqa soluvchi dev.",
+        "loot": "800-1200 🪙 Oltin, Qizigan zanjir"
+    },
+    "boss_malgazar": {
+        "id": "boss_malgazar",
+        "name": "👑 Qiynoqlar Lordi Malgazar (9-Qavat Bossi)",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)",
+        "habitat": "Zindon 9-qavati do'zax taxti",
+        "hp": 3600,
+        "atk": 135,
+        "def": 58,
+        "weakness": "Muqaddas Yorug'lik va Birlashgan Hujum",
+        "desc": "Do'zax darvozasining mutlaq posboni. Har bir zarbasida o'yinchidan jon so'rib oladi.",
+        "loot": "8000-12000 🪙 Oltin, Malgazar Shoxi, 9-Qavat Kaliti"
+    },
+    "void_horror": {
+        "id": "void_horror",
+        "name": "🌌 Bo'shliqning Shaklsiz Dahshati",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)",
+        "habitat": "Zindon 10-qavati koinoti",
+        "hp": 1100,
+        "atk": 120,
+        "def": 50,
+        "weakness": "Barcha runalar kuchi",
+        "desc": "Vaqt va makon qonunlariga bo'ysunmaydigan koinot qora materiyasi.",
+        "loot": "1200-1800 🪙 Oltin, Bo'shliq zarrasi"
+    },
+    "star_eater": {
+        "id": "star_eater",
+        "name": "🪐 Yulduzlar Kuli Yutuvchisi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)",
+        "habitat": "Zindon 10-qavati qa'ri",
+        "hp": 1250,
+        "atk": 128,
+        "def": 55,
+        "weakness": "Ilohiy Quyosh qilichi",
+        "desc": "Yorug'likni yutib butun maydonni qop-qorong'u qilib qo'yuvchi dahshat.",
+        "loot": "1400-2000 🪙 Oltin, Yulduz changi"
+    },
+    "chaos_herald": {
+        "id": "chaos_herald",
+        "name": "💀 Fano va Xaos Jarhchisi",
+        "danger": "⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️⭐️ (10/10)",
+        "habitat": "Zindon 10-qavati zali",
+        "hp": 1300,
+        "atk": 132,
+        "def": 60,
+        "weakness": "Yurakka to'g'ridan-to'g'ri zarba",
+        "desc": "Morvathning uyg'onganini butun olamga e'lon qiluvchi qora qanotli elchi.",
+        "loot": "1500-2200 🪙 Oltin, Xaos belgisi"
+    },
+    "boss_morvath_true": {
+        "id": "boss_morvath_true",
+        "name": "👑 ZULMAT HUKMDORI QORA LORD MORVATH (10-Qavat Bosh Bossi)",
+        "danger": "👑 AFSONAVIY XUDO DARAJASI",
+        "habitat": "Valoriya Qit'asining Tubi (10-Qavat)",
+        "hp": 5500,
+        "atk": 185,
+        "def": 75,
+        "weakness": "Faqat Oliy Yaratuvchi Qurollari va Ilohiy Runalar",
+        "desc": "Ming yillar oldin zanjirlangan, butun Valoriya qit'asini yutib yuborishga qodir bo'lgan qorong'ulik xudosi.",
+        "loot": "25000-50000 🪙 Oltin, 500 💎 Javohir, Morvath Boqiy Toji"
+    },
+    "raid_bahamut": {
+        "id": "raid_bahamut",
+        "name": "🐉 Qadimiy Qora Ajdaho Bahamut (Dunyo Bossi)",
+        "danger": "👑 GLOBAL REYD",
+        "habitat": "Ajdaho Qal'asi cho'qqisi",
+        "hp": 8000,
+        "atk": 210,
+        "def": 85,
+        "weakness": "Qorin qismidagi oq tangacha",
+        "desc": "Qanotlari osmonni qoplovchi, nafasi butun shaharni bir zumda kulga aylantiruvchi qora ajdaho.",
+        "loot": "50,000 🪙 Oltin, 1000 💎, Bahamut Nafasi Qilichi"
+    },
+    "raid_phoenix": {
+        "id": "raid_phoenix",
+        "name": "🔥 Olovli Boqiy Feniks (Dunyo Bossi)",
+        "danger": "👑 GLOBAL REYD",
+        "habitat": "Vulqon krateri",
+        "hp": 6500,
+        "atk": 195,
+        "def": 70,
+        "weakness": "Sovuq ayozli nayza",
+        "desc": "Har safar o'lganda o'z kulidan qayta tiriluvchi muqaddas olov qushi.",
+        "loot": "40,000 🪙 Oltin, 800 💎, Feniks Qanotli Zirhi"
+    },
+    "raid_leviathan": {
+        "id": "raid_leviathan",
+        "name": "🌊 Chuqur Dengiz Leviatani (Dunyo Bossi)",
+        "danger": "👑 GLOBAL REYD",
+        "habitat": "Dengiz tubidagi girdob",
+        "hp": 7500,
+        "atk": 205,
+        "def": 80,
+        "weakness": "Elektr chaqmoq runasi",
+        "desc": "Kemalarni yong'oqdek chaqib yuboruvchi bahaybat suv maxluqi.",
+        "loot": "45,000 🪙 Oltin, 900 💎, Leviatan Nayzasi"
+    },
+    "raid_titan_earth": {
+        "id": "raid_titan_earth",
+        "name": "🌋 Yer Silkituvchi Qoya Titani (Dunyo Bossi)",
+        "danger": "👑 GLOBAL REYD",
+        "habitat": "Toshlar vodiysi",
+        "hp": 9000,
+        "atk": 180,
+        "def": 100,
+        "weakness": "Bo'g'inlardagi kristallarni sindirish",
+        "desc": "Tog'dek gavdaga ega tosh dev, har bir qadami 8 ballik zilzila hosil qiladi.",
+        "loot": "60,000 🪙 Oltin, 1200 💎, Titan Monoliti"
+    },
+    "raid_grim_reaper": {
+        "id": "raid_grim_reaper",
+        "name": "💀 Azroilning Qora Soyasi (Dunyo Bossi)",
+        "danger": "👑 GLOBAL REYD",
+        "habitat": "Kultepa Qabristonining o'rtasi",
+        "hp": 7000,
+        "atk": 230,
+        "def": 65,
+        "weakness": "Muqaddas Nur va Farishta Toji",
+        "desc": "Ritsarlarning ruhini o'rib ketish uchun osmondan tushgan o'lim farishtasi.",
+        "loot": "55,000 🪙 Oltin, 1100 💎, O'lim O'rog'i"
+    },
+    "raid_nidhogg": {
+        "id": "raid_nidhogg",
+        "name": "🐍 Ildiz Kemiruvchi Yovvoyi Nidhogg",
+        "danger": "👑 GLOBAL REYD",
+        "habitat": "Boqiy Daraxt ildizlari",
+        "hp": 7800,
+        "atk": 215,
+        "def": 82,
+        "weakness": "Olovli flamberg va zahar",
+        "desc": "Dunyoni ushlab turuvchi daraxt ildizlarini kemiruvchi ajdaho ilon.",
+        "loot": "50,000 🪙 Oltin, 950 💎, Nidhogg Tangachalari"
     }
 }
+
+def get_monster(monster_id: str):
+    return BESTIARY_DATA.get(monster_id)
+
+def get_all_monsters():
+    return list(BESTIARY_DATA.values())
+
+def get_monsters_by_habitat(habitat_query: str):
+    return [m for m in BESTIARY_DATA.values() if habitat_query.lower() in m.get("habitat", "").lower()]

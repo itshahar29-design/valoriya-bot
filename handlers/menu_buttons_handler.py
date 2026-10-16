@@ -10,7 +10,9 @@ from database.db import (
 from game.events_engine import EventsEngine
 from game.bestiary import BESTIARY_DATA
 from game.items_db import ITEMS_CATALOG
-from game.lore_db import TAVERN_RUMORS, ANCIENT_SCROLLS
+from game.lore_db import TAVERN_RUMORS, ANCIENT_SCROLLS, TREASURE_MAPS
+from game.alchemy_db import ORES_DATABASE, HERBS_DATABASE, POTIONS_DATABASE, RUNES_RECIPES
+from game.quest_db import GLOBAL_BOUNTIES, MAIN_CAMPAIGN_QUESTS
 from keyboards.inline_menus import (
     main_menu_keyboard, battle_actions_keyboard,
     inventory_qol_keyboard, owner_god_mode_keyboard, class_selection_keyboard
@@ -739,8 +741,11 @@ async def cb_lore_hub(callback: CallbackQuery):
     )
     buttons = [
         [InlineKeyboardButton(text="👺 Maxluqlar Ensiklopediyasi (Bestiariy)", callback_data="lore_menu_bestiary")],
-        [InlineKeyboardButton(text="🗡 100+ Qurollar & Sovutlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="🗡 200+ Qurollar & Sovutlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="🧪 120+ Alximiya, Rudalar & Runalar", callback_data="lore_menu_alchemy")],
         [InlineKeyboardButton(text="📜 Qadimiy Qo'lyozmalar & Mayxona Sirlari", callback_data="lore_menu_scrolls")],
+        [InlineKeyboardButton(text="🗺 Qadimiy Xazina Xaritalari", callback_data="lore_menu_treasure_maps")],
+        [InlineKeyboardButton(text="🎯 Qidiruvdagi Jinoyatchilar (Bounties)", callback_data="lore_menu_bounties")],
         [InlineKeyboardButton(text="🦁 12 Imperiya Tarixi va Armiyalari", callback_data="lore_menu_kingdoms")],
         [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
     ]
@@ -906,6 +911,59 @@ async def cb_lore_single_kingdom(callback: CallbackQuery):
         [InlineKeyboardButton(text="🍯 Saroyga Borish (Paxta Qo'yish)", callback_data=f"flatter_{k_id}")],
         [InlineKeyboardButton(text="⬅️ Qirolliklar Ro'yxati", callback_data="lore_menu_kingdoms")],
         [InlineKeyboardButton(text="🏛 Bosh Arxiv", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.5 ALCHEMY & ORES LORE
+@menu_buttons_router.callback_query(F.data == "lore_menu_alchemy")
+async def cb_lore_alchemy_list(callback: CallbackQuery):
+    text = (
+        "🧪 *120+ ALXIMIYA, RESURSLAR VA RUNALAR ENSIKLOPEDIYASI* 🧪\n\n"
+        "Valoriya tog'lari va konlarida topiladigan nodir rudalar, "
+        "shifobaxsh giyohlar va qadimiy elementar runalar katalogi:\n\n"
+        f"🔩 *Rudalar soni:* {len(ORES_DATABASE)} xil metall\n"
+        f"🌿 *Alximik o'tlar:* {len(HERBS_DATABASE)} xil giyoh\n"
+        f"🧪 *Eliksir retseptlari:* {len(POTIONS_DATABASE)} xil damlama\n"
+        f"🔮 *Elementar afsunlar:* {len(RUNES_RECIPES)} xil formula\n\n"
+        "Alximiya va temirchilik mahoratingizni oshirish uchun shaxta va o'rmonlarda resurs to'plang!"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="⛏ Shaxtaga Borish", callback_data="prof_mine")],
+        [InlineKeyboardButton(text="🧪 Qozon Qaynatish", callback_data="prof_brew")],
+        [InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.6 TREASURE MAPS
+@menu_buttons_router.callback_query(F.data == "lore_menu_treasure_maps")
+async def cb_lore_treasure_maps(callback: CallbackQuery):
+    text = (
+        "🗺 *QADIMIY XAZINA XARITALARI* 🗺\n\n"
+        "Valoriya qit'asida qaroqchilar va qadimiy qirollar tomonidan ko'milgan oltinlar:\n\n"
+    )
+    for m in TREASURE_MAPS:
+        text += f"*{m['title']}*\n_{m['clue']}_\n💰 *Mukofot:* +{m['reward_gold']:,} 🪙 Oltin\n\n"
+
+    buttons = [
+        [InlineKeyboardButton(text="🧭 Sarguzashtga Chiqish", callback_data="adv_go")],
+        [InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.7 BOUNTIES (QIDIRUVDAGI JINOYATCHILAR)
+@menu_buttons_router.callback_query(F.data == "lore_menu_bounties")
+async def cb_lore_bounties(callback: CallbackQuery):
+    text = (
+        "🎯 *VALORIYA QIDIRUVDAGI JINOYATCHILARI (BOUNTIES)* 🎯\n\n"
+        "Qirollik sudi tomonidan e'lon qilingan qonundan tashqari kimsalar ro'yxati. "
+        "Ularni yenggan ritsarlar katta oltin mukofotlariga ega bo'ladilar:\n\n"
+    )
+    for b in GLOBAL_BOUNTIES[:6]:
+        text += f"👤 *{b['name']}* [{b['danger']}]\n📍 *Joylashuvi:* {b['location']}\n📜 *Jinoyati:* _{b['crime']}_\n💰 *Mukofot:* **+{b['reward_gold']:,} 🪙 Oltin**\n\n"
+
+    buttons = [
+        [InlineKeyboardButton(text="⚔️ Arenada Ov Qilish", callback_data="menu_arena")],
+        [InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")]
     ]
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 

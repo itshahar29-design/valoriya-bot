@@ -41,6 +41,76 @@ WOUND_TYPES = {
         "desc": "Qorong'ulik ruhingizni yemirmoqda. Hamyondan oltin yo'qoladi va Sanity o'z-o'zidan pasayadi.",
         "gold_leak_pct": 5,
         "cure_cost": 300
+    },
+    "gouged_eye": {
+        "id": "gouged_eye",
+        "name": "👁 O'yilgan Ko'z Jarohati",
+        "desc": "Ko'rish maydoni toraygan, kritik zarba berish imkoniyati 0 ga tushadi.",
+        "penalty_crit_pct": 50,
+        "cure_cost": 250
+    },
+    "torn_tendon": {
+        "id": "torn_tendon",
+        "name": "🦵 Uzilgan Boldir Payi",
+        "desc": "Oyoq paylari uzilgani sababli chaqqon harakatlana olmaysiz (-40% AGI).",
+        "penalty_agi_pct": 40,
+        "cure_cost": 220
+    },
+    "shattered_knee": {
+        "id": "shattered_knee",
+        "name": "🦴 Maydalangan Tizza Qopqog'i",
+        "desc": "Tizza suyagi singan, stamina tiklanishi 50% sekinlashadi.",
+        "penalty_stamina_pct": 30,
+        "cure_cost": 240
+    },
+    "broken_jaw": {
+        "id": "broken_jaw",
+        "name": "💀 Sinib Ketgan Jag' Suyagi",
+        "desc": "Jag' singan, ovqatlanish va damlamalarni ichish qiyinlashgan.",
+        "penalty_hp_pct": 15,
+        "cure_cost": 170
+    },
+    "pierced_lung": {
+        "id": "pierced_lung",
+        "name": "🫁 Teshilgan O'pka Yara",
+        "desc": "Har raundda ko'krakdan qon toshib -15 HP yo'qoladi.",
+        "hp_loss_round": 15,
+        "cure_cost": 350
+    },
+    "gangrene": {
+        "id": "gangrene",
+        "name": "🤢 Qorason / Chirigan Go'sht (Gangrena)",
+        "desc": "Jarohat joyi qorayib chirigan, zudlik bilan davolanmasa tana parchalanadi.",
+        "penalty_hp_pct": 35,
+        "cure_cost": 400
+    },
+    "burned_skin": {
+        "id": "burned_skin",
+        "name": "🔥 3-Darajali Kuyish Jarohati",
+        "desc": "Magma yoki olov ta'sirida teri kuygan, mudofaa -25% pasayadi.",
+        "penalty_def_pct": 25,
+        "cure_cost": 200
+    },
+    "paranoia_phobia": {
+        "id": "paranoia_phobia",
+        "name": "😱 Doimiy Ruhiy Paranoya",
+        "desc": "Ritsar hamma narsadan hadiksiraydi, jangda dushmanning dastlabki zarbasi 2x kuchli tuyuladi.",
+        "penalty_sanity_pct": 25,
+        "cure_cost": 260
+    },
+    "tremor_hands": {
+        "id": "tremor_hands",
+        "name": "🧤 Qaltiroq Qo'llar Sindromi",
+        "desc": "Asab tolalari zararlangani uchun qurol qo'ldan tushib ketish ehtimoli bor (-20% ATK).",
+        "penalty_atk_pct": 20,
+        "cure_cost": 190
+    },
+    "demon_possession": {
+        "id": "demon_possession",
+        "name": "😈 Iblisning Vujudga Joylashishi",
+        "desc": "Morvath sharpasi ichingizga kirgan: zarba +30 oshadi, ammo har soatda Sanity tushadi.",
+        "penalty_sanity_pct": 40,
+        "cure_cost": 500
     }
 }
 

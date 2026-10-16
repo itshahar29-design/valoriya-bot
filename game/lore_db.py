@@ -69,3 +69,45 @@ ANCIENT_SCROLLS = {
                 "Tavernada sharob ichish va ibodatxonada shifo topish ruhingizni qutqaradi."
     }
 }
+
+TREASURE_MAPS = [
+    {
+        "id": "map_sunken_ship",
+        "title": "🗺 Cho'kkan Qaroqchilar Kemasi Xaritasi",
+        "clue": "Dengiz portidan janubdagi qora qoyalar ostida. Suv toshqini paytida ko'milgan sandiq ochiladi.",
+        "reward_gold": 1200, "item": "shd_silver_mirror"
+    },
+    {
+        "id": "map_red_sands",
+        "title": "🗺 Qizil Qumlar Yashirin Xazinasi",
+        "clue": "Sahrodagi uchta xurmo daraxti orasidagi tosh tagida ko'milgan qadimiy fir'avn oltinlari.",
+        "reward_gold": 1500, "item": "aml_ruby_heart"
+    },
+    {
+        "id": "map_dragon_cave",
+        "title": "🗺 Ajdaho Qal'asi Yerosti Xaritasi",
+        "clue": "Vulqon og'zidan pastga tushuvchi ikkinchi g'or yo'lagi. Magma toshlari orasidagi temir sandiq.",
+        "reward_gold": 2500, "item": "wpn_obsidian_claymore"
+    },
+    {
+        "id": "map_ice_peak",
+        "title": "🗺 Muzlagan Arshning Yo'qolgan Toji",
+        "clue": "Qor bo'roni tinmaydigan qoyaning eng baland nuqtasida muzlagan qadimiy qabr.",
+        "reward_gold": 3000, "item": "hlm_frost_crown"
+    },
+    {
+        "id": "map_void_rift",
+        "title": "🗺 Bo'shliq Yorug'i Maxfiy Xaritasi",
+        "clue": "7-Qavat zindonidagi yashirin devor orqasida koinot changi bilan qoplangan sandiq.",
+        "reward_gold": 5000, "item": "aml_void_essence"
+    }
+]
+
+def get_all_treasure_maps():
+    return TREASURE_MAPS
+
+def get_treasure_map(map_id: str):
+    for m in TREASURE_MAPS:
+        if m["id"] == map_id:
+            return m
+    return None

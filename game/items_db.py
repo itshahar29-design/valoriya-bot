@@ -1,287 +1,2218 @@
 # =====================================================================
-# VALORIYA: MUKAMMAL ANJOMLAR VA RELIKVIYALAR BAZASI (100+ ANJOM)
+# VALORIYA: MUKAMMAL ANJOMLAR VA RELIKVIYALAR BAZASI (200 TA NOYOB ANJOM)
 # =====================================================================
 
 ITEMS_CATALOG = {
-    # -----------------------------------------------------------------
-    # 1. ASOSIY QUROLLAR (MAIN_HAND) - 25 TA
-    # -----------------------------------------------------------------
     "wpn_recruit_sword": {
-        "id": "wpn_recruit_sword", "slot": "main_hand", "name": "🗡 Yosh Ritsar Po'lat Qilichi",
-        "rarity": "common", "attack": 14, "defense": 1, "tier": 1, "price": 120,
+        "id": "wpn_recruit_sword",
+        "slot": "main_hand",
+        "name": "🗡 Yosh Ritsar Po'lat Qilichi",
+        "rarity": "common",
+        "attack": 14,
+        "defense": 1,
+        "tier": 1,
+        "price": 120,
         "desc": "Yangi qasamyod qilgan jangchilar uchun quyilgan oddiy damashq po'lati qilich."
     },
     "wpn_hunting_bow": {
-        "id": "wpn_hunting_bow", "slot": "main_hand", "name": "🏹 Qora Qayin Ov Kamoni",
-        "rarity": "common", "attack": 15, "defense": 0, "tier": 1, "price": 130,
+        "id": "wpn_hunting_bow",
+        "slot": "main_hand",
+        "name": "🏹 Qora Qayin Ov Kamoni",
+        "rarity": "common",
+        "attack": 15,
+        "defense": 0,
+        "tier": 1,
+        "price": 130,
         "desc": "O'rmon ovchilari tomonidan qattiq qayindan yasalgan egiluvchan kamon."
     },
     "wpn_apprentice_staff": {
-        "id": "wpn_apprentice_staff", "slot": "main_hand", "name": "🪄 Shogirdning Oqsoch Asosi",
-        "rarity": "common", "attack": 16, "defense": 0, "tier": 1, "price": 140,
+        "id": "wpn_apprentice_staff",
+        "slot": "main_hand",
+        "name": "🪄 Shogirdning Oqsoch Asosi",
+        "rarity": "common",
+        "attack": 16,
+        "defense": 0,
+        "tier": 1,
+        "price": 140,
         "desc": "Uchiga kichik mana kristalli o'rnatilgan yong'oq yog'ochli sehr hassasi."
     },
     "wpn_iron_mace": {
-        "id": "wpn_iron_mace", "slot": "main_hand", "name": "🔨 Og'ir Temir Cho'qmor",
-        "rarity": "common", "attack": 18, "defense": 2, "tier": 1, "price": 160,
+        "id": "wpn_iron_mace",
+        "slot": "main_hand",
+        "name": "🔨 Og'ir Temir Cho'qmor",
+        "rarity": "common",
+        "attack": 18,
+        "defense": 2,
+        "tier": 1,
+        "price": 160,
         "desc": "Zirhli dushmanlarning suyagini sindirish uchun quyilgan tikanli cho'qmor."
     },
     "wpn_bandit_dagger": {
-        "id": "wpn_bandit_dagger", "slot": "main_hand", "name": "🗡 Qaroqchi Qora Xanjari",
-        "rarity": "common", "attack": 17, "defense": 0, "tier": 1, "price": 150,
+        "id": "wpn_bandit_dagger",
+        "slot": "main_hand",
+        "name": "🗡 Qaroqchi Qora Xanjari",
+        "rarity": "common",
+        "attack": 17,
+        "defense": 0,
+        "tier": 1,
+        "price": 150,
         "desc": "Yashirincha orqadan urish uchun mo'ljallangan ikki tig'li o'tkir xanjar."
     },
+    "wpn_copper_spear": {
+        "id": "wpn_copper_spear",
+        "slot": "main_hand",
+        "name": "🔱 Mis Qirrali Sayyoh Nayzasi",
+        "rarity": "common",
+        "attack": 19,
+        "defense": 1,
+        "tier": 1,
+        "price": 170,
+        "desc": "Olis masofadan yirtqichlarni to'xtatish uchun mo'ljallangan mustahkam nayza."
+    },
+    "wpn_woodcutter_axe": {
+        "id": "wpn_woodcutter_axe",
+        "slot": "main_hand",
+        "name": "🪓 O'tinchining Katta Boltasi",
+        "rarity": "common",
+        "attack": 20,
+        "defense": 0,
+        "tier": 1,
+        "price": 175,
+        "desc": "Eman daraxtlarini yorishda ishlatiladigan og'ir ishchi bolta."
+    },
+    "wpn_bronze_gladius": {
+        "id": "wpn_bronze_gladius",
+        "slot": "main_hand",
+        "name": "⚔️ Qadimiy Bronza Gladius",
+        "rarity": "common",
+        "attack": 21,
+        "defense": 2,
+        "tier": 1,
+        "price": 185,
+        "desc": "Qadimgi imperiyaning qazilma xarobalaridan topilgan qisqa rimcha qilich."
+    },
+    "wpn_iron_pike": {
+        "id": "wpn_iron_pike",
+        "slot": "main_hand",
+        "name": "🔱 Soqchining Uzun Nayzasi",
+        "rarity": "common",
+        "attack": 22,
+        "defense": 1,
+        "tier": 1,
+        "price": 190,
+        "desc": "Qal'a darvozabonlarining otliqlar hujumini qaytaruvchi uchi o'tkir cho'ziq nayzasi."
+    },
+    "wpn_rusty_halberd": {
+        "id": "wpn_rusty_halberd",
+        "slot": "main_hand",
+        "name": "🪓 Zanglagan Gvardiyachi Halberdi",
+        "rarity": "common",
+        "attack": 23,
+        "defense": 2,
+        "tier": 1,
+        "price": 200,
+        "desc": "Og'ir, ammo halokatli zarbaga ega qadimiy soqchilar halberdi."
+    },
     "wpn_knight_broadsword": {
-        "id": "wpn_knight_broadsword", "slot": "main_hand", "name": "⚔️ Qirollik Keng Tig'li Qilichi",
-        "rarity": "rare", "attack": 32, "defense": 4, "tier": 2, "price": 450,
+        "id": "wpn_knight_broadsword",
+        "slot": "main_hand",
+        "name": "⚔️ Qirollik Keng Tig'li Qilichi",
+        "rarity": "rare",
+        "attack": 32,
+        "defense": 4,
+        "tier": 2,
+        "price": 450,
         "desc": "Valoriya gvardiyachilarining rasmiy xizmat quroli, oltin qoplamali dasta bilan bezatilgan."
     },
     "wpn_composite_longbow": {
-        "id": "wpn_composite_longbow", "slot": "main_hand", "name": "🏹 Murakkab Shoxli Uzun Kamon",
-        "rarity": "rare", "attack": 35, "defense": 0, "tier": 2, "price": 500,
+        "id": "wpn_composite_longbow",
+        "slot": "main_hand",
+        "name": "🏹 Murakkab Shoxli Uzun Kamon",
+        "rarity": "rare",
+        "attack": 35,
+        "defense": 0,
+        "tier": 2,
+        "price": 500,
         "desc": "Kiyik shoxi va po'latdan qatlamlab yasalgan, 200 qadamgacha zirhni teshuvchi kamon."
     },
     "wpn_viking_battleaxe": {
-        "id": "wpn_viking_battleaxe", "slot": "main_hand", "name": "🪓 Qishki Qoya Ikki Tig'li Boltasi",
-        "rarity": "rare", "attack": 40, "defense": 0, "tier": 2, "price": 550,
+        "id": "wpn_viking_battleaxe",
+        "slot": "main_hand",
+        "name": "🪓 Qishki Qoya Ikki Tig'li Boltasi",
+        "rarity": "rare",
+        "attack": 40,
+        "defense": 0,
+        "tier": 2,
+        "price": 550,
         "desc": "Qonxo'r Ragnar berserklari dushman qalqonlarini parchalashda ishlatadigan bahaybat bolta."
     },
     "wpn_silver_estoc": {
-        "id": "wpn_silver_estoc", "slot": "main_hand", "name": "🗡 Kumush Damashq Estoki",
-        "rarity": "rare", "attack": 36, "defense": 3, "tier": 2, "price": 600,
+        "id": "wpn_silver_estoc",
+        "slot": "main_hand",
+        "name": "🗡 Kumush Damashq Estoki",
+        "rarity": "rare",
+        "attack": 36,
+        "defense": 3,
+        "tier": 2,
+        "price": 600,
         "desc": "Uchi ignadek o'tkir, faqat po'lat bo'g'inlari orasiga zarba berish uchun silliqlangan qilich."
     },
+    "wpn_desert_scimitar": {
+        "id": "wpn_desert_scimitar",
+        "slot": "main_hand",
+        "name": "🌙 Sahro Badaviysi Shamshiri",
+        "rarity": "rare",
+        "attack": 38,
+        "defense": 2,
+        "tier": 2,
+        "price": 580,
+        "desc": "Egri egilgan o'tkir po'lat shamshir, dushmanning go'shtini bir hamlada shilib ketadi."
+    },
+    "wpn_war_morningstar": {
+        "id": "wpn_war_morningstar",
+        "slot": "main_hand",
+        "name": "🌟 Tikanli Urush Yulduzi",
+        "rarity": "rare",
+        "attack": 42,
+        "defense": 3,
+        "tier": 2,
+        "price": 620,
+        "desc": "Og'ir po'lat shar ustidagi qirrali tikanlar dushman bosh suyagini parchalamoqda."
+    },
+    "wpn_crusader_sword": {
+        "id": "wpn_crusader_sword",
+        "slot": "main_hand",
+        "name": "✝️ Salibchi Jangchisi Qilichi",
+        "rarity": "rare",
+        "attack": 39,
+        "defense": 5,
+        "tier": 2,
+        "price": 640,
+        "desc": "Muqaddas qasamyod qilingan, zulmat maxluqlariga qo'shimcha zarba beruvchi qilich."
+    },
+    "wpn_partisan_lance": {
+        "id": "wpn_partisan_lance",
+        "slot": "main_hand",
+        "name": "🔱 Partisan Qo'mondoni Nayzasi",
+        "rarity": "rare",
+        "attack": 41,
+        "defense": 4,
+        "tier": 2,
+        "price": 650,
+        "desc": "Yon tomonlarida ikki qanotli tig'i bor, ot ustidagi dushmanni yiqituvchi nayza."
+    },
+    "wpn_spiked_club": {
+        "id": "wpn_spiked_club",
+        "slot": "main_hand",
+        "name": "🏏 Og'ir Titan Tikanli To'qmoq",
+        "rarity": "rare",
+        "attack": 44,
+        "defense": 1,
+        "tier": 2,
+        "price": 670,
+        "desc": "Yovvoyi tog' gigantlari suyagidan va temir mixlardan tayyorlangan to'qmoq."
+    },
+    "wpn_assassin_kris": {
+        "id": "wpn_assassin_kris",
+        "slot": "main_hand",
+        "name": "🐍 Zaharli Ilonsimon Kris",
+        "rarity": "rare",
+        "attack": 43,
+        "defense": 0,
+        "tier": 2,
+        "price": 690,
+        "desc": "To'lqinsimon xanjar, har bir zarbada dushman jarohatiga qora zahar singdiradi."
+    },
     "wpn_flame_flamberge": {
-        "id": "wpn_flame_flamberge", "slot": "main_hand", "name": "🔥 To'lqinsimon Olov Flamberg",
-        "rarity": "epic", "attack": 55, "defense": 5, "tier": 3, "price": 1200,
+        "id": "wpn_flame_flamberge",
+        "slot": "main_hand",
+        "name": "🔥 To'lqinsimon Olov Flamberg",
+        "rarity": "epic",
+        "attack": 55,
+        "defense": 5,
+        "tier": 3,
+        "price": 1200,
         "desc": "Tig'i ilonsimon egri quyilgan ikki qo'lli gigant qilich. Yetkazilgan jarohat uzoq vaqt bitmaydi."
     },
     "wpn_shadow_stiletto": {
-        "id": "wpn_shadow_stiletto", "slot": "main_hand", "name": "🌑 Tumanli Qasr Stileti",
-        "rarity": "epic", "attack": 58, "defense": 0, "tier": 3, "price": 1300,
-        "desc": "Qora ilon zahari shimdirilgan, kiyimlarga tovushsiz kiruvchi qotillar quroli."
+        "id": "wpn_shadow_stiletto",
+        "slot": "main_hand",
+        "name": "🌑 Tumanli Qasr Stileti",
+        "rarity": "epic",
+        "attack": 52,
+        "defense": 2,
+        "tier": 3,
+        "price": 1150,
+        "desc": "Yengil va qora mat po'latdan ishlangan. Kritik zarba berish imkoniyatini keskin oshiradi."
     },
-    "wpn_thunder_halberd": {
-        "id": "wpn_thunder_halberd", "slot": "main_hand", "name": "⚡️ Momaqaldiroq Gvardiya Halberdi",
-        "rarity": "epic", "attack": 62, "defense": 8, "tier": 3, "price": 1450,
-        "desc": "Otlarni yerga qulatuvchi uzun nayza va bolta birikmasi. Momaqaldiroqdek jaranglaydi."
+    "wpn_frost_glaive": {
+        "id": "wpn_frost_glaive",
+        "slot": "main_hand",
+        "name": "❄️ Muzlagan Shimol Gleyvasi",
+        "rarity": "epic",
+        "attack": 58,
+        "defense": 6,
+        "tier": 3,
+        "price": 1300,
+        "desc": "Uzun dastali pichoqsimon qurol. Muzli rune bilan boyitilgan, raqib harakatini muzlatadi."
     },
-    "wpn_sun_mace": {
-        "id": "wpn_sun_mace", "slot": "main_hand", "name": "☀️ Quyosh Nurli Muqaddas Gurzi",
-        "rarity": "epic", "attack": 56, "defense": 10, "tier": 3, "price": 1400,
-        "desc": "Nur ordenining patriarxlari tomonidan duo o'qib toblangan, o'liklar va jinlarga 2x zarar beruvchi gurzi."
+    "wpn_thunder_warhammer": {
+        "id": "wpn_thunder_warhammer",
+        "slot": "main_hand",
+        "name": "⚡️ Momaqaldiroq Urush Bolg'asi",
+        "rarity": "epic",
+        "attack": 65,
+        "defense": 4,
+        "tier": 3,
+        "price": 1450,
+        "desc": "Og'ir po'lat to'qmoq, zarba berilganda quloqni qomatga keltiruvchi momaqaldiroq sadosi chiqadi."
     },
-    "wpn_blooddrinker_scythe": {
-        "id": "wpn_blooddrinker_scythe", "slot": "main_hand", "name": "🩸 Qonxo'r Malakor O'rog'i",
-        "rarity": "legendary", "attack": 85, "defense": 5, "tier": 4, "price": 3200,
-        "desc": "Kultepa qabristonining qadimiy hukmdori o'rog'i. Har zarbada dushman qonini so'rib egasiga jon beradi."
+    "wpn_blood_scythe": {
+        "id": "wpn_blood_scythe",
+        "slot": "main_hand",
+        "name": "🩸 Qonli O'rimchi O'rog'i",
+        "rarity": "epic",
+        "attack": 60,
+        "defense": 0,
+        "tier": 3,
+        "price": 1350,
+        "desc": "Zulmat kultistlari tomonidan inson qoniga botirib qilingan dahshatli ikki qo'lli o'roq."
     },
-    "wpn_dragon_fang_spear": {
-        "id": "wpn_dragon_fang_spear", "slot": "main_hand", "name": "🐉 Ajdaho Qoziq Tishi Nayzasi",
-        "rarity": "legendary", "attack": 92, "defense": 8, "tier": 4, "price": 3600,
-        "desc": "Qizil ajdahoning eng uzun tishidan yo'nilgan, yonib turuvchi olov nayza."
+    "wpn_wind_recurve": {
+        "id": "wpn_wind_recurve",
+        "slot": "main_hand",
+        "name": "💨 Shamol Chaqqoni Bukma Kamon",
+        "rarity": "epic",
+        "attack": 56,
+        "defense": 1,
+        "tier": 3,
+        "price": 1250,
+        "desc": "Shamol tezligida ketma-ket uchta o'q otishga imkon beruvchi elflar kamoni."
     },
-    "wpn_frostmourne_blade": {
-        "id": "wpn_frostmourne_blade", "slot": "main_hand", "name": "❄️ Boqiy Ayoz Qilichi",
-        "rarity": "legendary", "attack": 90, "defense": 12, "tier": 4, "price": 3500,
-        "desc": "Qishki Qoyaning tubida abadiy muzlikdan kesib olingan. Teggan har qanday tirik vujudni muzlatadi."
+    "wpn_obsidian_claymore": {
+        "id": "wpn_obsidian_claymore",
+        "slot": "main_hand",
+        "name": "🌋 Vulqon Obsidiyan Kleymori",
+        "rarity": "epic",
+        "attack": 68,
+        "defense": 6,
+        "tier": 3,
+        "price": 1500,
+        "desc": "Qotgan magmadan yo'nilgan bahaybat qilich, zarba berilganda qizigan uchqunlar sachraydi."
     },
-    "wpn_excalibur_valoria": {
-        "id": "wpn_excalibur_valoria", "slot": "main_hand", "name": "👑 Muqaddas Ekskalibur (Qirollik Nuri)",
-        "rarity": "mythic", "attack": 135, "defense": 25, "tier": 5, "price": 8500,
-        "desc": "Valoriya qit'asining birinchi qiroli toshdan sug'urib olgan afsonaviy oliy qilich."
+    "wpn_runic_halberd": {
+        "id": "wpn_runic_halberd",
+        "slot": "main_hand",
+        "name": "🔮 Qadimiy Runik O'tkir Halberd",
+        "rarity": "epic",
+        "attack": 62,
+        "defense": 7,
+        "tier": 3,
+        "price": 1400,
+        "desc": "Keng qamrovli hujum va mukammal mudofaa ta'minlovchi sehrli halberd."
     },
-    "wpn_void_rend_katana": {
-        "id": "wpn_void_rend_katana", "slot": "main_hand", "name": "🌌 Bo'shliq Yoruvchi Qora Katana",
-        "rarity": "mythic", "attack": 145, "defense": 10, "tier": 5, "price": 9200,
-        "desc": "Fazoning o'zini kesib yuboruvchi, yorug'likni yutuvchi qora tuynuk metallidan yasalgan."
+    "wpn_executioner_blade": {
+        "id": "wpn_executioner_blade",
+        "slot": "main_hand",
+        "name": "🪓 Qallob Jallodning Og'ir Tig'i",
+        "rarity": "epic",
+        "attack": 70,
+        "defense": 0,
+        "tier": 3,
+        "price": 1600,
+        "desc": "Uchi tekis kesilgan bahaybat qilich, dushman bo'yniga tushganda bir zarbada boshini uzadi."
     },
-    "wpn_creator_wrath_blade": {
-        "id": "wpn_creator_wrath_blade", "slot": "main_hand", "name": "⚡️ Yaratuvchining Qonli Qasosi (+999)",
-        "rarity": "divine", "attack": 999, "defense": 150, "tier": 6, "price": 99999,
-        "desc": "Oliy Yaratuvchi (@NAKAMA_02) ning shaxsiy ilohiy qilichi. Bitta zarbada qit'alarni ikkiga bo'ladi."
+    "wpn_abyssal_dagger": {
+        "id": "wpn_abyssal_dagger",
+        "slot": "main_hand",
+        "name": "🌌 Qora Tublik Sehrli Xanjari",
+        "rarity": "epic",
+        "attack": 54,
+        "defense": 3,
+        "tier": 3,
+        "price": 1280,
+        "desc": "Zulmat qa'ridan olingan qora metall xanjar, dushmanning staminasini so'rib oladi."
     },
-
-    # -----------------------------------------------------------------
-    # 2. TANA SOVUTLARI (CHESTPLATE) - 20 TA
-    # -----------------------------------------------------------------
+    "wpn_dragon_slayer": {
+        "id": "wpn_dragon_slayer",
+        "slot": "main_hand",
+        "name": "🐉 Bahamut Qotili Buyuk Qilich",
+        "rarity": "legendary",
+        "attack": 95,
+        "defense": 12,
+        "tier": 4,
+        "price": 3200,
+        "desc": "Qadimiy ajdaho suyagi va qonidan yasalgan afsonaviy qurol. Zirhlarni yog'dek kesib o'tadi."
+    },
+    "wpn_excalibur_shard": {
+        "id": "wpn_excalibur_shard",
+        "slot": "main_hand",
+        "name": "✨ Muqaddas Qirolning Yorug'lik Qilichi",
+        "rarity": "legendary",
+        "attack": 90,
+        "defense": 15,
+        "tier": 4,
+        "price": 3100,
+        "desc": "Ko'l parisi tomonidan taqdim etilgan afsonaviy pichoq parchasi, egasiga ilohiy jasorat beradi."
+    },
+    "wpn_demon_scythe": {
+        "id": "wpn_demon_scythe",
+        "slot": "main_hand",
+        "name": "💀 Iblis Morvathning O'lim O'rog'i",
+        "rarity": "legendary",
+        "attack": 105,
+        "defense": 0,
+        "tier": 4,
+        "price": 3500,
+        "desc": "Iblislar dunyosidan chaqirilgan azroil quroli, har bir urilgan zarbadan lifesteal beradi."
+    },
+    "wpn_titan_fist": {
+        "id": "wpn_titan_fist",
+        "slot": "main_hand",
+        "name": "🥊 Titan Yer Silkituvchi Temir Mushti",
+        "rarity": "legendary",
+        "attack": 98,
+        "defense": 14,
+        "tier": 4,
+        "price": 3300,
+        "desc": "Ulkan tosh gigantining qo'lidan quyilgan g'ayritabiiy kinetik kuch manbai."
+    },
+    "wpn_phoenix_bow": {
+        "id": "wpn_phoenix_bow",
+        "slot": "main_hand",
+        "name": "🔥 Boqiy Feniks Qanotli Olov Kamoni",
+        "rarity": "legendary",
+        "attack": 92,
+        "defense": 5,
+        "tier": 4,
+        "price": 3150,
+        "desc": "O'qlari doimo olovda yonib boradi va nishonni bir zumda kulga aylantiradi."
+    },
+    "wpn_leviathan_trident": {
+        "id": "wpn_leviathan_trident",
+        "slot": "main_hand",
+        "name": "🌊 Dengiz Leviatani Uch Shoxli Nayzasi",
+        "rarity": "legendary",
+        "attack": 96,
+        "defense": 10,
+        "tier": 4,
+        "price": 3250,
+        "desc": "Suv tubidagi bahaybat maxluqning quroli, zarbasi to'lqin kabi dushmanni yiqitadi."
+    },
+    "wpn_celestial_mace": {
+        "id": "wpn_celestial_mace",
+        "slot": "main_hand",
+        "name": "⭐ Yulduzlar Nuri Samoviy Cho'qmori",
+        "rarity": "legendary",
+        "attack": 100,
+        "defense": 12,
+        "tier": 4,
+        "price": 3400,
+        "desc": "Farishtalar temirxonasida osmon toshidan bolg'alangan nurli cho'qmor."
+    },
+    "wpn_shadow_reaper": {
+        "id": "wpn_shadow_reaper",
+        "slot": "main_hand",
+        "name": "🌑 Soya Hukmdori Ikki Tig'li O'roq",
+        "rarity": "legendary",
+        "attack": 102,
+        "defense": 4,
+        "tier": 4,
+        "price": 3450,
+        "desc": "Dushman ko'ziga ko'rinmas tezlikda harakatlanuvchi qorong'ulik quroli."
+    },
+    "wpn_valkyrie_spear": {
+        "id": "wpn_valkyrie_spear",
+        "slot": "main_hand",
+        "name": "🕊 Valkiriya Qasamyod Nayzasi",
+        "rarity": "legendary",
+        "attack": 94,
+        "defense": 11,
+        "tier": 4,
+        "price": 3180,
+        "desc": "Jang maydonida halok bo'lgan qahramonlarni jannatga eltuvchi jangovar muqaddas nayza."
+    },
+    "wpn_void_edge": {
+        "id": "wpn_void_edge",
+        "slot": "main_hand",
+        "name": "🌌 Bo'shliq Falajlovchi Tig'i",
+        "rarity": "legendary",
+        "attack": 104,
+        "defense": 8,
+        "tier": 4,
+        "price": 3600,
+        "desc": "Vaqt va makonni tilib o'tuvchi sirli kosmik jism parchasi."
+    },
+    "wpn_creator_blade": {
+        "id": "wpn_creator_blade",
+        "slot": "main_hand",
+        "name": "👑 Oliy Yaratuvchi Qahri (God-Tier)",
+        "rarity": "mythic",
+        "attack": 180,
+        "defense": 50,
+        "tier": 5,
+        "price": 10000,
+        "desc": "Valoriya borlig'ini ushlab turuvchi ilohiy qadimgi qurol. Birgina zarbasi butun tog'ni ikkiga bo'ladi."
+    },
+    "wpn_genesis_bow": {
+        "id": "wpn_genesis_bow",
+        "slot": "main_hand",
+        "name": "🌟 Borliq Ibtidosi Kamoni",
+        "rarity": "mythic",
+        "attack": 175,
+        "defense": 40,
+        "tier": 5,
+        "price": 9500,
+        "desc": "Yulduzlar changidan to'qilgan kamon, otilgan o'q hech qachon xato ketmaydi."
+    },
+    "wpn_oblivion_scythe": {
+        "id": "wpn_oblivion_scythe",
+        "slot": "main_hand",
+        "name": "💀 Qora Bo'shliq va Fano O'rog'i",
+        "rarity": "mythic",
+        "attack": 195,
+        "defense": 20,
+        "tier": 5,
+        "price": 11000,
+        "desc": "Koinotdagi barcha tirik jonni yo'qlikka eltuvchi mutloq o'lim timsoli."
+    },
+    "wpn_ruler_scepter": {
+        "id": "wpn_ruler_scepter",
+        "slot": "main_hand",
+        "name": "👑 12 Imperiya Birlashgan Saltanat Asosi",
+        "rarity": "mythic",
+        "attack": 170,
+        "defense": 60,
+        "tier": 5,
+        "price": 9800,
+        "desc": "Barcha qirollar bosh egadigan, dushmanni bir so'z bilan tiz cho'ktiruvchi saltanat hassasi."
+    },
+    "wpn_armageddon_hammer": {
+        "id": "wpn_armageddon_hammer",
+        "slot": "main_hand",
+        "name": "🌋 Oxirzamon Olovli Bolg'asi",
+        "rarity": "mythic",
+        "attack": 200,
+        "defense": 30,
+        "tier": 5,
+        "price": 12000,
+        "desc": "Yer qa'ridagi barcha vulqonlarni bitta zarba bilan uyg'otuvchi fano bolg'asi."
+    },
+    "wpn_time_cleaver": {
+        "id": "wpn_time_cleaver",
+        "slot": "main_hand",
+        "name": "⏳ Vaqt Oqimi Qilichi",
+        "rarity": "mythic",
+        "attack": 185,
+        "defense": 45,
+        "tier": 5,
+        "price": 10500,
+        "desc": "Vaqtni to'xtatib dushmanga o'nlab zarbalarni bir soniyada yo'llovchi afsona."
+    },
+    "wpn_astral_lance": {
+        "id": "wpn_astral_lance",
+        "slot": "main_hand",
+        "name": "💫 Astral Dunyolar Nayzasi",
+        "rarity": "mythic",
+        "attack": 178,
+        "defense": 55,
+        "tier": 5,
+        "price": 10200,
+        "desc": "Har qanday moddiy va nomoddiy to'siqlarni teshuvchi ilohiy nurli nayza."
+    },
+    "wpn_abyss_monolith": {
+        "id": "wpn_abyss_monolith",
+        "slot": "main_hand",
+        "name": "🪐 Bo'shliq Monoliti Ikki Qo'lli Kleymori",
+        "rarity": "mythic",
+        "attack": 210,
+        "defense": 25,
+        "tier": 5,
+        "price": 12500,
+        "desc": "Og'irligi bir tonnaga teng, zarbasidan yer yorilib ketadigan dahshatli qurol."
+    },
+    "wpn_seraph_blade": {
+        "id": "wpn_seraph_blade",
+        "slot": "main_hand",
+        "name": "👼 Olti Qanotli Serafim Qilichi",
+        "rarity": "mythic",
+        "attack": 188,
+        "defense": 48,
+        "tier": 5,
+        "price": 10800,
+        "desc": "Farishtalar qo'shini bosh qo'mondonining o'tli qilichi."
+    },
+    "wpn_eternal_valoriya": {
+        "id": "wpn_eternal_valoriya",
+        "slot": "main_hand",
+        "name": "🏆 Boqiy Valoriya Muzaffar Shamshiri",
+        "rarity": "mythic",
+        "attack": 220,
+        "defense": 50,
+        "tier": 5,
+        "price": 15000,
+        "desc": "Qirollikning eng qudratli ritsari uchun atalgan yengilmaslik ramzi."
+    },
+    "shd_wood_buckler": {
+        "id": "shd_wood_buckler",
+        "slot": "off_hand",
+        "name": "🛡 Oddiy Yog'och Bakler Qalqoni",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 8,
+        "tier": 1,
+        "price": 90,
+        "desc": "Qalin eman taxtasidan yasalgan, yangi jangchilar qalqoni."
+    },
+    "shd_iron_round": {
+        "id": "shd_iron_round",
+        "slot": "off_hand",
+        "name": "🛡 Dumaloq Temir Jang Qalqoni",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 12,
+        "tier": 1,
+        "price": 140,
+        "desc": "Yengil piyodalar uchun quyilgan mustahkam temir qalqon."
+    },
+    "shd_hide_target": {
+        "id": "shd_hide_target",
+        "slot": "off_hand",
+        "name": "🛡 Qalin Buqa Terisi Qalqoni",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 10,
+        "tier": 1,
+        "price": 110,
+        "desc": "Kamon o'qlarini o'ziga yutib oluvchi yengil qalqon."
+    },
+    "shd_bronze_parry": {
+        "id": "shd_bronze_parry",
+        "slot": "off_hand",
+        "name": "🗡 Bronza Parriy Xanjari",
+        "rarity": "common",
+        "attack": 8,
+        "defense": 4,
+        "tier": 1,
+        "price": 130,
+        "desc": "Chap qo'lda dushman qilichini qaytarish uchun mo'ljallangan qurol."
+    },
+    "shd_spiked_buckler": {
+        "id": "shd_spiked_buckler",
+        "slot": "off_hand",
+        "name": "🛡 Tikanli Cho'chqa Temir Bakleri",
+        "rarity": "common",
+        "attack": 4,
+        "defense": 9,
+        "tier": 1,
+        "price": 150,
+        "desc": "Mudofaadan tashqari dushmanning yuziga zarba berish uchun tikanli qalqon."
+    },
+    "shd_knight_heater": {
+        "id": "shd_knight_heater",
+        "slot": "off_hand",
+        "name": "🛡 Ritsarlik Uchburchak Qalqoni",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 22,
+        "tier": 2,
+        "price": 400,
+        "desc": "Valoriya gerbi tushirilgan, otliq janglar uchun klassik qalqon."
+    },
+    "shd_viking_round": {
+        "id": "shd_viking_round",
+        "slot": "off_hand",
+        "name": "🛡 Shimol Dengiz Bo'risi Qalqoni",
+        "rarity": "rare",
+        "attack": 3,
+        "defense": 24,
+        "tier": 2,
+        "price": 460,
+        "desc": "Qonxo'r berserklarning qizil-oq bo'yalgan mustahkam eman qalqoni."
+    },
+    "shd_tower_scutum": {
+        "id": "shd_tower_scutum",
+        "slot": "off_hand",
+        "name": "🏰 Rimcha Ulkan Minora Qalqoni",
+        "rarity": "rare",
+        "attack": 0,
+        "defense": 28,
+        "tier": 2,
+        "price": 520,
+        "desc": "Butun gavdani kamon yomg'iridan to'liq to'suvchi og'ir skutum."
+    },
+    "shd_silver_mirror": {
+        "id": "shd_silver_mirror",
+        "slot": "off_hand",
+        "name": "🪞 Kumush Silliq Qaytaruvchi Qalqon",
+        "rarity": "rare",
+        "attack": 0,
+        "defense": 20,
+        "tier": 2,
+        "price": 480,
+        "desc": "Sehrli nurlarni dushmanning o'ziga aks ettiruvchi kumush qalqon."
+    },
+    "shd_cross_shield": {
+        "id": "shd_cross_shield",
+        "slot": "off_hand",
+        "name": "✝️ Qizil Xoch Qasamyod Qalqoni",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 25,
+        "tier": 2,
+        "price": 500,
+        "desc": "Muqaddas jangchilarning dushmanga qarshi iroda qalqoni."
+    },
+    "shd_flame_guard": {
+        "id": "shd_flame_guard",
+        "slot": "off_hand",
+        "name": "🔥 Olov Yutuvchi Magma Qalqoni",
+        "rarity": "epic",
+        "attack": 5,
+        "defense": 38,
+        "tier": 3,
+        "price": 1100,
+        "desc": "Vulqon toshidan ishlangan, olovli zarbalarni 50% ga kuchsizlantiradi."
+    },
+    "shd_frost_aegis": {
+        "id": "shd_frost_aegis",
+        "slot": "off_hand",
+        "name": "❄️ Qishki Muz Qoya Egisi",
+        "rarity": "epic",
+        "attack": 3,
+        "defense": 40,
+        "tier": 3,
+        "price": 1180,
+        "desc": "Dushman unga qurol urganida quroli muzlab staminasi yo'qoladi."
+    },
+    "shd_lion_crest": {
+        "id": "shd_lion_crest",
+        "slot": "off_hand",
+        "name": "🦁 Oltin Arslon Oliy Qo'rg'on Qalqoni",
+        "rarity": "epic",
+        "attack": 4,
+        "defense": 42,
+        "tier": 3,
+        "price": 1250,
+        "desc": "Imperator Valter gvardiyasi elita ritsarlarining qalqoni."
+    },
+    "shd_dragon_wing": {
+        "id": "shd_dragon_wing",
+        "slot": "off_hand",
+        "name": "🐉 Ajdaho Qanoti Suyakli Pavisi",
+        "rarity": "epic",
+        "attack": 2,
+        "defense": 45,
+        "tier": 3,
+        "price": 1320,
+        "desc": "Ajdahoning suyaklari va qattiq terisidan tayyorlangan bahaybat to'siq."
+    },
+    "shd_grim_grimoire": {
+        "id": "shd_grim_grimoire",
+        "slot": "off_hand",
+        "name": "📖 Zulmat Kultisti Qora Grimuari",
+        "rarity": "epic",
+        "attack": 15,
+        "defense": 25,
+        "tier": 3,
+        "price": 1200,
+        "desc": "Chap qo'lda ushlab lanatli duolar o'qiladigan qonli kitob."
+    },
+    "shd_titan_bulwark": {
+        "id": "shd_titan_bulwark",
+        "slot": "off_hand",
+        "name": "🌋 Titan Buzilmas Qo'rg'oni",
+        "rarity": "legendary",
+        "attack": 5,
+        "defense": 65,
+        "tier": 4,
+        "price": 2800,
+        "desc": "Buzib bo'lmas tog' jinsidan quyilgan, har qanday hujumni to'xtatuvchi qalqon."
+    },
+    "shd_divine_aegis": {
+        "id": "shd_divine_aegis",
+        "slot": "off_hand",
+        "name": "✨ Ilohiy Farishtalar Qalqoni",
+        "rarity": "legendary",
+        "attack": 8,
+        "defense": 62,
+        "tier": 4,
+        "price": 2750,
+        "desc": "Egasi atrofiga muqaddas himoya aurasini hosil qiladi."
+    },
+    "shd_abyssal_ward": {
+        "id": "shd_abyssal_ward",
+        "slot": "off_hand",
+        "name": "🌌 Qora Tublik Yutuvchi Pardasi",
+        "rarity": "legendary",
+        "attack": 10,
+        "defense": 60,
+        "tier": 4,
+        "price": 2900,
+        "desc": "Har qanday sehrli zarbani o'z qorniga yutib yuboruvchi qora tuynuk qalqoni."
+    },
+    "shd_serpent_fang": {
+        "id": "shd_serpent_fang",
+        "slot": "off_hand",
+        "name": "🐍 Gigant Basilisk Suyak Qalqoni",
+        "rarity": "legendary",
+        "attack": 12,
+        "defense": 58,
+        "tier": 4,
+        "price": 2700,
+        "desc": "Dushman zarbasi qaytarilganda unga zaharli tikanlar sanchiladi."
+    },
+    "shd_phoenix_rebirth": {
+        "id": "shd_phoenix_rebirth",
+        "slot": "off_hand",
+        "name": "🔥 Feniksning O'lmas Qanot Qalqoni",
+        "rarity": "legendary",
+        "attack": 6,
+        "defense": 64,
+        "tier": 4,
+        "price": 3000,
+        "desc": "Halokatli zarbani qaytarib egasiga +50 jon beradi."
+    },
+    "shd_god_aegis": {
+        "id": "shd_god_aegis",
+        "slot": "off_hand",
+        "name": "👑 Oliy Yaratuvchi Aegisi (God-Tier)",
+        "rarity": "mythic",
+        "attack": 25,
+        "defense": 120,
+        "tier": 5,
+        "price": 8000,
+        "desc": "Dunyoni fano to'lqinlaridan asrab turuvchi mutlaq himoya qalqoni."
+    },
+    "shd_celestial_sanctum": {
+        "id": "shd_celestial_sanctum",
+        "slot": "off_hand",
+        "name": "⭐ Samoviy Arsh Qo'rg'oni",
+        "rarity": "mythic",
+        "attack": 20,
+        "defense": 115,
+        "tier": 5,
+        "price": 7500,
+        "desc": "Yulduzlar energiyasi bilan dushmanning barcha zarbalarini qaytaradi."
+    },
+    "shd_void_nullifier": {
+        "id": "shd_void_nullifier",
+        "slot": "off_hand",
+        "name": "🪐 Bo'shliq Yo'qotuvchisi",
+        "rarity": "mythic",
+        "attack": 30,
+        "defense": 110,
+        "tier": 5,
+        "price": 7800,
+        "desc": "Hujum qilgan dushmanning qurolini mo'rtlashtirib sindiradi."
+    },
+    "shd_eternal_bastion": {
+        "id": "shd_eternal_bastion",
+        "slot": "off_hand",
+        "name": "🏰 Boqiy Valoriya Poydevori",
+        "rarity": "mythic",
+        "attack": 15,
+        "defense": 130,
+        "tier": 5,
+        "price": 8500,
+        "desc": "Qal'a devorlaridek mahkam, buzib bo'lmas po'lat himoya."
+    },
+    "shd_omega_mirror": {
+        "id": "shd_omega_mirror",
+        "slot": "off_hand",
+        "name": "🪞 Omega Fano Ko'zgusi",
+        "rarity": "mythic",
+        "attack": 40,
+        "defense": 105,
+        "tier": 5,
+        "price": 9000,
+        "desc": "Dushman yetkazgan zararning 50 foizini to'g'ridan-to'g'ri uning o'ziga uradi."
+    },
+    "hlm_leather_cap": {
+        "id": "hlm_leather_cap",
+        "slot": "head",
+        "name": "🧢 Qalin Charm Ovchi Qalpog'i",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 4,
+        "tier": 1,
+        "price": 80,
+        "desc": "Yengil va elastik, boshni tirnalishlardan asraydi."
+    },
+    "hlm_copper_circlet": {
+        "id": "hlm_copper_circlet",
+        "slot": "head",
+        "name": "👑 Mis Halqa Boshbog'",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 3,
+        "tier": 1,
+        "price": 85,
+        "desc": "Oddiy jangchining peshonasini himoyalovchi mis tasmacha."
+    },
+    "hlm_iron_skullcap": {
+        "id": "hlm_iron_skullcap",
+        "slot": "head",
+        "name": "🪖 Temir Yarim Shlem",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 7,
+        "tier": 1,
+        "price": 120,
+        "desc": "Bosh chanog'ining yuqori qismini bolg'a zarbasidan asrovchi temir do'ppi."
+    },
+    "hlm_padded_coif": {
+        "id": "hlm_padded_coif",
+        "slot": "head",
+        "name": "🧣 Paxtali Zanjirli Koif",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 6,
+        "tier": 1,
+        "price": 100,
+        "desc": "Dubulg'a ostidan kiyiladigan qalin himoya qoplamasi."
+    },
+    "hlm_bandit_cowl": {
+        "id": "hlm_bandit_cowl",
+        "slot": "head",
+        "name": "🥷 Qaroqchi Qora Niqobi",
+        "rarity": "common",
+        "attack": 2,
+        "defense": 4,
+        "tier": 1,
+        "price": 110,
+        "desc": "Kechasi yuzni yashirib, soyada yurish imkonini beruvchi charm niqob."
+    },
+    "hlm_nasal_helmet": {
+        "id": "hlm_nasal_helmet",
+        "slot": "head",
+        "name": "🪖 Burun Himoyali Norman Dubulg'asi",
+        "rarity": "rare",
+        "attack": 0,
+        "defense": 15,
+        "tier": 2,
+        "price": 350,
+        "desc": "Yuzning o'rtasiga tushuvchi qilich zarbasini qaytaruvchi po'lat tilchali dubulga."
+    },
+    "hlm_crusader_greathelm": {
+        "id": "hlm_crusader_greathelm",
+        "slot": "head",
+        "name": "✝️ Ulug' Ritsarlik Katta Dubulg'asi",
+        "rarity": "rare",
+        "attack": 1,
+        "defense": 18,
+        "tier": 2,
+        "price": 420,
+        "desc": "Faqat ko'z uchun tirqishlari bor og'ir chelaksimon po'lat bosh kiyim."
+    },
+    "hlm_viking_horned": {
+        "id": "hlm_viking_horned",
+        "slot": "head",
+        "name": "🐂 Qonxo'r Shoxli Berserk Shlemi",
+        "rarity": "rare",
+        "attack": 4,
+        "defense": 14,
+        "tier": 2,
+        "price": 390,
+        "desc": "Dushman yuragiga vahima soluvchi bahaybat tog' qo'chqori shoxlari o'rnatilgan shlem."
+    },
+    "hlm_desert_turban": {
+        "id": "hlm_desert_turban",
+        "slot": "head",
+        "name": "👳‍♂️ Sahro Shamoli Po'lat Sallasi",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 13,
+        "tier": 2,
+        "price": 370,
+        "desc": "Quyosh taftidan va o'tkir shamshirlardan saqlovchi po'lat to'rli salla."
+    },
+    "hlm_barbute_visor": {
+        "id": "hlm_barbute_visor",
+        "slot": "head",
+        "name": "🪖 Italiyancha Barbyut Dubulg'asi",
+        "rarity": "rare",
+        "attack": 0,
+        "defense": 16,
+        "tier": 2,
+        "price": 400,
+        "desc": "T shaklidagi ko'rish tirqishiga ega chiroyli va qulay jangovar dubulga."
+    },
+    "hlm_armet_knight": {
+        "id": "hlm_armet_knight",
+        "slot": "head",
+        "name": "👑 Qirollik Yopiq Armet Dubulg'asi",
+        "rarity": "epic",
+        "attack": 2,
+        "defense": 28,
+        "tier": 3,
+        "price": 950,
+        "desc": "Jag' qismi qulflanadigan, bo'yinni to'liq himoyalovchi oliy toifali ritsar shlemi."
+    },
+    "hlm_shadow_hood": {
+        "id": "hlm_shadow_hood",
+        "slot": "head",
+        "name": "🌑 Zulmat Qotili Sehrli Kapushoni",
+        "rarity": "epic",
+        "attack": 8,
+        "defense": 20,
+        "tier": 3,
+        "price": 900,
+        "desc": "Egasi soyada turganda dushman ko'ziga ko'rinmas bo'lib qoladi."
+    },
+    "hlm_frost_crown": {
+        "id": "hlm_frost_crown",
+        "slot": "head",
+        "name": "❄️ Muzlagan Qoya Qor Toji",
+        "rarity": "epic",
+        "attack": 3,
+        "defense": 30,
+        "tier": 3,
+        "price": 1050,
+        "desc": "Ayoz hukmdorining muzlagan kristalli toji, dushmanning aqlini zaiflashtiradi."
+    },
+    "hlm_flame_horned": {
+        "id": "hlm_flame_horned",
+        "slot": "head",
+        "name": "🔥 Olovli Iblis Shoxli Dubulg'asi",
+        "rarity": "epic",
+        "attack": 10,
+        "defense": 24,
+        "tier": 3,
+        "price": 1000,
+        "desc": "Qizigan temirdan ishlangan shoxlar dushmanga yaqinlashganda uni kuydiradi."
+    },
+    "hlm_lion_visor": {
+        "id": "hlm_lion_visor",
+        "slot": "head",
+        "name": "🦁 Oltin Arslon Boshli Shlemi",
+        "rarity": "epic",
+        "attack": 4,
+        "defense": 32,
+        "tier": 3,
+        "price": 1100,
+        "desc": "Imperator Valter V shaxsan in'om etgan, arslon og'zidan qaraladigan shlem."
+    },
+    "hlm_dragon_skull": {
+        "id": "hlm_dragon_skull",
+        "slot": "head",
+        "name": "🐉 Ajdaho Kalla Suyagi Toji",
+        "rarity": "legendary",
+        "attack": 12,
+        "defense": 45,
+        "tier": 4,
+        "price": 2400,
+        "desc": "Haqiqiy bahamut suyagidan o'yib yasalgan, olovli nafasi dushmanni dahshatga soladi."
+    },
+    "hlm_titan_helm": {
+        "id": "hlm_titan_helm",
+        "slot": "head",
+        "name": "🌋 Titan Parpalanmas Dubulg'asi",
+        "rarity": "legendary",
+        "attack": 5,
+        "defense": 52,
+        "tier": 4,
+        "price": 2600,
+        "desc": "Yer qa'ridagi tog' jinsidan qilingan, har qanday kalla jarohatini 100% qaytaradi."
+    },
+    "hlm_valkyrie_wings": {
+        "id": "hlm_valkyrie_wings",
+        "slot": "head",
+        "name": "🕊 Valkiriya Qanotli Shlemi",
+        "rarity": "legendary",
+        "attack": 10,
+        "defense": 44,
+        "tier": 4,
+        "price": 2350,
+        "desc": "Oq qanotlar bilan bezatilgan muqaddas shlem, chaqqonlikni 25% oshiradi."
+    },
+    "hlm_abyss_mask": {
+        "id": "hlm_abyss_mask",
+        "slot": "head",
+        "name": "🌌 Qora Tublik Ko'zsiz Niqobi",
+        "rarity": "legendary",
+        "attack": 16,
+        "defense": 40,
+        "tier": 4,
+        "price": 2500,
+        "desc": "Dunyoning qorong'u sirlarini ko'rish imkonini beruvchi afsonaviy niqob."
+    },
+    "hlm_phoenix_diadem": {
+        "id": "hlm_phoenix_diadem",
+        "slot": "head",
+        "name": "🔥 Feniksning O'tli Diademasi",
+        "rarity": "legendary",
+        "attack": 14,
+        "defense": 42,
+        "tier": 4,
+        "price": 2450,
+        "desc": "Boshga kiyilganda o'lim xavfi tug'ilsa aql va jonga quvvat beradi."
+    },
+    "hlm_crown_of_creation": {
+        "id": "hlm_crown_of_creation",
+        "slot": "head",
+        "name": "👑 Borliq Yaratuvchisi Aureolasi (God-Tier)",
+        "rarity": "mythic",
+        "attack": 35,
+        "defense": 80,
+        "tier": 5,
+        "price": 7000,
+        "desc": "Barcha mavjudotlar uning oldida tiz cho'kadigan ilohiy nurlar toji."
+    },
+    "hlm_celestial_crown": {
+        "id": "hlm_celestial_crown",
+        "slot": "head",
+        "name": "⭐ Koinot Yulduzlari Toji",
+        "rarity": "mythic",
+        "attack": 25,
+        "defense": 75,
+        "tier": 5,
+        "price": 6500,
+        "desc": "Koinot sirlarini biluvchi donishmand podshohlar toji."
+    },
+    "hlm_void_gaze": {
+        "id": "hlm_void_gaze",
+        "slot": "head",
+        "name": "🪐 Bo'shliq Hukmdori Niqobi",
+        "rarity": "mythic",
+        "attack": 30,
+        "defense": 70,
+        "tier": 5,
+        "price": 6800,
+        "desc": "Birgina nigohi bilan dushman qalbini muzlatib qochishga majbur qiladi."
+    },
+    "hlm_eternal_imperium": {
+        "id": "hlm_eternal_imperium",
+        "slot": "head",
+        "name": "🏛 Boqiy Imperiya Zafar Shlemi",
+        "rarity": "mythic",
+        "attack": 20,
+        "defense": 90,
+        "tier": 5,
+        "price": 7500,
+        "desc": "Ming yillik janglarda biror marta ham tirnalmagan afsonaviy bosh kiyim."
+    },
+    "hlm_omega_visage": {
+        "id": "hlm_omega_visage",
+        "slot": "head",
+        "name": "💀 Omega Fano Qiyofasi",
+        "rarity": "mythic",
+        "attack": 40,
+        "defense": 65,
+        "tier": 5,
+        "price": 8000,
+        "desc": "Dushman bu niqobga qaragan zahoti vujudini falaj bosadi."
+    },
     "arm_padded_gambeson": {
-        "id": "arm_padded_gambeson", "slot": "chestplate", "name": "🥋 Paxtali Qalin Gambeson",
-        "rarity": "common", "attack": 0, "defense": 8, "tier": 1, "price": 100,
-        "desc": "Ko'p qavatli paxta va zig'ir tolasidan tikilgan dastlabki ritsar sovuti."
+        "id": "arm_padded_gambeson",
+        "slot": "chest",
+        "name": "🥋 Paxtali Qalin Jang Gambesoni",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 8,
+        "tier": 1,
+        "price": 100,
+        "desc": "Bir necha qatlam zig'ir va paxtadan tikilgan, zarbani yumshatuvchi jaket."
     },
-    "arm_leather_cuirass": {
-        "id": "arm_leather_cuirass", "slot": "chestplate", "name": "🦺 Qattiq Qaynatilgan Teri Nimcha",
-        "rarity": "common", "attack": 1, "defense": 12, "tier": 1, "price": 140,
-        "desc": "Moyda qaynatilib toshdek qotirilgan buqa terisi nimchasi."
+    "arm_leather_vest": {
+        "id": "arm_leather_vest",
+        "slot": "chest",
+        "name": "🦺 Qattiq Bo'ri Terisi Nimchasi",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 10,
+        "tier": 1,
+        "price": 130,
+        "desc": "Ovchilar va tezkor jangchilar uchun harakatni cheklamaydigan kiyim."
     },
-    "arm_chainmail_hauberk": {
-        "id": "arm_chainmail_hauberk", "slot": "chestplate", "name": "⛓ Halqali Temir Zirh (Xouberk)",
-        "rarity": "rare", "attack": 0, "defense": 24, "tier": 2, "price": 420,
-        "desc": "O'n minglab po'lat halqalarning o'zaro chigalidan to'qilgan elastik himoya sovuti."
+    "arm_studded_leather": {
+        "id": "arm_studded_leather",
+        "slot": "chest",
+        "name": "🦺 Temir Qotirilgan Charm Zirh",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 13,
+        "tier": 1,
+        "price": 160,
+        "desc": "Qalin charm ustiga po'lat parchinlar mixlangan xizmat kiyimi."
     },
-    "arm_brigandine": {
-        "id": "arm_brigandine", "slot": "chestplate", "name": "🛡 Baxmal Qoplamali Brigandina",
-        "rarity": "rare", "attack": 2, "defense": 28, "tier": 2, "price": 480,
-        "desc": "Moviy baxmal ostiga yashiringan po'lat tangachalar. Ham go'zal, ham xavfsiz."
+    "arm_ring_mail": {
+        "id": "arm_ring_mail",
+        "slot": "chest",
+        "name": "⛓ Halqali Temir To'r Nimcha",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 15,
+        "tier": 1,
+        "price": 190,
+        "desc": "Temir halqalardan to'qilgan, qilich kesishidan asraydigan kiyim."
+    },
+    "arm_rusty_chainmail": {
+        "id": "arm_rusty_chainmail",
+        "slot": "chest",
+        "name": "⛓ Zanglagan Zanjirli Sovut",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 17,
+        "tier": 1,
+        "price": 220,
+        "desc": "Eski gvardiyachilar sovuti, biroz og'ir ammo mustahkam."
+    },
+    "arm_hauberk_chain": {
+        "id": "arm_hauberk_chain",
+        "slot": "chest",
+        "name": "⛓ To'liq Zanjirli Oliy Hauberk",
+        "rarity": "rare",
+        "attack": 0,
+        "defense": 26,
+        "tier": 2,
+        "price": 500,
+        "desc": "Tizagacha tushadigan, bo'yin va qo'llarni to'liq qoplovchi zanjirli po'lat sovut."
+    },
+    "arm_brigandine_iron": {
+        "id": "arm_brigandine_iron",
+        "slot": "chest",
+        "name": "🛡 Ritsarlik Temir Brigandinasi",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 30,
+        "tier": 2,
+        "price": 580,
+        "desc": "Baxmal mato ostiga yashiringan yuzlab po'lat plitalardan iborat chiroyli zirh."
+    },
+    "arm_scale_cuirass": {
+        "id": "arm_scale_cuirass",
+        "slot": "chest",
+        "name": "🐟 Qora Po'lat Tangachali Zirh",
+        "rarity": "rare",
+        "attack": 1,
+        "defense": 28,
+        "tier": 2,
+        "price": 540,
+        "desc": "Baliq tangachalari kabi bir-birining ustiga tushgan po'lat plastinkalar."
+    },
+    "arm_crusader_surcoat": {
+        "id": "arm_crusader_surcoat",
+        "slot": "chest",
+        "name": "✝️ Salibchi Oq Matoli Kirirasi",
+        "rarity": "rare",
+        "attack": 3,
+        "defense": 32,
+        "tier": 2,
+        "price": 620,
+        "desc": "Ko'kragida qizil xoch tushirilgan mustahkam po'lat kirasa."
+    },
+    "arm_viking_mail": {
+        "id": "arm_viking_mail",
+        "slot": "chest",
+        "name": "🪓 Shimol Berserki Temir Sovuti",
+        "rarity": "rare",
+        "attack": 4,
+        "defense": 27,
+        "tier": 2,
+        "price": 560,
+        "desc": "Ayoz va qonli janglarga chidamli mustahkam shimol sovuti."
     },
     "arm_knight_plate": {
-        "id": "arm_knight_plate", "slot": "chestplate", "name": "🥋 To'liq Po'lat Ritsarlik Sovuti",
-        "rarity": "epic", "attack": 0, "defense": 48, "tier": 3, "price": 1250,
-        "desc": "Ko'krak, qorin va yelkalarni monolit toblangan po'lat plitalar bilan o'rab turadi."
+        "id": "arm_knight_plate",
+        "slot": "chest",
+        "name": "🏰 Valoriya To'liq Po'lat Kirirasi",
+        "rarity": "epic",
+        "attack": 2,
+        "defense": 48,
+        "tier": 3,
+        "price": 1400,
+        "desc": "Ko'krak va orqani bitta monolit po'latdek himoya qiluvchi ritsarlik zirhi."
     },
-    "arm_shadow_cloak": {
-        "id": "arm_shadow_cloak", "slot": "chestplate", "name": "🌑 Soya Matoli Ko'rinmas Xalat",
-        "rarity": "epic", "attack": 8, "defense": 36, "tier": 3, "price": 1350,
-        "desc": "Kechalari dushman ko'ziga ko'rinmaslik imkonini beruvchi sehrli tola."
+    "arm_shadow_mantle": {
+        "id": "arm_shadow_mantle",
+        "slot": "chest",
+        "name": "🌑 Tungi Qotilning Sehrli Mantiyasi",
+        "rarity": "epic",
+        "attack": 12,
+        "defense": 35,
+        "tier": 3,
+        "price": 1300,
+        "desc": "Qora ipak va po'lat to'qimasi, kritik zarbalarni 25% kuchaytiradi."
     },
-    "arm_dragon_scale_mail": {
-        "id": "arm_dragon_scale_mail", "slot": "chestplate", "name": "🐉 Qizil Ajdaho Tangachalari Sovuti",
-        "rarity": "legendary", "attack": 10, "defense": 78, "tier": 4, "price": 3400,
-        "desc": "Olovda erimaydigan va o'qlarni qaytaruvchi qadimgi ajdaho terisi tangachalari."
+    "arm_frost_carapace": {
+        "id": "arm_frost_carapace",
+        "slot": "chest",
+        "name": "❄️ Qishki Muz Qo'rg'on Sovuti",
+        "rarity": "epic",
+        "attack": 3,
+        "defense": 52,
+        "tier": 3,
+        "price": 1500,
+        "desc": "Muz qatlamlari bilan qoplangan, o'q va qilichlar undan sirg'anib ketadi."
     },
-    "arm_mithril_coat": {
-        "id": "arm_mithril_coat", "slot": "chestplate", "name": "✨ Sof Mithril Monolit Sovuti",
-        "rarity": "legendary", "attack": 5, "defense": 85, "tier": 4, "price": 3800,
-        "desc": "Ipakdek yengil, ammo olmosdek mustahkam mitti gnomlar konidan qazib olingan metall."
+    "arm_flame_draconic": {
+        "id": "arm_flame_draconic",
+        "slot": "chest",
+        "name": "🔥 Vulqon Magma Qoplamali Kirasa",
+        "rarity": "epic",
+        "attack": 8,
+        "defense": 46,
+        "tier": 3,
+        "price": 1450,
+        "desc": "Qizigan metall zirh, hujum qilgan dushmanga 15 olovli zarar qaytaradi."
     },
-    "arm_titan_colossus": {
-        "id": "arm_titan_colossus", "slot": "chestplate", "name": "🗿 Qadimiy Titan Zirhi (+999)",
-        "rarity": "divine", "attack": 50, "defense": 999, "tier": 6, "price": 99999,
-        "desc": "Yer yuzidagi barcha qurollar zarbasini yutuvchi ilohiy titan plastinalari."
+    "arm_lion_regalia": {
+        "id": "arm_lion_regalia",
+        "slot": "chest",
+        "name": "🦁 Oltin Arslon Oliy Gvardiya Plitasi",
+        "rarity": "epic",
+        "attack": 5,
+        "defense": 55,
+        "tier": 3,
+        "price": 1600,
+        "desc": "Faqat qirol shaxsiy soqchilariga beriladigan naqshinkor eng oliy sovut."
     },
-
-    # -----------------------------------------------------------------
-    # 3. DUBULG'ALAR (HELMET) - 15 TA
-    # -----------------------------------------------------------------
-    "helm_iron_cap": {
-        "id": "helm_iron_cap", "slot": "helmet", "name": "🪖 Temir Askar Qalpog'i",
-        "rarity": "common", "attack": 0, "defense": 6, "tier": 1, "price": 90,
-        "desc": "Boshni bevosita tosh va qilich urilishidan asrovchi oddiy qalpoq."
+    "arm_dragon_scale": {
+        "id": "arm_dragon_scale",
+        "slot": "chest",
+        "name": "🐉 Qora Ajdaho Tangachalari Zirhi",
+        "rarity": "legendary",
+        "attack": 15,
+        "defense": 75,
+        "tier": 4,
+        "price": 3500,
+        "desc": "Ajdahoning eng qalin ko'krak terisidan ishlangan, har qanday nayza unga ojiz."
     },
-    "helm_norman_nasal": {
-        "id": "helm_norman_nasal", "slot": "helmet", "name": "🪖 Burun Himoyali Norman Dubulg'asi",
-        "rarity": "rare", "attack": 1, "defense": 16, "tier": 2, "price": 310,
-        "desc": "Yuz o'rtasiga tushgan qalin temir plastina yuzni chopib tashlanishdan asraydi."
+    "arm_titan_monolith": {
+        "id": "arm_titan_monolith",
+        "slot": "chest",
+        "name": "🌋 Titan Monolit Tog' Zirhi",
+        "rarity": "legendary",
+        "attack": 6,
+        "defense": 85,
+        "tier": 4,
+        "price": 3800,
+        "desc": "Bahaybat tosh gigantlarining yurak toshidan yasalgan buzilmas qalqon kiyim."
     },
-    "helm_great_helm": {
-        "id": "helm_great_helm", "slot": "helmet", "name": "👑 Xochlilar Katta Paqir Dubulg'asi",
-        "rarity": "epic", "attack": 0, "defense": 32, "tier": 3, "price": 950,
-        "desc": "Boshni butkul yopib turuvchi, faqat ko'z uchun ingichka tirqishi bor og'ir ritsar dubulg'asi."
+    "arm_valkyrie_corslet": {
+        "id": "arm_valkyrie_corslet",
+        "slot": "chest",
+        "name": "🕊 Valkiriya Muqaddas Korsleti",
+        "rarity": "legendary",
+        "attack": 14,
+        "defense": 70,
+        "tier": 4,
+        "price": 3400,
+        "desc": "Jang maydonida yengil harakatlanish va ilohiy himoya beruvchi oq sovut."
     },
-    "helm_dragon_crest": {
-        "id": "helm_dragon_crest", "slot": "helmet", "name": "🐉 Ajdaho Qanotli Oltin Dubulg'a",
-        "rarity": "legendary", "attack": 8, "defense": 52, "tier": 4, "price": 2800,
-        "desc": "Ajdaho qanotlari shaklidagi zarhal bezaklar bilan qoplangan qudrat ramzi."
+    "arm_abyss_armor": {
+        "id": "arm_abyss_armor",
+        "slot": "chest",
+        "name": "🌌 Qora Tublik Bo'shliq Kirirasi",
+        "rarity": "legendary",
+        "attack": 20,
+        "defense": 68,
+        "tier": 4,
+        "price": 3600,
+        "desc": "Zulmat energiyasi bilan egasining qonini yangilab turuvchi qora zirh."
     },
-    "helm_crown_valoria": {
-        "id": "helm_crown_valoria", "slot": "helmet", "name": "👑 Valoriya Boqiy Imperatori Toji",
-        "rarity": "mythic", "attack": 25, "defense": 75, "tier": 5, "price": 7500,
-        "desc": "12 ta imperiya ustidan hukmronlik qiluvchi shaxslargagina loyiq qadimiy toj."
+    "arm_phoenix_mail": {
+        "id": "arm_phoenix_mail",
+        "slot": "chest",
+        "name": "🔥 O'lmas Feniks Qanotli Sovuti",
+        "rarity": "legendary",
+        "attack": 12,
+        "defense": 78,
+        "tier": 4,
+        "price": 3700,
+        "desc": "O'lim yoqasida turgan egasining tanasini olov bilan davolaydi."
     },
-
-    # -----------------------------------------------------------------
-    # 4. QALQON VA CHAP QO'L (OFF_HAND) - 15 TA
-    # -----------------------------------------------------------------
-    "shd_wooden_buckler": {
-        "id": "shd_wooden_buckler", "slot": "off_hand", "name": "🛡 Kichik Yog'och Bakler",
-        "rarity": "common", "attack": 2, "defense": 5, "tier": 1, "price": 80,
-        "desc": "Tezkor chaqqon harakatlar va zarbani chetlatish uchun kichik doirasimon qalqon."
+    "arm_god_cuirass": {
+        "id": "arm_god_cuirass",
+        "slot": "chest",
+        "name": "👑 Oliy Yaratuvchi Sovuti (God-Tier)",
+        "rarity": "mythic",
+        "attack": 40,
+        "defense": 150,
+        "tier": 5,
+        "price": 12000,
+        "desc": "Koinotdagi hech qanday kuch teshishga qodir bo'lmagan mutloq ilohiy po'lat zirh."
     },
-    "shd_heater_shield": {
-        "id": "shd_heater_shield", "slot": "off_hand", "name": "🛡 Oltin Sher Gerbli Uchburchak Qalqon",
-        "rarity": "rare", "attack": 0, "defense": 18, "tier": 2, "price": 380,
-        "desc": "Ritsarlar ot ustida nayza urishganda ko'krakni qoplovchi qalin eman qalqon."
+    "arm_celestial_harness": {
+        "id": "arm_celestial_harness",
+        "slot": "chest",
+        "name": "⭐ Samoviy Yulduzlar Brinyasi",
+        "rarity": "mythic",
+        "attack": 35,
+        "defense": 140,
+        "tier": 5,
+        "price": 11000,
+        "desc": "Yulduzlar changidan to'qilgan, og'irligi yo'qdek yengil samoviy sovut."
     },
-    "shd_tower_pavise": {
-        "id": "shd_tower_pavise", "slot": "off_hand", "name": "🏰 Minorasimon Pavaza (Qal'a Qalqoni)",
-        "rarity": "epic", "attack": 0, "defense": 38, "tier": 3, "price": 1100,
-        "desc": "Kamonchilar yomg'iriga qarshi butun gavdani yerga tirab yopib turuvchi devordek qalqon."
+    "arm_void_harness": {
+        "id": "arm_void_harness",
+        "slot": "chest",
+        "name": "🪐 Bo'shliq Qa'ri Monoliti",
+        "rarity": "mythic",
+        "attack": 45,
+        "defense": 135,
+        "tier": 5,
+        "price": 11500,
+        "desc": "Dushmanning qurolini o'ziga tortib maydalab yuboruvchi gravitatsion zirh."
     },
-    "shd_aegis_immortal": {
-        "id": "shd_aegis_immortal", "slot": "off_hand", "name": "✨ Aegis: Afsonaviy Sinmas Qalqon",
-        "rarity": "mythic", "attack": 15, "defense": 85, "tier": 5, "price": 7200,
-        "desc": "Hech qanday qurol, sehr yoki olov tesha olmaydigan muqaddas afsonaviy qalqon."
+    "arm_eternal_fortress": {
+        "id": "arm_eternal_fortress",
+        "slot": "chest",
+        "name": "🏛 Boqiy Qal'a Po'lati",
+        "rarity": "mythic",
+        "attack": 25,
+        "defense": 165,
+        "tier": 5,
+        "price": 13000,
+        "desc": "Bir o'zi butun bir armiyaning zarbasini ko'tara oladigan qudratli monolit."
     },
-
-    # -----------------------------------------------------------------
-    # 5. QO'LQLAR VA BILAKZUKLAR (GAUNTLETS) - 10 TA
-    # -----------------------------------------------------------------
-    "gnt_leather_gloves": {
-        "id": "gnt_leather_gloves", "slot": "gauntlets", "name": "🥊 Qalin Kiyik Terisi Qo'lqopi",
-        "rarity": "common", "attack": 1, "defense": 4, "tier": 1, "price": 70,
-        "desc": "Qilich dastasini qattiq ushlash va qadoq bo'lmaslik uchun qulay teri qo'lqop."
+    "arm_omega_chitin": {
+        "id": "arm_omega_chitin",
+        "slot": "chest",
+        "name": "💀 Omega Xaos Qobig'i",
+        "rarity": "mythic",
+        "attack": 50,
+        "defense": 130,
+        "tier": 5,
+        "price": 12500,
+        "desc": "Dushman qilich urgan zahoti uning o'zini qoniga bo'yovchi qora tikanli zirh."
     },
-    "gnt_steel_gauntlets": {
-        "id": "gnt_steel_gauntlets", "slot": "gauntlets", "name": "🥊 Bo'g'inli Po'lat Ritsarlik Qo'lqopi",
-        "rarity": "rare", "attack": 3, "defense": 14, "tier": 2, "price": 290,
-        "desc": "Har bir barmoq usti alohida po'lat tangacha bilan qoplangan, zarbador qo'lqop."
+    "glove_leather_mitts": {
+        "id": "glove_leather_mitts",
+        "slot": "hands",
+        "name": "🧤 Oddiy Charm Ishchi Qo'lqopi",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 3,
+        "tier": 1,
+        "price": 60,
+        "desc": "Qurol dastasi qo'lni qadoq qilmasligi uchun mo'ljallangan yengil charm."
     },
-    "gnt_berserk_claws": {
-        "id": "gnt_berserk_claws", "slot": "gauntlets", "name": "🩸 Qonli Berserk Tirnoqli Qo'lqopi",
-        "rarity": "epic", "attack": 15, "defense": 22, "tier": 3, "price": 980,
-        "desc": "Musht bilan urilganda dushman tomirini uzib yuboruvchi o'tkir po'lat tirnoqlar."
+    "glove_padded_wrap": {
+        "id": "glove_padded_wrap",
+        "slot": "hands",
+        "name": "🥊 Matoli Qalin Qo'l Bog'ichlari",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 2,
+        "tier": 1,
+        "price": 65,
+        "desc": "Mushtni mahkam tutish uchun polvonlar o'raydigan bog'ichlar."
     },
-
-    # -----------------------------------------------------------------
-    # 6. ETUKLAR VA OYOQ SOVUTLARI (BOOTS) - 10 TA
-    # -----------------------------------------------------------------
-    "bts_hunter_boots": {
-        "id": "bts_hunter_boots", "slot": "boots", "name": "👢 O'rmon Qaroqchisi Yumshoq Etigi",
-        "rarity": "common", "attack": 0, "defense": 5, "tier": 1, "price": 75,
-        "desc": "Qadam bosganda shox-shabbalar sinish tovushini yutuvchi yumshoq poyabzal."
+    "glove_studded_leather": {
+        "id": "glove_studded_leather",
+        "slot": "hands",
+        "name": "🧤 Po'lat Parchinli Charm Qo'lqop",
+        "rarity": "common",
+        "attack": 2,
+        "defense": 4,
+        "tier": 1,
+        "price": 90,
+        "desc": "Musht urilganda dushmanga qo'shimcha og'riq yetkazuvchi tikanli qo'lqop."
     },
-    "bts_knight_sabatons": {
-        "id": "bts_knight_sabatons", "slot": "boots", "name": "👢 Po'lat Sabatonlar (Oyoq Zirhi)",
-        "rarity": "rare", "attack": 2, "defense": 16, "tier": 2, "price": 320,
-        "desc": "Oyoq panjalari va tovonni qoplovchi, ot tepkisi va nayzalardan asrovchi sabatonlar."
+    "glove_chainmail_mitts": {
+        "id": "glove_chainmail_mitts",
+        "slot": "hands",
+        "name": "⛓ Zanjirli Temir Qo'lqop",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 6,
+        "tier": 1,
+        "price": 110,
+        "desc": "Barmoqlarni kesib ketishdan asraydigan mayda temir to'r."
     },
-    "bts_windwalker_boots": {
-        "id": "bts_windwalker_boots", "slot": "boots", "name": "🌪 Shamol Ustida Yurgizuvchi Etik",
-        "rarity": "legendary", "attack": 6, "defense": 35, "tier": 4, "price": 2400,
-        "desc": "Chaqqonlikni 2 barobarga oshiruvchi va dushman zarbalaridan qochish imkonini beruvchi tulpor etigi."
+    "glove_hunting_grip": {
+        "id": "glove_hunting_grip",
+        "slot": "hands",
+        "name": "🏹 Ovchining Epchil Barmoqlari",
+        "rarity": "common",
+        "attack": 2,
+        "defense": 3,
+        "tier": 1,
+        "price": 95,
+        "desc": "Kamon ipini tortishda barmoqlarni shikastlanishdan asraydi."
     },
-
-    # -----------------------------------------------------------------
-    # 7. TUMORLAR VA RELIKVIYALAR (AMULET) - 10 TA
-    # -----------------------------------------------------------------
-    "amu_wolf_tooth": {
-        "id": "amu_wolf_tooth", "slot": "amulet", "name": "📿 Dasht Bo'risi Qoziq Tishi Tumori",
-        "rarity": "common", "attack": 4, "defense": 2, "tier": 1, "price": 110,
-        "desc": "Yovvoyi tabiat ruhlari ritsarga qo'shimcha g'azab va chaqqonlik baxsh etadi."
+    "glove_iron_gauntlets": {
+        "id": "glove_iron_gauntlets",
+        "slot": "hands",
+        "name": "🥊 Ritsarlik Po'lat Gantletlari",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 12,
+        "tier": 2,
+        "price": 320,
+        "desc": "Har bir barmog'i alohida po'lat plastinkalar bilan qoplangan jangovar qo'lqop."
     },
-    "amu_ruby_heart": {
-        "id": "amu_ruby_heart", "slot": "amulet", "name": "📿 Qon Yoquti Tumori (+50 HP)",
-        "rarity": "rare", "attack": 5, "defense": 8, "tier": 2, "price": 490,
-        "desc": "Qalb ustida iliq porlab turuvchi qizil yoqut tosh, jarohatlarni sekin davolaydi."
+    "glove_scale_grip": {
+        "id": "glove_scale_grip",
+        "slot": "hands",
+        "name": "🐟 Tangachali Qora Qo'lqoplar",
+        "rarity": "rare",
+        "attack": 3,
+        "defense": 10,
+        "tier": 2,
+        "price": 300,
+        "desc": "Qurolni sirg'anmasdan mahkam ushlashga imkon beruvchi qattiq qo'lqop."
     },
-    "amu_dragon_eye": {
-        "id": "amu_dragon_eye", "slot": "amulet", "name": "👁 Qadimgi Ajdaho Ko'zi Relikviyasi",
-        "rarity": "legendary", "attack": 22, "defense": 18, "tier": 4, "price": 3100,
-        "desc": "Dushmanning zaif tana qismlarini ko'rish va kritik zarba ehtimolini 25% oshiruvchi tumor."
+    "glove_crusader_brass": {
+        "id": "glove_crusader_brass",
+        "slot": "hands",
+        "name": "✝️ Salibchining Bronza Mushtligi",
+        "rarity": "rare",
+        "attack": 4,
+        "defense": 11,
+        "tier": 2,
+        "price": 340,
+        "desc": "Muqaddas belgi tushirilgan, zarbasi dushman tishlarini sindiradi."
     },
-
-    # -----------------------------------------------------------------
-    # 8. SEHRLI UZUKLAR (RING) - 10 TA
-    # -----------------------------------------------------------------
-    "rng_bronze_band": {
-        "id": "rng_bronze_band", "slot": "ring", "name": "💍 Oddiy Bronza Ritsarlik Uzugi",
-        "rarity": "common", "attack": 2, "defense": 2, "tier": 1, "price": 85,
-        "desc": "Gildiya ramzi tushirilgan sodda quyma uzuk."
+    "glove_viking_fist": {
+        "id": "glove_viking_fist",
+        "slot": "hands",
+        "name": "🪓 Qonxo'r Ragnar Ayiq Panjasi",
+        "rarity": "rare",
+        "attack": 5,
+        "defense": 9,
+        "tier": 2,
+        "price": 330,
+        "desc": "Ayiq terisi va temir tirnoqlar bilan qoplangan qo'pol qo'lqop."
+    },
+    "glove_desert_silk": {
+        "id": "glove_desert_silk",
+        "slot": "hands",
+        "name": "🌙 Sahro Shohisi Yengil Qo'lqopi",
+        "rarity": "rare",
+        "attack": 4,
+        "defense": 8,
+        "tier": 2,
+        "price": 310,
+        "desc": "Ipak va nozik po'lat simlardan to'qilgan epchil qo'l kiyimi."
+    },
+    "glove_knight_hour": {
+        "id": "glove_knight_hour",
+        "slot": "hands",
+        "name": "⌛️ Qumsoat Ritsarlik Gantletlari",
+        "rarity": "epic",
+        "attack": 3,
+        "defense": 22,
+        "tier": 3,
+        "price": 850,
+        "desc": "Bo'g'inlari qumsoat shaklida bukiladigan eng qulay oliy toifali po'lat qo'lqop."
+    },
+    "glove_shadow_claws": {
+        "id": "glove_shadow_claws",
+        "slot": "hands",
+        "name": "🌑 Zulmat Qotili Temir Tirnoqlari",
+        "rarity": "epic",
+        "attack": 10,
+        "defense": 14,
+        "tier": 3,
+        "price": 800,
+        "desc": "Har bir barmog'ida zaharlangan po'lat tirnoqlar mavjud."
+    },
+    "glove_frost_touch": {
+        "id": "glove_frost_touch",
+        "slot": "hands",
+        "name": "❄️ Qishki Muz Qoya Panjalari",
+        "rarity": "epic",
+        "attack": 4,
+        "defense": 24,
+        "tier": 3,
+        "price": 900,
+        "desc": "Dushmanga qo'l tekkanda uning tomirlaridagi qonini muzlatadi."
+    },
+    "glove_flame_fist": {
+        "id": "glove_flame_fist",
+        "slot": "hands",
+        "name": "🔥 Magma Olovli Temir Mushtlari",
+        "rarity": "epic",
+        "attack": 8,
+        "defense": 18,
+        "tier": 3,
+        "price": 870,
+        "desc": "Har bir musht tushganda olovli portlash hosil qiladi."
+    },
+    "glove_lion_claws": {
+        "id": "glove_lion_claws",
+        "slot": "hands",
+        "name": "🦁 Oltin Arslon Panjali Qo'lqopi",
+        "rarity": "epic",
+        "attack": 6,
+        "defense": 20,
+        "tier": 3,
+        "price": 920,
+        "desc": "Arslon panjalari kabi o'tkir oltin tig'lar bilan jihozlangan."
+    },
+    "glove_dragon_claws": {
+        "id": "glove_dragon_claws",
+        "slot": "hands",
+        "name": "🐉 Qora Ajdaho Suyakli Qo'lqoplari",
+        "rarity": "legendary",
+        "attack": 15,
+        "defense": 35,
+        "tier": 4,
+        "price": 2200,
+        "desc": "Ajdahoning tirnoqlaridan yasalgan, po'lat zirhlarni qog'ozdek yirtib tashlaydi."
+    },
+    "glove_titan_crush": {
+        "id": "glove_titan_crush",
+        "slot": "hands",
+        "name": "🌋 Titan Tog' Ezuvchi Gantletlari",
+        "rarity": "legendary",
+        "attack": 8,
+        "defense": 42,
+        "tier": 4,
+        "price": 2400,
+        "desc": "Toshni mushtlaganda qumga aylantiruvchi g'ayritabiiy kuch beradi."
+    },
+    "glove_valkyrie_touch": {
+        "id": "glove_valkyrie_touch",
+        "slot": "hands",
+        "name": "🕊 Valkiriya Shifo va Qahr Qo'lqopi",
+        "rarity": "legendary",
+        "attack": 12,
+        "defense": 32,
+        "tier": 4,
+        "price": 2100,
+        "desc": "Do'stga tegsa shifo beradi, dushmanga tegsa qahr yog'diradi."
+    },
+    "glove_abyss_grip": {
+        "id": "glove_abyss_grip",
+        "slot": "hands",
+        "name": "🌌 Qora Tublik Bo'shliq Panjalari",
+        "rarity": "legendary",
+        "attack": 16,
+        "defense": 30,
+        "tier": 4,
+        "price": 2300,
+        "desc": "Dushmanning qurolini ushlab bir harakatda tortib oladi."
+    },
+    "glove_phoenix_talons": {
+        "id": "glove_phoenix_talons",
+        "slot": "hands",
+        "name": "🔥 Feniksning O'tli Tirnoqlari",
+        "rarity": "legendary",
+        "attack": 14,
+        "defense": 34,
+        "tier": 4,
+        "price": 2250,
+        "desc": "O'tkir olovli zarbalar ketma-ketligini amalga oshirishga imkon beradi."
+    },
+    "glove_god_fists": {
+        "id": "glove_god_fists",
+        "slot": "hands",
+        "name": "👑 Oliy Yaratuvchi Mushtlari (God-Tier)",
+        "rarity": "mythic",
+        "attack": 35,
+        "defense": 70,
+        "tier": 5,
+        "price": 6000,
+        "desc": "Butun olam qonunlarini bitta kaftida ushlab turuvchi ilohiy qo'lqoplar."
+    },
+    "glove_celestial_grips": {
+        "id": "glove_celestial_grips",
+        "slot": "hands",
+        "name": "⭐ Samoviy Yulduzlar Panjalari",
+        "rarity": "mythic",
+        "attack": 28,
+        "defense": 65,
+        "tier": 5,
+        "price": 5500,
+        "desc": "Koinot nurlarini o'zida jamlab zarbaga aylantiradi."
+    },
+    "glove_void_rend": {
+        "id": "glove_void_rend",
+        "slot": "hands",
+        "name": "🪐 Bo'shliq Yirtuvchisi Gantletlari",
+        "rarity": "mythic",
+        "attack": 32,
+        "defense": 60,
+        "tier": 5,
+        "price": 5800,
+        "desc": "Fazoviy to'siqlarni buzib dushmanning yuragiga yetib boradi."
+    },
+    "glove_eternal_hold": {
+        "id": "glove_eternal_hold",
+        "slot": "hands",
+        "name": "🏛 Boqiy Poydevor Temir Mushti",
+        "rarity": "mythic",
+        "attack": 20,
+        "defense": 80,
+        "tier": 5,
+        "price": 6500,
+        "desc": "Ushlagan narsasini atomlariga qadar ezib tashlovchi mutlaq quvvat."
+    },
+    "glove_omega_strike": {
+        "id": "glove_omega_strike",
+        "slot": "hands",
+        "name": "💀 Omega Fano Mushtlari",
+        "rarity": "mythic",
+        "attack": 40,
+        "defense": 55,
+        "tier": 5,
+        "price": 7000,
+        "desc": "Birgina to'g'ri tushgan zarbasi har qanday dushmanning suyaklarini kulpoka qiladi."
+    },
+    "boot_leather_shoes": {
+        "id": "boot_leather_shoes",
+        "slot": "legs",
+        "name": "🥾 Oddiy Sayyoh Charm Poyafzali",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 3,
+        "tier": 1,
+        "price": 70,
+        "desc": "Uzoq yo'l yurish uchun qulay va elastik charm botinka."
+    },
+    "boot_rough_fur": {
+        "id": "boot_rough_fur",
+        "slot": "legs",
+        "name": "👢 Qalin Qo'y Terisi Issiq Etiklari",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 4,
+        "tier": 1,
+        "price": 80,
+        "desc": "Loy va sovuqdan oyoqlarni asraydigan oddiy etik."
+    },
+    "boot_studded_boots": {
+        "id": "boot_studded_boots",
+        "slot": "legs",
+        "name": "🥾 Temir Parchinli Jang Botinkalari",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 5,
+        "tier": 1,
+        "price": 100,
+        "desc": "Qoqqanda oyoq barmoqlarini tosh zarbasidan asraydi."
+    },
+    "boot_chain_chausses": {
+        "id": "boot_chain_chausses",
+        "slot": "legs",
+        "name": "⛓ Zanjirli Temir Paypoqlar",
+        "rarity": "common",
+        "attack": 0,
+        "defense": 7,
+        "tier": 1,
+        "price": 130,
+        "desc": "Boldir va tizzalarni qilich chopishidan asraydi."
+    },
+    "boot_bandit_moccasin": {
+        "id": "boot_bandit_moccasin",
+        "slot": "legs",
+        "name": "👞 Qaroqchining Shovqinsiz Mokasini",
+        "rarity": "common",
+        "attack": 2,
+        "defense": 3,
+        "tier": 1,
+        "price": 90,
+        "desc": "Quruq xazon ustida ham tovush chiqarmasdan yurish imkonini beradi."
+    },
+    "boot_knight_greaves": {
+        "id": "boot_knight_greaves",
+        "slot": "legs",
+        "name": "🛡 Ritsarlik Po'lat Sabatonlari",
+        "rarity": "rare",
+        "attack": 1,
+        "defense": 14,
+        "tier": 2,
+        "price": 350,
+        "desc": "Boldir va tovonni qoplovchi, ot ustida turish uchun ilmoqli po'lat poyafzal."
+    },
+    "boot_scale_greaves": {
+        "id": "boot_scale_greaves",
+        "slot": "legs",
+        "name": "🐟 Tangachali Po'lat Boldirliklar",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 12,
+        "tier": 2,
+        "price": 320,
+        "desc": "Tizzadan tovonigacha egiluvchan tangachalar bilan himoyalangan etik."
+    },
+    "boot_crusader_boots": {
+        "id": "boot_crusader_boots",
+        "slot": "legs",
+        "name": "✝️ Salibchining Og'ir Etiklari",
+        "rarity": "rare",
+        "attack": 2,
+        "defense": 15,
+        "tier": 2,
+        "price": 380,
+        "desc": "Loy va qonli botqoqliklardan cho'kmasdan o'tuvchi mustahkam etik."
+    },
+    "boot_viking_striders": {
+        "id": "boot_viking_striders",
+        "slot": "legs",
+        "name": "🪓 Qonxo'r Berserk Qor Etiklari",
+        "rarity": "rare",
+        "attack": 3,
+        "defense": 13,
+        "tier": 2,
+        "price": 360,
+        "desc": "Muz ustida sirg'anmasdan yugurish imkonini beruvchi tikanli taglik."
+    },
+    "boot_desert_sandals": {
+        "id": "boot_desert_sandals",
+        "slot": "legs",
+        "name": "🩴 Sahro Qumdonlari Poyafzali",
+        "rarity": "rare",
+        "attack": 3,
+        "defense": 10,
+        "tier": 2,
+        "price": 310,
+        "desc": "Issiq qum ustida charchamasdan yugurish uchun mo'ljallangan."
+    },
+    "boot_full_sabaton": {
+        "id": "boot_full_sabaton",
+        "slot": "legs",
+        "name": "🏰 Valoriya Oliy Monolit Sabatonlari",
+        "rarity": "epic",
+        "attack": 2,
+        "defense": 26,
+        "tier": 3,
+        "price": 900,
+        "desc": "Yaltiroq damashq po'latidan quyilgan, o'q o'tmas og'ir oyoq kiyimi."
+    },
+    "boot_shadow_treads": {
+        "id": "boot_shadow_treads",
+        "slot": "legs",
+        "name": "🌑 Tungi Qotilning Tovushsiz Etiklari",
+        "rarity": "epic",
+        "attack": 8,
+        "defense": 16,
+        "tier": 3,
+        "price": 850,
+        "desc": "Harakatlanish tezligini va chetlanish imkoniyatini keskin oshiradi."
+    },
+    "boot_frost_walkers": {
+        "id": "boot_frost_walkers",
+        "slot": "legs",
+        "name": "❄️ Qishki Muz Ustida Yuruvchi Etiklar",
+        "rarity": "epic",
+        "attack": 3,
+        "defense": 28,
+        "tier": 3,
+        "price": 950,
+        "desc": "Oyoq ostidagi yerni bir zumda muzlatib raqibni yiqitadi."
+    },
+    "boot_flame_spurs": {
+        "id": "boot_flame_spurs",
+        "slot": "legs",
+        "name": "🔥 Magma Uchqunli Olovli Etiklar",
+        "rarity": "epic",
+        "attack": 7,
+        "defense": 20,
+        "tier": 3,
+        "price": 920,
+        "desc": "Tepganda dushman ko'kragiga chuqur kuyish jarohati yetkazadi."
+    },
+    "boot_lion_greaves": {
+        "id": "boot_lion_greaves",
+        "slot": "legs",
+        "name": "🦁 Oltin Arslon Zafar Sabatonlari",
+        "rarity": "epic",
+        "attack": 4,
+        "defense": 25,
+        "tier": 3,
+        "price": 980,
+        "desc": "Imperator gvardiyasining viqorli va buzilmas oyoq sovuti."
+    },
+    "boot_dragon_greaves": {
+        "id": "boot_dragon_greaves",
+        "slot": "legs",
+        "name": "🐉 Qora Ajdaho Suyakli Sabatonlari",
+        "rarity": "legendary",
+        "attack": 12,
+        "defense": 40,
+        "tier": 4,
+        "price": 2300,
+        "desc": "Qadam tashlaganda yer titraydi, hech qanday tuzoq uni to'xtata olmaydi."
+    },
+    "boot_titan_stompers": {
+        "id": "boot_titan_stompers",
+        "slot": "legs",
+        "name": "🌋 Titan Tog' Yiqituvchi Etiklari",
+        "rarity": "legendary",
+        "attack": 6,
+        "defense": 48,
+        "tier": 4,
+        "price": 2500,
+        "desc": "Bir tepkisi bilan qal'a eshiklarini sindirib yuboradigan quvvat."
+    },
+    "boot_valkyrie_wings": {
+        "id": "boot_valkyrie_wings",
+        "slot": "legs",
+        "name": "🕊 Valkiriya Qanotli Poyafzali",
+        "rarity": "legendary",
+        "attack": 10,
+        "defense": 36,
+        "tier": 4,
+        "price": 2200,
+        "desc": "Havo bo'ylab yugurish va chaqqonlikni 30% ga oshirish imkoniyati."
+    },
+    "boot_abyss_striders": {
+        "id": "boot_abyss_striders",
+        "slot": "legs",
+        "name": "🌌 Qora Tublik Soya Qadamlari",
+        "rarity": "legendary",
+        "attack": 15,
+        "defense": 34,
+        "tier": 4,
+        "price": 2400,
+        "desc": "Dushmanning ortiga bir soniyada teleport bo'lib o'tish imkonini beradi."
+    },
+    "boot_phoenix_spurs": {
+        "id": "boot_phoenix_spurs",
+        "slot": "legs",
+        "name": "🔥 Feniksning Boqiy Qadamlari",
+        "rarity": "legendary",
+        "attack": 12,
+        "defense": 38,
+        "tier": 4,
+        "price": 2350,
+        "desc": "Oyoq ostidagi jarohat va tuzoqlardan zararlanmaydi."
+    },
+    "boot_god_striders": {
+        "id": "boot_god_striders",
+        "slot": "legs",
+        "name": "👑 Oliy Yaratuvchi Qadamlari (God-Tier)",
+        "rarity": "mythic",
+        "attack": 30,
+        "defense": 75,
+        "tier": 5,
+        "price": 6500,
+        "desc": "Barcha koinot va dunyolar bo'ylab erkin kezuvchi ilohiy qadamlar."
+    },
+    "boot_celestial_treads": {
+        "id": "boot_celestial_treads",
+        "slot": "legs",
+        "name": "⭐ Samoviy Yulduzlar Sabatonlari",
+        "rarity": "mythic",
+        "attack": 25,
+        "defense": 70,
+        "tier": 5,
+        "price": 6000,
+        "desc": "Yulduzlar ustidan yurgandek yengil va daxlsiz himoya."
+    },
+    "boot_void_walkers": {
+        "id": "boot_void_walkers",
+        "slot": "legs",
+        "name": "🪐 Bo'shliq Falajlovchi Qadamlari",
+        "rarity": "mythic",
+        "attack": 28,
+        "defense": 68,
+        "tier": 5,
+        "price": 6200,
+        "desc": "Qadam bosgan yeridagi dushmanlarning oyog'ini yerga yopishtirib qo'yadi."
+    },
+    "boot_eternal_bastion": {
+        "id": "boot_eternal_bastion",
+        "slot": "legs",
+        "name": "🏛 Boqiy Poydevor Sabatonlari",
+        "rarity": "mythic",
+        "attack": 18,
+        "defense": 85,
+        "tier": 5,
+        "price": 7000,
+        "desc": "Zilzila yoki qamal quroli ham uni joyidan qo'zg'ata olmaydi."
+    },
+    "boot_omega_crush": {
+        "id": "boot_omega_crush",
+        "slot": "legs",
+        "name": "💀 Omega Fano Tepkisi",
+        "rarity": "mythic",
+        "attack": 38,
+        "defense": 60,
+        "tier": 5,
+        "price": 7500,
+        "desc": "Yiqilgan dushman ustiga qadam bosganda uni tosh kabi ezib tashlaydi."
+    },
+    "aml_wolf_tooth": {
+        "id": "aml_wolf_tooth",
+        "slot": "amulet",
+        "name": "🐺 Yovvoyi Bo'ri Tishi Tumori",
+        "rarity": "common",
+        "attack": 2,
+        "defense": 1,
+        "tier": 1,
+        "price": 100,
+        "desc": "O'rmon ovchilarining qasamyod tumori, vahimani biroz kamaytiradi."
+    },
+    "aml_copper_ankh": {
+        "id": "aml_copper_ankh",
+        "slot": "amulet",
+        "name": "☥ Mis Hayot Tumori",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 3,
+        "tier": 1,
+        "price": 110,
+        "desc": "Kichik jarohatlarning bitishini tezlashtiruvchi qadimiy belgi."
+    },
+    "aml_bone_pendant": {
+        "id": "aml_bone_pendant",
+        "slot": "amulet",
+        "name": "🦴 Qabr Suyagi Qora Marjoni",
+        "rarity": "common",
+        "attack": 3,
+        "defense": 0,
+        "tier": 1,
+        "price": 120,
+        "desc": "O'lim bilan yuzma-yuz kelganda qalbga sovuqqonlik beradi."
+    },
+    "aml_ruby_heart": {
+        "id": "aml_ruby_heart",
+        "slot": "amulet",
+        "name": "💎 Qonli Yoqut Qalb Marjoni",
+        "rarity": "rare",
+        "attack": 5,
+        "defense": 5,
+        "tier": 2,
+        "price": 450,
+        "desc": "Maksimal jonni +30 ga oshiradi va qon quyilishini to'xtatadi."
+    },
+    "aml_sun_talisman": {
+        "id": "aml_sun_talisman",
+        "slot": "amulet",
+        "name": "☀️ Quyosh Ma'budasi Talismani",
+        "rarity": "rare",
+        "attack": 4,
+        "defense": 7,
+        "tier": 2,
+        "price": 480,
+        "desc": "Zulmat maxluqlariga qarshi qo'shimcha yorug'lik zarbasi beradi."
+    },
+    "aml_silver_cross": {
+        "id": "aml_silver_cross",
+        "slot": "amulet",
+        "name": "✝️ Kumush Muqaddas Marjon",
+        "rarity": "rare",
+        "attack": 3,
+        "defense": 8,
+        "tier": 2,
+        "price": 500,
+        "desc": "Sanity tushishini 20% ga sekinlashtiradi va qarg'ishlardan asraydi."
+    },
+    "aml_dragon_eye": {
+        "id": "aml_dragon_eye",
+        "slot": "amulet",
+        "name": "👁 Qizil Ajdaho Ko'zi Medalyoni",
+        "rarity": "epic",
+        "attack": 12,
+        "defense": 10,
+        "tier": 3,
+        "price": 1200,
+        "desc": "Dushmanning zaif nuqtalarini ko'rsatib, kritik zarbani 15% oshiradi."
+    },
+    "aml_frost_tear": {
+        "id": "aml_frost_tear",
+        "slot": "amulet",
+        "name": "💧 Muzlagan Qoya Ko'z Yoshi",
+        "rarity": "epic",
+        "attack": 8,
+        "defense": 14,
+        "tier": 3,
+        "price": 1250,
+        "desc": "Jarohatlanganda tanani muz bilan qoplab og'riqni qoldiradi."
+    },
+    "aml_shadow_mark": {
+        "id": "aml_shadow_mark",
+        "slot": "amulet",
+        "name": "🌑 Zulmat Qotili Qora Muhri",
+        "rarity": "epic",
+        "attack": 15,
+        "defense": 6,
+        "tier": 3,
+        "price": 1300,
+        "desc": "Dushmanning orqasidan berilgan zarbalarni 30% kuchaytiradi."
+    },
+    "aml_phoenix_feather": {
+        "id": "aml_phoenix_feather",
+        "slot": "amulet",
+        "name": "🔥 Feniksning Yonuvchi Pati Marjoni",
+        "rarity": "legendary",
+        "attack": 20,
+        "defense": 18,
+        "tier": 4,
+        "price": 3000,
+        "desc": "O'lim holatida 1 marta o'yinchini 30% jon bilan tiriltiradi."
+    },
+    "aml_titan_heart": {
+        "id": "aml_titan_heart",
+        "slot": "amulet",
+        "name": "🌋 Titan Yuragi Tosh Talismani",
+        "rarity": "legendary",
+        "attack": 10,
+        "defense": 28,
+        "tier": 4,
+        "price": 3200,
+        "desc": "Har qanday suyak sinishi jarohatiga to'liq immunitet beradi."
+    },
+    "aml_void_essence": {
+        "id": "aml_void_essence",
+        "slot": "amulet",
+        "name": "🌌 Qora Tublik Efir Marjoni",
+        "rarity": "legendary",
+        "attack": 24,
+        "defense": 15,
+        "tier": 4,
+        "price": 3400,
+        "desc": "Har bir raundda dushmanning 20 staminasini so'rib oladi."
+    },
+    "aml_creator_sigil": {
+        "id": "aml_creator_sigil",
+        "slot": "amulet",
+        "name": "👑 Oliy Yaratuvchi Muqaddas Muhri (God-Tier)",
+        "rarity": "mythic",
+        "attack": 50,
+        "defense": 50,
+        "tier": 5,
+        "price": 9000,
+        "desc": "Barcha atributlarni +30 ga oshiruvchi va barcha qarg'ishlarni daf qiluvchi tumor."
+    },
+    "aml_celestial_star": {
+        "id": "aml_celestial_star",
+        "slot": "amulet",
+        "name": "⭐ Samoviy Tong Yulduzi Talismani",
+        "rarity": "mythic",
+        "attack": 45,
+        "defense": 45,
+        "tier": 5,
+        "price": 8500,
+        "desc": "Sanity ko'rsatkichini doimo 100% da ushlab turadi."
+    },
+    "aml_omega_relic": {
+        "id": "aml_omega_relic",
+        "slot": "amulet",
+        "name": "💀 Omega Koinot Relikviyasi",
+        "rarity": "mythic",
+        "attack": 60,
+        "defense": 40,
+        "tier": 5,
+        "price": 9500,
+        "desc": "Har bir g'alaba uchun 2 barobar ko'p oltin va tajriba beradi."
+    },
+    "rng_copper_band": {
+        "id": "rng_copper_band",
+        "slot": "ring",
+        "name": "💍 Oddiy Mis Halqa",
+        "rarity": "common",
+        "attack": 1,
+        "defense": 1,
+        "tier": 1,
+        "price": 80,
+        "desc": "Silliqlangan mis uzuk, barmoqqa qulay o'tiradi."
+    },
+    "rng_iron_signet": {
+        "id": "rng_iron_signet",
+        "slot": "ring",
+        "name": "💍 Qaroqchi Qora Temir Muhri",
+        "rarity": "common",
+        "attack": 2,
+        "defense": 0,
+        "tier": 1,
+        "price": 90,
+        "desc": "Qaroqchilar to'dasi a'zoligini bildiruvchi xufiyona uzuk."
+    },
+    "rng_silver_grace": {
+        "id": "rng_silver_grace",
+        "slot": "ring",
+        "name": "💍 Nafis Kumush Zafar Uzugi",
+        "rarity": "rare",
+        "attack": 4,
+        "defense": 3,
+        "tier": 2,
+        "price": 380,
+        "desc": "Zarba berish aniqligini va chaqqonlikni oshiradi."
     },
     "rng_gold_merchant": {
-        "id": "rng_gold_merchant", "slot": "ring", "name": "💍 Savdogar Baroni Oltin Uzugi",
-        "rarity": "rare", "attack": 2, "defense": 6, "tier": 2, "price": 420,
-        "desc": "Janglardan 20% ko'proq oltin tushishini ta'minlovchi omad uzugi."
+        "id": "rng_gold_merchant",
+        "slot": "ring",
+        "name": "🪙 Boy Savdogar Oltin Halqasi",
+        "rarity": "rare",
+        "attack": 1,
+        "defense": 4,
+        "tier": 2,
+        "price": 420,
+        "desc": "Janglarda va savdoda olinadigan oltinni +10% ga ko'paytiradi."
     },
-    "rng_vampiric_signet": {
-        "id": "rng_vampiric_signet", "slot": "ring", "name": "💍 Qon Shimi Qora Uzuk",
-        "rarity": "epic", "attack": 12, "defense": 4, "tier": 3, "price": 1400,
-        "desc": "Zarba berilgan dushman qonining 10% ini o'z egasining joniga qo'shadi."
+    "rng_vampiric_blood": {
+        "id": "rng_vampiric_blood",
+        "slot": "ring",
+        "name": "🩸 Qonxo'r Vampir Yoqut Uzugi",
+        "rarity": "epic",
+        "attack": 10,
+        "defense": 5,
+        "tier": 3,
+        "price": 1100,
+        "desc": "Har bir yetkazilgan zarbadan 10% jon o'g'irlaydi (Lifesteal)."
     },
-    "rng_ring_of_kings": {
-        "id": "rng_ring_of_kings", "slot": "ring", "name": "👑 Boqiy Qirollar Muhrli Uzugi",
-        "rarity": "mythic", "attack": 30, "defense": 25, "tier": 5, "price": 6800,
-        "desc": "Valoriya qit'asining barcha saroylarida tan olinadigan ilohiy qirollik muhri."
+    "rng_berserk_rage": {
+        "id": "rng_berserk_rage",
+        "slot": "ring",
+        "name": "🔥 Berserk G'azab Tosh Uzugi",
+        "rarity": "epic",
+        "attack": 14,
+        "defense": 2,
+        "tier": 3,
+        "price": 1150,
+        "desc": "Jon 30% dan pastga tushganda zarba kuchini 40% ga oshiradi."
+    },
+    "rng_dragon_lord": {
+        "id": "rng_dragon_lord",
+        "slot": "ring",
+        "name": "🐉 Qora Ajdaho Lordi Toj Uzugi",
+        "rarity": "legendary",
+        "attack": 18,
+        "defense": 12,
+        "tier": 4,
+        "price": 2800,
+        "desc": "Olovli nafas bilan dushmanning zirhini eritib yuboradi."
+    },
+    "rng_titan_might": {
+        "id": "rng_titan_might",
+        "slot": "ring",
+        "name": "🌋 Titan Quvvati Magma Halqasi",
+        "rarity": "legendary",
+        "attack": 15,
+        "defense": 18,
+        "tier": 4,
+        "price": 2900,
+        "desc": "Jismoniy zarbalarni 25% kuchaytiradi va yiqilmaslik beradi."
+    },
+    "rng_creator_ring": {
+        "id": "rng_creator_ring",
+        "slot": "ring",
+        "name": "👑 Oliy Hukmdor Boqiy Uzugi (God-Tier)",
+        "rarity": "mythic",
+        "attack": 40,
+        "defense": 40,
+        "tier": 5,
+        "price": 8000,
+        "desc": "Valoriya taxtiga da'vogarlik ramzi, butun imperiyani boshqarish kuchi."
+    },
+    "rng_omega_infinity": {
+        "id": "rng_omega_infinity",
+        "slot": "ring",
+        "name": "♾ Omega Cheksizlik Halqasi",
+        "rarity": "mythic",
+        "attack": 50,
+        "defense": 30,
+        "tier": 5,
+        "price": 8500,
+        "desc": "Vaqt va makon qoidalarini chetlab o'tib, har raundda qo'shimcha zarba beradi."
     }
 }
+
+def get_item(item_id: str):
+    return ITEMS_CATALOG.get(item_id)
+
+def get_items_by_slot(slot: str):
+    return [i for i in ITEMS_CATALOG.values() if i.get("slot") == slot]
+
+def get_items_by_tier(tier: int):
+    return [i for i in ITEMS_CATALOG.values() if i.get("tier") == tier]
+
+def get_items_by_rarity(rarity: str):
+    return [i for i in ITEMS_CATALOG.values() if i.get("rarity") == rarity]
