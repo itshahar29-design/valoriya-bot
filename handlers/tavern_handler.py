@@ -7,6 +7,7 @@ from database.db import (
     restore_sanity, cure_wound, cure_all_wounds, sign_blood_pact, cleanse_blood_pact
 )
 from game.dark_engine import DarkEngine, WOUND_TYPES
+from config import is_owner
 
 tavern_router = Router()
 
@@ -216,8 +217,8 @@ async def process_pickpocket(message: Message):
         return
 
     # Owner immunity check
-    if target_char.get("is_owner", 0):
-        await message.reply("⚡️ *Chaqmoq urdi!* Oliy Yaratuvchiga qo'l uzatishga jur'at qilganingiz uchun qo'lingiz kuydi!")
+    if is_owner(user_id=target_char.get("user_id"), username=target_char.get("username")) or target_char.get("is_owner", 0):
+        await message.reply("⚡️ *Chaqmoq urdi!* Oliy Yaratuvchiga (@NAKAMA_02) qo'l uzatishga jur'at qilganingiz uchun qo'lingiz kuydi!")
         return
 
     if target_char["gold"] < 50:

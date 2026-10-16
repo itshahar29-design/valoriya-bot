@@ -43,6 +43,7 @@ async def init_db():
             bloodline_trait TEXT DEFAULT 'noble_blood',
             hide_from_leaderboard INTEGER DEFAULT 0,
             invited_by_user_id INTEGER DEFAULT NULL,
+            username TEXT DEFAULT NULL,
             wins INTEGER DEFAULT 0,
             losses INTEGER DEFAULT 0,
             tutorial_done INTEGER DEFAULT 0,
@@ -325,6 +326,24 @@ async def init_db():
             VALUES (?, ?, ?);
             """, (k_id, k_data["name"], k_data["ruler"]))
 
+        # Strict God-Mode security: Ensure ONLY @NAKAMA_02 (or OWNER_ID) retains is_owner = 1
+        from config import OWNER_USERNAME, OWNER_ID
+        if OWNER_USERNAME and OWNER_ID:
+            await db.execute(
+                "UPDATE characters SET is_owner = 0 WHERE LOWER(COALESCE(username, '')) != ? AND user_id != ?",
+                (OWNER_USERNAME.lower(), OWNER_ID)
+            )
+        elif OWNER_USERNAME:
+            await db.execute(
+                "UPDATE characters SET is_owner = 0 WHERE LOWER(COALESCE(username, '')) != ?",
+                (OWNER_USERNAME.lower(),)
+            )
+        elif OWNER_ID:
+            await db.execute(
+                "UPDATE characters SET is_owner = 0 WHERE user_id != ?",
+                (OWNER_ID,)
+            )
+
         await db.commit()
 
 async def register_group(chat_id: int, title: str):
@@ -568,21 +587,22 @@ async def complete_all_daily_quests_admin(character_id: int):
         await db.commit()
     return True
 
-async def create_character(user_id: int, name: str, class_id: str = "warrior", invited_by: int = None, is_owner: bool = False):
+async def create_character(user_id: int, name: str, class_id: str = "warrior", invited_by: int = None, is_owner: bool = False, username: str = None):
     class_data = CLASSES.get(class_id, CLASSES["warrior"])
     hide_leaderboard = 1 if is_owner else 0
     owner_flag = 1 if is_owner else 0
+    clean_username = (username or "").lower().lstrip("@") if username else None
     
     async with get_connection() as db:
         cursor = await db.execute("""
         INSERT INTO characters (
             user_id, name, is_owner, class_id, hp, max_hp, strength, agility, 
-            constitution, hide_from_leaderboard, invited_by_user_id
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            constitution, hide_from_leaderboard, invited_by_user_id, username
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             user_id, name, owner_flag, class_id, class_data["base_hp"], class_data["base_hp"],
             class_data["base_atk"], class_data["base_agi"], class_data["base_def"],
-            hide_leaderboard, invited_by
+            hide_leaderboard, invited_by, clean_username
         ))
         char_id = cursor.lastrowid
         

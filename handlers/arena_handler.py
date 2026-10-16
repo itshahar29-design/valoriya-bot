@@ -5,6 +5,7 @@ from game.battle_engine import BattleEngine
 from game.npc_engine import NPCEngine
 from game.retention_engine import RetentionEngine
 from keyboards.inline_menus import battle_actions_keyboard, hit_zones_keyboard, main_menu_keyboard
+from config import is_owner
 
 arena_router = Router()
 
@@ -140,7 +141,7 @@ async def process_battle_turn(callback: CallbackQuery):
             f"🎖 *Shon-sharaf:* +25 Honor\n"
             f"📜 *Kundalik Kvest:* Arenadagi g'alaba hisobga olindi!{bonus_text}",
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0)))
+            reply_markup=main_menu_keyboard(is_owner(user_id=user_id, username=callback.from_user.username))
         )
         return
         
@@ -160,7 +161,7 @@ async def process_battle_turn(callback: CallbackQuery):
             f"{opp['name']} qo'rquvdan tiz cho'kib jonini saqlab qolish uchun {loot_gold} oltin to'ladi!\n"
             f"📜 *Kundalik Kvest:* Arenadagi g'alaba hisobga olindi!",
             parse_mode="Markdown",
-            reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0)))
+            reply_markup=main_menu_keyboard(is_owner(user_id=user_id, username=callback.from_user.username))
         )
         return
         

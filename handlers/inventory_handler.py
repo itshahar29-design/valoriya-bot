@@ -5,6 +5,7 @@ from database.db import (
     auto_equip_best, repair_all_items, dismantle_junk
 )
 from keyboards.inline_menus import inventory_qol_keyboard, main_menu_keyboard
+from config import is_owner
 from game.constants import EQUIPMENT_SLOTS
 from game.dark_engine import DarkEngine
 import json
@@ -97,12 +98,12 @@ async def handle_dismantle_junk(callback: CallbackQuery):
 @inventory_router.callback_query(F.data == "menu_main")
 async def return_to_main_menu(callback: CallbackQuery):
     user_id = callback.from_user.id
-    char = await get_character_by_user_id(user_id)
-    is_owner = bool(char.get("is_owner", 0)) if char else False
+    username = callback.from_user.username
+    is_owner_flag = is_owner(user_id=user_id, username=username)
     
     await callback.message.edit_text(
         f"👑 *BOSH HARBIY QARORGOH* 👑\n\n"
         f"Valoriya qit'asida qanday buyruq berasiz?",
         parse_mode="Markdown",
-        reply_markup=main_menu_keyboard(is_owner)
+        reply_markup=main_menu_keyboard(is_owner_flag)
     )

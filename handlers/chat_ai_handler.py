@@ -5,17 +5,12 @@ from keyboards.inline_menus import (
     main_menu_keyboard, arena_menu_keyboard, kingdom_list_keyboard,
     inventory_qol_keyboard, owner_god_mode_keyboard
 )
-from config import OWNER_ID, OWNER_USERNAME
+from config import OWNER_ID, OWNER_USERNAME, is_owner
 
 chat_router = Router()
 
 def is_owner_user(user_id: int, username: str | None) -> bool:
-    clean_username = (username or "").lower().lstrip("@")
-    if OWNER_USERNAME and clean_username == OWNER_USERNAME:
-        return True
-    if OWNER_ID and user_id == OWNER_ID:
-        return True
-    return False
+    return is_owner(user_id=user_id, username=username)
 
 @chat_router.message(F.text)
 async def handle_natural_chat(message: Message):

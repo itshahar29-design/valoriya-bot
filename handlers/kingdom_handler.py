@@ -6,6 +6,7 @@ from database.db import get_character_by_user_id, update_character
 from game.constants import KINGDOMS
 from game.emotions_engine import EmotionsEngine
 from keyboards.inline_menus import main_menu_keyboard
+from config import is_owner
 
 kingdom_router = Router()
 
@@ -90,7 +91,7 @@ async def process_flattery_speech(message: Message, state: FSMContext):
         f"{result['reply']}\n\n"
         f"📊 *Sizning munosabatingiz:* {result['affection_change']:+d} ball\n"
         f"💰 *Mukofot:* +{result['reward_gold']} Oltin",
-        reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0) if char else False))
+        reply_markup=main_menu_keyboard(is_owner(user_id=message.from_user.id, username=message.from_user.username))
     )
 
 @kingdom_router.callback_query(F.data.startswith("swear_oath_"))
@@ -113,5 +114,5 @@ async def swear_oath(callback: CallbackQuery):
         f"Siz *{k['name']}* bayrog'i ostida xizmat qilishga qasamyod qildingiz!\n\n"
         f"Hukmdor {k['ruler']} sizni qirollik ritsari sifatida e'tirof etdi va har soatlik soliq maoshi tayinladi.",
         parse_mode="Markdown",
-        reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0)))
+        reply_markup=main_menu_keyboard(is_owner(user_id=user_id, username=callback.from_user.username))
     )

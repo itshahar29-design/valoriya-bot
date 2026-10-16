@@ -24,19 +24,13 @@ from handlers.arena_handler import ACTIVE_BATTLES
 from handlers.market_handler import get_market_hub_keyboard
 from handlers.quest_handler import render_quests_ui
 from handlers.trade_travel_handler import render_trade_ui
-from config import OWNER_ID, OWNER_USERNAME
+from config import OWNER_ID, OWNER_USERNAME, is_owner
 
 menu_buttons_router = Router()
 
-def is_owner_user(user_id: int, username: str | None, char: dict | None) -> bool:
-    if char and char.get("is_owner", 0):
-        return True
-    clean_username = (username or "").lower().lstrip("@")
-    if OWNER_USERNAME and clean_username == OWNER_USERNAME:
-        return True
-    if OWNER_ID and user_id == OWNER_ID:
-        return True
-    return False
+def is_owner_user(user_id: int, username: str | None, char: dict | None = None) -> bool:
+    clean_u = username or (char.get("username") if char else None)
+    return is_owner(user_id=user_id, username=clean_u)
 
 # =====================================================================
 # 1. ARENA (1v1 DUEL)
@@ -549,7 +543,7 @@ async def btn_owner_god(message: Message):
 
     is_owner = is_owner_user(user_id, username, char)
     if not is_owner:
-        await message.answer("⛔️ Bu bo'lim faqat Oliy Yaratuvchi (Owner) uchun himoyalangan!")
+        await message.answer("⛔️ Bu bo'lim faqat Oliy Yaratuvchi (@NAKAMA_02) uchun himoyalangan!")
         return
 
     text = (

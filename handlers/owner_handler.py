@@ -8,19 +8,13 @@ from database.db import (
     set_setting
 )
 from keyboards.inline_menus import owner_god_mode_keyboard, main_menu_keyboard
-from config import OWNER_ID, OWNER_USERNAME
+from config import OWNER_ID, OWNER_USERNAME, is_owner
 
 owner_router = Router()
 
-def is_owner_authorized(user_id: int, username: str | None, char: dict | None) -> bool:
-    if char and char.get("is_owner", 0):
-        return True
-    clean_username = (username or "").lower().lstrip("@")
-    if OWNER_USERNAME and clean_username == OWNER_USERNAME:
-        return True
-    if OWNER_ID and user_id == OWNER_ID:
-        return True
-    return False
+def is_owner_authorized(user_id: int, username: str | None, char: dict | None = None) -> bool:
+    clean_u = username or (char.get("username") if char else None)
+    return is_owner(user_id=user_id, username=clean_u)
 
 @owner_router.callback_query(F.data.in_(["menu_owner_god", "god_page_1"]))
 async def open_owner_god_menu_p1(callback: CallbackQuery):
@@ -29,7 +23,7 @@ async def open_owner_god_menu_p1(callback: CallbackQuery):
     char = await get_character_by_user_id(user_id)
     
     if not is_owner_authorized(user_id, username, char):
-        await callback.answer("⛔️ Ruxsat berilmagan! Faqat Oliy Yaratuvchi (Owner) uchun!", show_alert=True)
+        await callback.answer("⛔️ Ruxsat berilmagan! Faqat Oliy Yaratuvchi (@NAKAMA_02) uchun!", show_alert=True)
         return
         
     await callback.message.edit_text(

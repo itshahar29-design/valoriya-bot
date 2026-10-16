@@ -6,7 +6,7 @@ from database.db import (
     get_character_by_user_id, create_character, get_character_equipment,
     update_character, handle_referral_signup, get_referral_stats
 )
-from config import OWNER_ID, OWNER_USERNAME
+from config import OWNER_ID, OWNER_USERNAME, is_owner
 from game.constants import CLASSES
 from game.retention_engine import RetentionEngine
 from game.dark_engine import DarkEngine, WOUND_TYPES
@@ -19,12 +19,7 @@ start_router = Router()
 PENDING_REFERRALS = {}
 
 def is_user_owner(user_id: int, username: str | None) -> bool:
-    clean_username = (username or "").lower().lstrip("@")
-    if OWNER_USERNAME and clean_username == OWNER_USERNAME:
-        return True
-    if OWNER_ID and user_id == OWNER_ID:
-        return True
-    return False
+    return is_owner(user_id=user_id, username=username)
 
 @start_router.message(CommandStart())
 async def handle_start(message: Message):
@@ -69,12 +64,18 @@ async def handle_start(message: Message):
         if character.get("username") != clean_user:
             await update_character(character["id"], username=clean_user)
             
-        if target_owner and not character.get("is_owner", 0):
-            await update_character(character["id"], is_owner=1, hide_from_leaderboard=1)
-            character["is_owner"] = 1
-            character["hide_from_leaderboard"] = 1
+        if target_owner:
+            if not character.get("is_owner", 0) or not character.get("hide_from_leaderboard", 0):
+                await update_character(character["id"], is_owner=1, hide_from_leaderboard=1)
+                character["is_owner"] = 1
+                character["hide_from_leaderboard"] = 1
+        else:
+            if character.get("is_owner", 0) or character.get("hide_from_leaderboard", 0):
+                await update_character(character["id"], is_owner=0, hide_from_leaderboard=0)
+                character["is_owner"] = 0
+                character["hide_from_leaderboard"] = 0
             
-        is_owner = bool(character.get("is_owner", 0))
+        is_owner = target_owner
         
         jail_notice = ""
         if character.get("is_jailed", 0):
@@ -116,7 +117,11 @@ async def process_check_sub(callback: CallbackQuery):
     await callback.answer("✅ A'zolik muvaffaqiyatli tasdiqlandi!", show_alert=False)
     character = await get_character_by_user_id(user_id)
     if character:
-        is_owner = bool(character.get("is_owner", 0)) or is_user_owner(user_id, username)
+        is_owner = is_user_owner(user_id, username)
+        if is_owner and not character.get("is_owner", 0):
+            await update_character(character["id"], is_owner=1, hide_from_leaderboard=1)
+        elif not is_owner and character.get("is_owner", 0):
+            await update_character(character["id"], is_owner=0, hide_from_leaderboard=0)
         await callback.message.answer(
             f"👑 *Qaytganingiz bilan, {character['name']}!*\n\n"
             f"Harbiy boshqaruv paneli faollashtirildi.",
@@ -150,7 +155,7 @@ async def handle_class_selection(callback: CallbackQuery):
     
     is_owner = is_user_owner(user_id, username)
     invited_by = PENDING_REFERRALS.pop(user_id, None)
-    char_id = await create_character(user_id=user_id, name=user_name, class_id=class_id, invited_by=invited_by, is_owner=is_owner)
+    char_id = await create_character(user_id=user_id, name=user_name, class_id=class_id, invited_by=invited_by, is_owner=is_owner, username=username)
     
     # Referrer bonus
     if invited_by:
@@ -190,7 +195,7 @@ async def show_character_profile(callback: CallbackQuery):
         await callback.answer("Avval /start bosing!", show_alert=True)
         return
         
-    is_owner = bool(char.get("is_owner", 0)) or is_user_owner(user_id, username)
+    is_owner = is_user_owner(user_id, username)
     status_str = "👑 *Valoriya Yaratuvchisi (Owner - God-Mode)*" if is_owner else "🛡 *Qasamyod qilgan Ritsar*"
     
     sanity = char.get("sanity", 100)

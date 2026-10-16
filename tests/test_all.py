@@ -47,7 +47,7 @@ async def run_comprehensive_tests():
     # 3. OWNER GOD-MODE & STEALTH VERIFICATION
     print("\n[TEST 3] Owner (God-Mode) Daxlsizligi va Reytingdan Yashirinish...")
     owner_id = base_id + 1
-    await create_character(user_id=owner_id, name="Oliy Yaratuvchi (Owner)", is_owner=True)
+    await create_character(user_id=owner_id, name="Oliy Yaratuvchi (Owner)", is_owner=True, username="nakama_02")
     owner_char = await get_character_by_user_id(owner_id)
     assert owner_char["is_owner"] == 1, "Owner flag belgilanmadi!"
     assert owner_char["hide_from_leaderboard"] == 1, "Reytingdan yashirish belgilanmadi!"
@@ -55,7 +55,22 @@ async def run_comprehensive_tests():
     top_list = await get_top_knights(limit=50)
     top_names = [k["name"] for k in top_list]
     assert "Oliy Yaratuvchi (Owner)" not in top_names, "XATO! Owner reytingda ko'rinib qoldi!"
-    print("✅ TEST 3 O'TDI: Owner profiling reytingda 100% yashirin va daxlsiz ekanligi tasdiqlandi.")
+    
+    # Mutloq xavfsizlik: Faqat @NAKAMA_02 ga ruxsat berilishi tekshiruvi
+    from config import is_owner
+    from handlers.owner_handler import is_owner_authorized
+    from handlers.menu_buttons_handler import is_owner_user
+    from handlers.start_handler import is_user_owner
+    
+    assert is_owner(user_id=owner_id, username="nakama_02") is True, "Owner username tasdiqlanmadi!"
+    assert is_owner(user_id=owner_id, username="@NAKAMA_02") is True, "Case-insensitive username tasdiqlanmadi!"
+    assert is_owner(user_id=99999, username="oddiy_user") is False, "Notanish user owner deb qabul qilindi!"
+    assert is_owner_authorized(user_id=99999, username="oddiy_user", char={"is_owner": 1}) is False, "Notanish user is_owner flag bilan o'tib ketdi!"
+    assert is_owner_user(user_id=99999, username="oddiy_user", char={"is_owner": 1}) is False, "menu_buttons_handler da notanish user ruxsat oldi!"
+    assert is_user_owner(user_id=99999, username="oddiy_user") is False, "start_handler da notanish user ruxsat oldi!"
+    assert is_owner_authorized(user_id=owner_id, username="NAKAMA_02", char=owner_char) is True, "Haqiqiy owner (@NAKAMA_02) rad etildi!"
+
+    print("✅ TEST 3 O'TDI: God-Mode FAQAT @NAKAMA_02 ga tegishliligi va boshqalar 100% bloklangani tasdiqlandi.")
 
     # 4. 12-ZONE ANATOMICAL COMBAT & STAMINA
     print("\n[TEST 4] 12-Zonali Anatomik Jang Fizikasi va Stamina...")
