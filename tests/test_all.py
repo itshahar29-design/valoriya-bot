@@ -332,9 +332,76 @@ async def run_comprehensive_tests():
     assert sell_g_ok is True, f"Tovar sotilmadi: {sell_g_msg}"
     print(f"✅ TEST 12.5 (Shaharlararo Karvon Tijorati): Samarqanddan olindi, Muzli Cho'qqida sotildi: {sell_g_msg}")
 
+    # =====================================================================
+    # 13. OLIY YARATUVCHI (OWNER GOD-MODE) CHEKSIZ BUYRUQ VA VAKOLATLARI
+    # =====================================================================
+    print("\n[TEST 13] Oliy Yaratuvchi (Owner) Mutloq Vakolatlari va Cheksiz Buyruqlari...")
+    from database.db import (
+        give_player_gems, give_player_runes, make_player_king, dethrone_current_king,
+        set_player_sanity, give_player_wound, cure_player_all_wounds,
+        disband_guild_by_name, give_guild_gold_by_name, assign_castle_owner_by_id,
+        clear_market_listings_admin, unlock_all_player_achievements, complete_all_daily_quests_admin
+    )
+
+    # 13.1 Javohirlar (Gems) berish
+    g_res = await give_player_gems(char["id"], 500)
+    assert g_res >= 500, "Javohir berilmadi!"
+    print(f"✅ TEST 13.1 (Javohir In'omi): O'yinchiga +500 Javohir berildi (Jami: {g_res} 💎).")
+
+    # 13.2 Elementar Runalar berish
+    r_inv = await give_player_runes(char["id"], "fire_rune", 5)
+    assert r_inv.get("fire_rune", 0) >= 5, "Runalar berilmadi!"
+    print(f"✅ TEST 13.2 (Runa Berish): O'yinchiga 5 ta Olov runasi berildi (Jami: {r_inv['fire_rune']} ta).")
+
+    # 13.3 Qirollik Taxtiga tayinlash va Taxtdan ag'darish
+    k_ok, k_res = await make_player_king(char["id"])
+    assert k_ok is True, "Qirol tayinlanmadi!"
+    c_king = await get_current_king()
+    assert c_king.get("king_character_id") == char["id"], "Qirol ID mos kelmadi!"
+    
+    d_ok, d_res = await dethrone_current_king()
+    assert d_ok is True, "Taxt bo'shatilmadi!"
+    c_king_after = await get_current_king()
+    assert c_king_after.get("king_character_id") is None, "Taxt bo'sh qolmadi!"
+    print(f"✅ TEST 13.3 (Taxtni Boshqarish): Qirol tayinlandi va ag'darildi: {d_res[:45]}...")
+
+    # 13.4 Aql/Sanity manipulyatsiyasi va Travmalar berish
+    s_val = await set_player_sanity(char["id"], 0)
+    assert s_val == 0, "Sanity 0 ga tushirilmadi!"
+    w_list = await give_player_wound(char["id"], "broken_arm")
+    assert "broken_arm" in w_list, "Jarohat berilmadi!"
+    await cure_player_all_wounds(char["id"])
+    char_cured = await get_character_by_user_id(test_user_id)
+    assert char_cured["sanity"] == 100, "Sanity 100 ga tiklanmadi!"
+    print("✅ TEST 13.4 (Sanity & Travmalar): Aql 0% (Telbalik) va Jarohat berildi, so'ngra to'liq shifo berildi.")
+
+    # 13.5 Gildiya va Qal'alarni boshqarish
+    test_g_name = f"Vaqtinchalik_{int(time.time()) % 100000}"
+    await create_guild(buyer_id, test_g_name)
+    g_gold_ok, g_gold_msg = await give_guild_gold_by_name(test_g_name, 50000)
+    assert g_gold_ok is True, "Gildiyaga oltin berilmadi!"
+    c_assign_ok, c_assign_msg = await assign_castle_owner_by_id(castles[0]["id"], test_g_name)
+    assert c_assign_ok is True, "Qal'a topshirilmadi!"
+    disband_ok, disband_msg = await disband_guild_by_name(test_g_name)
+    assert disband_ok is True, "Gildiya tarqatilmadi!"
+    print(f"✅ TEST 13.5 (Gildiya & Qal'alar): Xazina to'ldirildi (+50k 🪙), Qal'a topshirildi va Gildiya tarqatildi.")
+
+    # 13.6 Kundalik Kvestlar va Barcha Yutuqlarni ochish
+    await complete_all_daily_quests_admin(char["id"])
+    await unlock_all_player_achievements(char["id"])
+    ach_all = await get_player_achievements(char["id"])
+    assert len(ach_all) >= 5, "Barcha yutuqlar ochilmadi!"
+    print(f"✅ TEST 13.6 (Kvest & Yutuqlar): Barcha kvestlar bajarildi va {len(ach_all)} ta yutuq ochildi.")
+
+    # 13.7 Bozorni Tozalash (Admin Market Reset)
+    await create_market_listing(char["id"], "potions", "Test Eliksir", 1, 100)
+    cleared_cnt = await clear_market_listings_admin()
+    assert cleared_cnt >= 1, "Bozor tozalanmadi!"
+    print(f"✅ TEST 13.7 (Bozor Reset): {cleared_cnt} ta faol listinglar bekor qilindi.")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 12 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 VALORIYA QIT'ASI TO'LIQ VA BEKAMU-KO'ST HOLATDA TAYYOR!")
+    print("🎉 BARCHA 13 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print("👑 VALORIYA QIT'ASI VA OWNER GOD-MODE TO'LIQ TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":

@@ -22,8 +22,8 @@ def is_owner_authorized(user_id: int, username: str | None, char: dict | None) -
         return True
     return False
 
-@owner_router.callback_query(F.data == "menu_owner_god")
-async def open_owner_god_menu(callback: CallbackQuery):
+@owner_router.callback_query(F.data.in_(["menu_owner_god", "god_page_1"]))
+async def open_owner_god_menu_p1(callback: CallbackQuery):
     user_id = callback.from_user.id
     username = callback.from_user.username
     char = await get_character_by_user_id(user_id)
@@ -33,16 +33,35 @@ async def open_owner_god_menu(callback: CallbackQuery):
         return
         
     await callback.message.edit_text(
-        "⚡️ *VALORIYA YARATUVCHISI (GOD-MODE) MARKAZIY BOSHQARUVI* ⚡️\n\n"
-        "Siz butun qit'a, 12 ta imperiya va barcha ritsarlar taqdiri ustidan mutlaq qudratga egasiz!\n"
-        "Profilingiz reytinglarda 100% yashirin va daxlsizdir.\n\n"
-        "👑 *Boshqaruv vositalari:*\n"
-        "• Cheksiz boylik, javohirlar va Xudo darajasidagi qurollar\n"
-        "• Global Dunyo ofatlari: Qonli Oy, Ajdaho, Oltin va Meteor yomg'iri\n"
-        "• Barcha ritsarlarga saxovatli Airdrop va Guruhlarga Oliy Farmon\n"
-        "• Foolproof Snapshot va 1-tugmali Rollback xavfsizligi.",
+        "⚡️ *VALORIYA YARATUVCHISI (GOD-MODE) [1-SAHIFA]* ⚡️\n\n"
+        "👑 *Shaxsiy Qudrat va Xudo Darajasidagi Buyumlar:*\n"
+        "• Cheksiz oltin, javohirlar, elementar runalar va eliksirlar\n"
+        "• God-Stats: 99,999 HP / 999 ATK va 999 DEF\n"
+        "• Bir zumda Valoriya Taxtini egallash (Qirol bo'lish)\n"
+        "• Afsonaviy Pegas va Iblis Ahdini yoqish/o'chirish.",
         parse_mode="Markdown",
-        reply_markup=owner_god_mode_keyboard()
+        reply_markup=owner_god_mode_keyboard(page=1)
+    )
+
+@owner_router.callback_query(F.data == "god_page_2")
+async def open_owner_god_menu_p2(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    
+    if not is_owner_authorized(user_id, username, char):
+        await callback.answer("⛔️ Ruxsat berilmagan!", show_alert=True)
+        return
+        
+    await callback.message.edit_text(
+        "🌍 *VALORIYA YARATUVCHISI (GOD-MODE) [2-SAHIFA]* 🌍\n\n"
+        "⚡️ *Dunyo Ofatlari, Guruhlar va Server Nazorati:*\n"
+        "• Qonli Oy, Ajdaho Reydi, Oltin va Meteor yomg'iri\n"
+        "• Global Shifo (barcha o'yinchilar davolanadi) yoki Global Qahr (chaqmoq)\n"
+        "• Bozor va Qal'alarni tozalash (Admin Reset)\n"
+        "• Snapshot saqlash va 1-soatlik Rollback.",
+        parse_mode="Markdown",
+        reply_markup=owner_god_mode_keyboard(page=2)
     )
 
 # 1. CHEKSIZ XAZINA (+50,000 Oltin)
@@ -56,7 +75,177 @@ async def grant_owner_gold(callback: CallbackQuery):
         
     await update_character(char["id"], gold=char["gold"] + 50000, gems=char.get("gems", 0) + 100)
     await callback.answer("💰 Xazinangizga +50,000 Oltin va +100 Qimmatbaho Javohir qo'shildi!", show_alert=True)
-    await open_owner_god_menu(callback)
+    await open_owner_god_menu_p1(callback)
+
+# 1.1 CHEKSIZ JAVOHIR (+1,000 Javohir)
+@owner_router.callback_query(F.data == "god_grant_gems")
+async def grant_owner_gems(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import give_player_gems
+    await give_player_gems(char["id"], 1000)
+    await callback.answer("💎 Xazinangizga +1,000 Qimmatbaho Javohir qo'shildi!", show_alert=True)
+    await open_owner_god_menu_p1(callback)
+
+# 1.2 TAXTNI DARHOL EGALLASH
+@owner_router.callback_query(F.data == "god_claim_throne_instant")
+async def god_claim_throne(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import make_player_king
+    ok, msg = await make_player_king(char["id"])
+    await callback.answer(msg.replace("*", ""), show_alert=True)
+    await open_owner_god_menu_p1(callback)
+
+# 1.3 BARCHA RUNALAR TO'PLAMI (+10 Olov, +10 Muz, +10 Chaqmoq)
+@owner_router.callback_query(F.data == "god_spawn_runes")
+async def god_spawn_runes(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import give_player_runes
+    await give_player_runes(char["id"], "fire_rune", 10)
+    await give_player_runes(char["id"], "frost_rune", 10)
+    await give_player_runes(char["id"], "lightning_rune", 10)
+    await callback.answer("🔮 10x Olov, 10x Muz va 10x Chaqmoq runalari berildi!", show_alert=True)
+    await open_owner_god_menu_p1(callback)
+
+# 1.4 BARCHA ELIKSIRLAR TO'PLAMI (+20 G'azab, +20 Hayot, +20 Zaxar)
+@owner_router.callback_query(F.data == "god_spawn_potions")
+async def god_spawn_potions(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    import json
+    from database.db import get_player_professions, get_connection
+    profs = await get_player_professions(char["id"])
+    pots = profs.setdefault("potions", {})
+    pots["rage"] = pots.get("rage", 0) + 20
+    pots["healing"] = pots.get("healing", 0) + 20
+    pots["void_poison"] = pots.get("void_poison", 0) + 20
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET professions_json = ? WHERE id = ?", (json.dumps(profs), char["id"]))
+        await db.commit()
+    await callback.answer("🧪 20x G'azab, 20x Hayot va 20x Zaxarlar qo'shildi!", show_alert=True)
+    await open_owner_god_menu_p1(callback)
+
+# 1.5 QANOTLI PEGAS TULPORI
+@owner_router.callback_query(F.data == "god_spawn_pegasus")
+async def god_spawn_pegasus(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    await update_character(char["id"], horse_name="🦄 Qanotli Oltin Pegas", horse_bond=100)
+    await callback.answer("🦄 Qanotli Oltin Pegas tulpori sizga 100% bog'landi!", show_alert=True)
+    await open_owner_god_menu_p1(callback)
+
+# 1.6 IBLIS QONLI AHDI TOGGLE
+@owner_router.callback_query(F.data == "god_toggle_demon_pact")
+async def god_toggle_demon_pact(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    current = char.get("bloodline_trait", "noble_blood")
+    new_trait = "noble_blood" if current == "demon_pact" else "demon_pact"
+    await update_character(char["id"], bloodline_trait=new_trait)
+    status = "bekor qilindi (Ozod Ruh)" if new_trait == "noble_blood" else "yoqildi (+45 ATK, 20% Lifesteal)!"
+    await callback.answer(f"🩸 Zulmat ahdi {status}", show_alert=True)
+    await open_owner_god_menu_p1(callback)
+
+# 1.7 GLOBAL SHIFO (MASS HEAL)
+@owner_router.callback_query(F.data == "god_mass_heal")
+async def god_mass_heal(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import get_connection, get_active_groups
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET hp = max_hp, stamina = max_stamina, sanity = 100, wounds_json = '[]'")
+        await db.commit()
+    groups = await get_active_groups()
+    for g in groups:
+        try:
+            await callback.bot.send_message(
+                g["chat_id"],
+                "💖 *YARATUVCHIDAN BUTUN VALORIYAGA SHIFO VA MARHAMAT!* 🌟\n\n"
+                "Oliy Yaratuvchi butun qit'adagi barcha ritsarlarning jarohatlarini davoladi, "
+                "jonlarini 100% ga to'ldirdi va aqllarini pokladi!",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            pass
+    await callback.answer("💖 Butun dunyo ritsarlari 100% sog'aytirildi!", show_alert=True)
+    await open_owner_god_menu_p2(callback)
+
+# 1.8 GLOBAL QAHR (MASS SMITE)
+@owner_router.callback_query(F.data == "god_mass_smite")
+async def god_mass_smite(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import get_connection, get_active_groups
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET hp = MAX(10, hp - 30) WHERE is_owner = 0")
+        await db.commit()
+    groups = await get_active_groups()
+    for g in groups:
+        try:
+            await callback.bot.send_message(
+                g["chat_id"],
+                "⚡️ *OSMONLARDAN YARATUVCHINING QAHR CHAQMOG'I URILDI!* ⚡️\n\n"
+                "Valoriya zaminini ilohiy chaqmoq qopladi! Barcha ritsarlarga -30 HP jazo zarbasi berildi!",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            pass
+    await callback.answer("⚡️ Global chaqmoq zarbasi barcha ritsarlarga urildi!", show_alert=True)
+    await open_owner_god_menu_p2(callback)
+
+# 1.9 BOZORNI TOZALASH
+@owner_router.callback_query(F.data == "god_clear_market")
+async def god_clear_market(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import clear_market_listings_admin
+    count = await clear_market_listings_admin()
+    await callback.answer(f"🛒 Bozordagi barcha {count} ta faol listinglar bekor qilindi!", show_alert=True)
+    await open_owner_god_menu_p2(callback)
+
+# 1.10 QAL'ALARNI NEYTRAL QILISH
+@owner_router.callback_query(F.data == "god_reset_castles")
+async def god_reset_castles(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    username = callback.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+    from database.db import get_connection
+    async with get_connection() as db:
+        await db.execute("UPDATE castles SET owner_guild_id = NULL")
+        await db.commit()
+    await callback.answer("🏰 Barcha 3 ta qadimiy qal'a neytral holatga qaytarildi!", show_alert=True)
+    await open_owner_god_menu_p2(callback)
 
 # 2. GOD-STATS (99,999 HP / 999 STR)
 @owner_router.callback_query(F.data == "god_max_stats")
@@ -938,7 +1127,488 @@ async def admin_start_fair(message: Message):
     await message.reply("🎪 Buyuk Yarmarka festivali butun qit'ada yoqildi!", parse_mode="Markdown")
 
 # =====================================================================
-# 27. MASTER GOD-MODE YO'RIQNOMASI (/god_help, !god_help)
+# 27. JAVOHIR BERISH VA OLISH (!give_gems, !take_gems, !ber_javohir, !ol_javohir)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_gems|ber_javohir)"))
+async def admin_give_gems(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    amount = 10
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+        if len(args) >= 2 and args[1].isdigit():
+            amount = int(args[1])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        if args[2].isdigit():
+            amount = int(args[2])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `!give_gems @username 20`", parse_mode="Markdown")
+        return
+
+    from database.db import give_player_gems
+    new_gems = await give_player_gems(target_char["id"], amount)
+    await message.reply(f"💎 *JAVOHIR HADYA ETILDI!* Ritsar *{target_char['name']}* ga +{amount} 💎 Javohir berildi! (Jami: {new_gems} 💎)", parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(take_gems|ol_javohir)"))
+async def admin_take_gems(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    amount = 10
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+        if len(args) >= 2 and args[1].isdigit():
+            amount = int(args[1])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        if args[2].isdigit():
+            amount = int(args[2])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `!take_gems @username 10`", parse_mode="Markdown")
+        return
+
+    from database.db import give_player_gems
+    new_gems = await give_player_gems(target_char["id"], -amount)
+    await message.reply(f"💎 *JAVOHIR MUSODARA QILINDI!* Ritsar *{target_char['name']}* dan -{amount} 💎 olindi! (Qoldiq: {new_gems} 💎)", parse_mode="Markdown")
+
+# =====================================================================
+# 28. ELEMENTAR RUNA BERISH (!give_rune, !ber_runa)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_rune|ber_runa)"))
+async def admin_give_rune(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    rune_type = "fire_rune"
+    qty = 1
+
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+        if len(args) >= 2:
+            r = args[1].lower()
+            rune_type = "fire_rune" if "olov" in r or "fire" in r else ("frost_rune" if "muz" in r or "frost" in r else "lightning_rune")
+        if len(args) >= 3 and args[2].isdigit():
+            qty = int(args[2])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        r = args[2].lower()
+        rune_type = "fire_rune" if "olov" in r or "fire" in r else ("frost_rune" if "muz" in r or "frost" in r else "lightning_rune")
+        if len(args) >= 4 and args[3].isdigit():
+            qty = int(args[3])
+
+    if not target_char:
+        await message.reply("❌ Foydalanish: `!give_rune @username [fire|frost|lightning] [soni]`", parse_mode="Markdown")
+        return
+
+    from database.db import give_player_runes, RUNES_DATA
+    await give_player_runes(target_char["id"], rune_type, qty)
+    await message.reply(f"🔮 *RUNA BERILDI!* Ritsar *{target_char['name']}* ga +{qty}x {RUNES_DATA[rune_type]['name']} hadya qilindi!", parse_mode="Markdown")
+
+# =====================================================================
+# 29. QIROLLIK TAXTINI TOPSHIRISH VA AG'DARISH (!make_king, !dethrone, !qirol_qil, !taxtdan_ur)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(make_king|qirol_qil)"))
+async def admin_make_king(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `!make_king @username`", parse_mode="Markdown")
+        return
+
+    from database.db import make_player_king, get_active_groups
+    ok, msg = await make_player_king(target_char["id"])
+    groups = await get_active_groups()
+    for g in groups:
+        try:
+            await message.bot.send_message(
+                g["chat_id"],
+                f"👑 *YANGI QIROLIY FARMON!* 👑\n\n"
+                f"Oliy Yaratuvchi irodasi bilan ritsar *{target_char['name']}* Valoriya Qiroli deb e'lon qilindi! Oltin Toj uning boshiga kiydirildi!",
+                parse_mode="Markdown"
+            )
+        except Exception:
+            pass
+
+    await message.reply(msg, parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(dethrone|taxtdan_ur|taxtdan_ol)"))
+async def admin_dethrone(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    from database.db import dethrone_current_king
+    ok, msg = await dethrone_current_king()
+    await message.reply(msg, parse_mode="Markdown")
+
+# =====================================================================
+# 30. JAROHAT BERISH VA TO'LIQ DAVOLASH (!wound, !cure_all, !jarohatla)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(wound|jarohatla)"))
+async def admin_wound_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    wound = "broken_ribs"
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+        if len(args) >= 2:
+            wound = args[1]
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+        if len(args) >= 3:
+            wound = args[2]
+
+    if not target_char:
+        await message.reply("❌ Foydalanish: `!wound @username [broken_ribs|deep_gash|concussion]`", parse_mode="Markdown")
+        return
+
+    from database.db import give_player_wound
+    from game.dark_engine import WOUND_TYPES
+    w_name = WOUND_TYPES.get(wound, {}).get("name", wound)
+    await give_player_wound(target_char["id"], wound)
+    await message.reply(f"🩸 *OG'IR TRAVMA YETKAZILDI!* Ritsar *{target_char['name']}* ga [{w_name}] jarohati yuklandi!", parse_mode="Markdown")
+
+# =====================================================================
+# 31. AQL VA TELBALIK BOSHQARUVI (!sanity, !aql, !telba_qil)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(telba_qil)"))
+async def admin_insane_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi!", parse_mode="Markdown")
+        return
+
+    from database.db import set_player_sanity
+    await set_player_sanity(target_char["id"], 0)
+    await message.reply(f"🧠💀 *MUTLAQ TELBALIK!* Ritsar *{target_char['name']}* ning Sanity ko'rsatkichi 0% ga tushirildi! U janglarda vasvasaga tushadi!", parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(sanity|aql)"))
+async def admin_set_sanity(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    val = 100
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+        if len(args) >= 2 and args[1].isdigit():
+            val = int(args[1])
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        if args[2].isdigit():
+            val = int(args[2])
+
+    if not target_char:
+        await message.reply("❌ Foydalanish: `!sanity @username 100`", parse_mode="Markdown")
+        return
+
+    from database.db import set_player_sanity
+    await set_player_sanity(target_char["id"], val)
+    await message.reply(f"🧠 Ritsar *{target_char['name']}* ning Sanity ko'rsatkichi {val}% qilib belgilandi!", parse_mode="Markdown")
+
+# =====================================================================
+# 32. IBLIS AHDINI MAJBURLASH YOKI TOZALASH (!give_pact, !cleanse_pact)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_pact|ahd_ber)"))
+async def admin_give_pact(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi!", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], bloodline_trait="demon_pact")
+    await message.reply(f"🩸 *ZULMAT AHDIGA BOG'LANDI!* Ritsar *{target_char['name']}* ga Morvath Iblis Ahdi yuklandi (+45 ATK, 20% Lifesteal)!", parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(cleanse_pact|ahdni_bekor_qil)"))
+async def admin_cleanse_pact(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi!", parse_mode="Markdown")
+        return
+
+    await update_character(target_char["id"], bloodline_trait="noble_blood")
+    await message.reply(f"🌟 *ZULMATDAN POKLANDI!* Ritsar *{target_char['name']}* iblis ahdidan to'liq ozod qilindi!", parse_mode="Markdown")
+
+# =====================================================================
+# 33. GILDIYA VA QAL'ALARNI BOSHQARISH (!disband_guild, !give_guild_gold, !set_castle)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(disband_guild|gildiyani_yop)"))
+async def admin_disband_guild(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split(maxsplit=1)
+    if len(args) < 2:
+        await message.reply("❌ Foydalanish: `!disband_guild [Gildiya Nomi]`", parse_mode="Markdown")
+        return
+
+    from database.db import disband_guild_by_name
+    ok, msg = await disband_guild_by_name(args[1])
+    await message.reply(msg, parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(give_guild_gold|gildiyaga_oltin)"))
+async def admin_give_guild_gold(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    if len(args) < 3:
+        await message.reply("❌ Foydalanish: `!give_guild_gold [Gildiya_Nomi] [oltin]`", parse_mode="Markdown")
+        return
+
+    g_name = args[1]
+    amount = int(args[2]) if args[2].isdigit() else 5000
+    from database.db import give_guild_gold_by_name
+    ok, msg = await give_guild_gold_by_name(g_name, amount)
+    await message.reply(msg, parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(set_castle|qala_egasi)"))
+async def admin_set_castle(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split(maxsplit=2)
+    if len(args) < 3:
+        await message.reply("❌ Foydalanish: `!set_castle [black_stone|iron_fort|golden_rock] [Gildiya Nomi|none]`", parse_mode="Markdown")
+        return
+
+    castle_id = args[1]
+    guild_name = args[2]
+    from database.db import assign_castle_owner_by_id
+    ok, msg = await assign_castle_owner_by_id(castle_id, guild_name)
+    await message.reply(msg, parse_mode="Markdown")
+
+# =====================================================================
+# 34. KVESTLAR VA YUTUQLARNI AVTO-OCHISH (!finish_quests, !unlock_achievements)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(finish_quests|kvestni_bajar)"))
+async def admin_finish_quests(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        target_char = char
+
+    from database.db import complete_all_daily_quests_admin
+    await complete_all_daily_quests_admin(target_char["id"])
+    await message.reply(f"📜 *KVESTLAR TO'LIQ BAJARILDI!* Ritsar *{target_char['name']}* bugungi barcha kvestlarni 100% bajardi deb belgilandi!", parse_mode="Markdown")
+
+@owner_router.message(F.text.regexp(r"^(!|\/)(unlock_achievements|yutuqlarni_och)"))
+async def admin_unlock_all_achievements(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        target_char = char
+
+    from database.db import unlock_all_player_achievements
+    count = await unlock_all_player_achievements(target_char["id"])
+    await message.reply(f"🏆 *BARCHA {count} TA YUTUQLAR BERILDI!* Ritsar *{target_char['name']}* barcha medallarga sazovor bo'ldi!", parse_mode="Markdown")
+
+# =====================================================================
+# 35. RENTGEN VA KUZATUV (!spy, !kuzat, !rentgen)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(spy|kuzat|rentgen)"))
+async def admin_spy_player(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split()
+    target_char = None
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+    elif len(args) >= 2:
+        target_char = await get_character_by_identifier(args[1])
+
+    if not target_char:
+        await message.reply("❌ O'yinchi topilmadi! Foydalanish: `!spy @username`", parse_mode="Markdown")
+        return
+
+    from database.db import get_character_equipment, get_runes_inventory, get_trade_inventory
+    eq = await get_character_equipment(target_char["id"])
+    runes = await get_runes_inventory(target_char["id"])
+    trade = await get_trade_inventory(target_char["id"])
+
+    gear_str = ", ".join([e["item_name"] for e in eq if e.get("is_equipped") == 1]) or "Hech narsa yo'q"
+    runes_str = f"🔥{runes.get('fire_rune',0)} ❄️{runes.get('frost_rune',0)} ⚡️{runes.get('lightning_rune',0)}"
+
+    text = (
+        f"🕵️‍♂️ *RENTGEN MA'LUMOTNOMASI: {target_char['name']}* 🔍\n\n"
+        f"🆔 ID: `{target_char['id']}` | Telegram ID: `{target_char['user_id']}`\n"
+        f"👑 Daraja: {target_char['level']} | Kasb: {target_char['class_id'].upper()}\n"
+        f"❤️ HP: {target_char['hp']}/{target_char['max_hp']} | ⚡️ Stamina: {target_char['stamina']}/100\n"
+        f"🧠 Sanity: {target_char.get('sanity', 100)}% | Zulmat Ahdi: {target_char.get('bloodline_trait', 'noble_blood')}\n"
+        f"💰 Xazina: {target_char['gold']:,} 🪙 | 💎 {target_char.get('gems', 0)}\n"
+        f"⚔️ Duel: {target_char['wins']}G' / {target_char['losses']}M | 🎖 Shon: {target_char.get('honor', 0)}\n"
+        f"🛡 Kiyingan anjomlar: {gear_str}\n"
+        f"🔮 Runalar: {runes_str}\n"
+        f"🐫 Karvon mollari: Ipak: {trade.get('silk',0)}, Ziravor: {trade.get('spices',0)}, Mo'yna: {trade.get('fur',0)}\n"
+        f"🐴 Tulpor: {target_char.get('horse_name')} ({target_char.get('horse_bond')}%)"
+    )
+    await message.reply(text, parse_mode="Markdown")
+
+# =====================================================================
+# 36. BOT NOMIDAN SHAXSIY XABAR (DIRECT PM) (!pm, !lichka)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(pm|lichka)"))
+async def admin_send_pm(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    args = message.text.split(maxsplit=2)
+    target_char = None
+    pm_text = ""
+    if message.reply_to_message:
+        target_char = await get_character_by_user_id(message.reply_to_message.from_user.id)
+        pm_text = message.text.replace("!pm", "").replace("/pm", "").strip()
+    elif len(args) >= 3:
+        target_char = await get_character_by_identifier(args[1])
+        pm_text = args[2]
+
+    if not target_char or not pm_text:
+        await message.reply("❌ Foydalanish: `!pm @username [xabar matni]`", parse_mode="Markdown")
+        return
+
+    try:
+        await message.bot.send_message(
+            target_char["user_id"],
+            f"👑 *VALORIYA OLIY YARATUVCHISIDAN SHAXSIY FARMON:* ⚡️\n\n{pm_text}",
+            parse_mode="Markdown"
+        )
+        await message.reply(f"📨 Xabar *{target_char['name']}* ning shaxsiy chatiga yetkazildi!", parse_mode="Markdown")
+    except Exception as e:
+        await message.reply(f"⚠️ Xabarni yuborib bo'lmadi (ehtimol botni bloklagan): {e}")
+
+# =====================================================================
+# 37. BOZORNI TOZALASH BUYRUG'I (!clear_market, !bozorni_tozala)
+# =====================================================================
+@owner_router.message(F.text.regexp(r"^(!|\/)(clear_market|bozorni_tozala)"))
+async def admin_cmd_clear_market(message: Message):
+    user_id = message.from_user.id
+    username = message.from_user.username
+    char = await get_character_by_user_id(user_id)
+    if not is_owner_authorized(user_id, username, char):
+        return
+
+    from database.db import clear_market_listings_admin
+    count = await clear_market_listings_admin()
+    await message.reply(f"🛒 Bozordagi barcha {count} ta listing bekor qilindi va tozalandi!", parse_mode="Markdown")
+
+# =====================================================================
+# 38. MASTER GOD-MODE YO'RIQNOMASI (/god_help, !god_help)
 # =====================================================================
 @owner_router.message(F.text.regexp(r"^(!|\/)(god_help|owner_help)"))
 async def admin_master_help(message: Message):
@@ -951,32 +1621,46 @@ async def admin_master_help(message: Message):
     text = (
         "👑 *VALORIYA YARATUVCHISI (GOD-MODE) MASTER BUYRUQLAR KITOBI* 👑\n\n"
         "*(Har qanday buyruqni @username bilan yoki o'yinchining xabariga Reply qilib ishlatishingiz mumkin)*\n\n"
-        "💰 **MOLIYAVIY BOSHQARUV:**\n"
-        "• `/give_gold @username 5000` — Istalgancha oltin berish\n"
-        "• `/take_gold @username 2000` — Oltinini musodara qilish\n\n"
+        "💰 **MOLIYAVIY VA IQTISODIY BOSHQARUV:**\n"
+        "• `!give_gold @username [miqdor]` — Oltin berish\n"
+        "• `!take_gold @username [miqdor]` — Oltin musodara qilish\n"
+        "• `!give_gems @username [miqdor]` — Qimmatbaho javohir berish\n"
+        "• `!take_gems @username [miqdor]` — Javohirni tortib olish\n"
+        "• `!give_rune @username [fire|frost|lightning] [soni]` — Elementar runalar berish\n"
+        "• `!clear_market` — Bozordagi barcha listinglarni tozalash\n\n"
+        "👑 **TAXTI RAVON VA HUKUMRONLIK:**\n"
+        "• `!make_king @username` — To'g'ridan-to'g'ri Valoriya Qiroli etib tayinlash!\n"
+        "• `!dethrone` — Amaldagi qirolni taxtdan ag'darish\n"
+        "• `!finish_quests @username` — Kundalik kvestlarni 100% bajarilgan qilish\n"
+        "• `!unlock_achievements @username` — Barcha yutuq va medallarni berish\n\n"
+        "🏰 **GILDIYA VA QAL'ALAR NAZORATI:**\n"
+        "• `!disband_guild [Nomi]` — Gildiyani butunlay tarqatib yo'q qilish\n"
+        "• `!give_guild_gold [Nomi] [miqdor]` — Gildiya xazinasiga oltin to'kish\n"
+        "• `!set_castle [qal'a_id] [Gildiya|none]` — Qal'a egaligini o'zgartirish\n\n"
         "🗡 **QUROL VA SOVUTLAR:**\n"
-        "• `/give_item @username [qurol nomi]` — Mifik qurol hadya qilish\n"
-        "• `/strip @username` — Barcha kiygan qurol/sovutlarini yechib olish\n"
-        "• `/give_horse @username [tulpor nomi]` — Afsonaviy tulpor sovg'a qilish\n\n"
-        "⚡️ **JAZO VA MARHAMAT:**\n"
-        "• `/kill @username` — Chaqmoq bilan urib joni 1 HP qilish\n"
-        "• `/heal @username` — Joni va staminasini 100% tiklash\n"
-        "• `/bless @username` — 2x Kuch va Himoya berish\n"
-        "• `/curse @username` — 50% ga kuchini zaiflashtirish\n"
-        "• `/jail @username` — Qirollik zindoniga tashlash\n"
-        "• `/unjail @username` — Zindondan ozod qilish\n"
-        "• `/rename @username [Yangi_Ism]` — Ritsar ismini o'zgartirish\n"
-        "• `/mute @username` — Chatda gapirishini taqiqlash\n"
-        "• `/unmute @username` — Gapirish huquqini qaytarish\n"
-        "• `/wipe_user @username` — Profilini to'liq 1-darajaga tushirish\n\n"
-        "🌍 **DUNYO VA IMPERIYA OFATLARI:**\n"
-        "• `/start_war` — Imperiyalar o'rtasida katta urush boshlash\n"
-        "• `/start_fair` — Butun qit'ada bepul yarmarka festivalini yoqish\n"
-        "• `!qonli_oy` — Qonli oyni yoqish\n"
-        "• `!ajdaho` — Reyd ajdaho tushirish\n"
-        "• `!oltin_yomgiri` — 2x o'lja rejimini yoqish\n\n"
-        "Barcha buyruqlar bir zumda amalga oshadi!"
+        "• `!give_item @username [qurol]` — Afsonaviy/Mifik qurol yaratib berish\n"
+        "• `!strip @username` — Barcha kiygan qurol/sovutlarini yechib olish\n"
+        "• `!give_horse @username [nomi]` — 100% sadoqatli jangovar tulpor berish\n\n"
+        "🩸 **ZULMAT TIZIMI VA TRAVMALAR:**\n"
+        "• `!wound @username [broken_ribs|deep_gash]` — Og'ir travma yuklash\n"
+        "• `!heal @username` — Jon va staminani to'ldirish, travmalarni davolash\n"
+        "• `!sanity @username [0..100]` — Aql-hush ko'rsatkichini o'zgartirish\n"
+        "• `!telba_qil @username` — Sanity 0% qilib telbaga aylantirish!\n"
+        "• `!give_pact @username` — Morvath Iblis Ahdini majburlash\n"
+        "• `!cleanse_pact @username` — Qonli ahd va la'natlardan poklash\n\n"
+        "⚡️ **JAZO, HUJJAT VA KUZATUV:**\n"
+        "• `!spy @username` — O'yinchining to'liq rentgen tahlili (X-Ray)\n"
+        "• `!pm @username [matn]` — O'yinchining lichkasiga bot nomidan farmon yozish!\n"
+        "• `!kill @username` — Chaqmoq bilan urib joni 1 HP qilish\n"
+        "• `!bless @username` / `!curse @username` — Baraka yoki La'nat\n"
+        "• `!jail @username [daqiqa]` / `!unjail @username` — Zindonga qamash/ozod qilish\n"
+        "• `!mute @username` / `!unmute @username` — Chatda gapirishni bloklash\n"
+        "• `!wipe_user @username` — Profilni to'liq 1-darajaga reset qilish\n\n"
+        "🌍 **DUNYO HODISALARI:**\n"
+        "• `!start_war` — Imperiyalar urushini boshlash\n"
+        "• `!start_fair` — Butun qit'ada bepul yarmarka e'lon qilish"
     )
     await message.reply(text, parse_mode="Markdown")
+
 
 

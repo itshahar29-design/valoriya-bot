@@ -400,6 +400,174 @@ async def reset_player_character(character_id: int):
         await db.commit()
         return True
 
+async def give_player_gems(character_id: int, amount: int) -> int:
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET gems = MAX(0, gems + ?) WHERE id = ?", (amount, character_id))
+        await db.commit()
+        async with db.execute("SELECT gems FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            return row[0] if row else 0
+
+async def give_player_runes(character_id: int, rune_type: str, amount: int = 1) -> dict:
+    runes = await get_runes_inventory(character_id)
+    if rune_type in runes:
+        runes[rune_type] = max(0, runes[rune_type] + amount)
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET runes_inventory_json = ? WHERE id = ?", (json.dumps(runes), character_id))
+        await db.commit()
+    return runes
+
+async def make_player_king(character_id: int) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT name FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = await cur.fetchone()
+            if not char:
+                return False, "Qahramon topilmadi!"
+            name = char["name"]
+
+        # Barcha sobiq qirollarni bekor qilish
+        await db.execute("UPDATE characters SET is_king = 0")
+        await db.execute("UPDATE characters SET is_king = 1 WHERE id = ?", (character_id,))
+        await db.execute("""
+        UPDATE tournament_throne SET 
+            king_character_id = ?, 
+            reign_started = CURRENT_TIMESTAMP, 
+            defense_wins = 0 
+        WHERE id = 1
+        """, (character_id,))
+        await db.commit()
+        await unlock_achievement(character_id, "king_throne", "👑 Valoriya Oliy Qiroli")
+        return True, f"👑 *OLIY BUYRUQ:* *{name}* rasman Valoriya Qiroli etib tayinlandi! Barcha uning oldida tiz cho'ksin!"
+
+async def dethrone_current_king() -> Tuple[bool, str]:
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET is_king = 0")
+        await db.execute("UPDATE tournament_throne SET king_character_id = NULL, defense_wins = 0 WHERE id = 1")
+        await db.commit()
+        return True, "⚡️ *TAXT BO'SHATILDI!* Amaldagi qirol taxtdan ag'darildi va Valoriya toji yana bo'sh qoldi!"
+
+async def set_player_sanity(character_id: int, sanity_val: int) -> int:
+    sanity_val = max(0, min(100, sanity_val))
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET sanity = ? WHERE id = ?", (sanity_val, character_id))
+        await db.commit()
+    return sanity_val
+
+async def give_player_wound(character_id: int, wound_key: str) -> list:
+    async with get_connection() as db:
+        async with db.execute("SELECT wounds_json FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            raw = row[0] if row and row[0] else "[]"
+            try:
+                wounds = json.loads(raw)
+            except Exception:
+                wounds = []
+        if wound_key not in wounds:
+            wounds.append(wound_key)
+        await db.execute("UPDATE characters SET wounds_json = ? WHERE id = ?", (json.dumps(wounds), character_id))
+        await db.commit()
+        return wounds
+
+async def cure_player_all_wounds(character_id: int):
+    async with get_connection() as db:
+        await db.execute("UPDATE characters SET wounds_json = '[]', hp = max_hp, sanity = 100 WHERE id = ?", (character_id,))
+        await db.commit()
+        return True
+
+async def disband_guild_by_name(guild_name: str) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT id, name FROM guilds WHERE LOWER(name) = ?", (guild_name.lower().strip(),)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, f"'{guild_name}' nomli gildiya topilmadi!"
+            g_id = row["id"]
+            actual_name = row["name"]
+
+        # A'zolarni bo'shatish
+        await db.execute("UPDATE characters SET guild_id = NULL WHERE guild_id = ?", (g_id,))
+        # Qal'alarni bo'shatish
+        await db.execute("UPDATE castles SET owner_guild_id = NULL WHERE owner_guild_id = ?", (g_id,))
+        # Gildiyani o'chirish
+        await db.execute("DELETE FROM guilds WHERE id = ?", (g_id,))
+        await db.commit()
+        return True, f"🏰 *GILDIYA TARQATILDI!* '{actual_name}' gildiyasi Oliy Yaratuvchi farmoni bilan yo'q qilindi!"
+
+async def give_guild_gold_by_name(guild_name: str, amount: int) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT id, name, treasury FROM guilds WHERE LOWER(name) = ?", (guild_name.lower().strip(),)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, f"'{guild_name}' nomli gildiya topilmadi!"
+            g_id = row["id"]
+            actual_name = row["name"]
+
+        await db.execute("UPDATE guilds SET treasury = treasury + ? WHERE id = ?", (amount, g_id))
+        await db.commit()
+        return True, f"💰 *GILDIYA XAZINASI OSHIRILDI!* '{actual_name}' xazinasiga +{amount:,} 🪙 oltin qo'shildi!"
+
+async def assign_castle_owner_by_id(castle_id: str, guild_name: str | None) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM castles WHERE id = ?", (castle_id,)) as cur:
+            c_row = await cur.fetchone()
+            if not c_row:
+                return False, f"'{castle_id}' identifikatorli qal'a topilmadi!"
+            c_name = c_row["name"]
+
+        if not guild_name or guild_name.lower() in ["none", "yoq", "bo'sh", "bosh"]:
+            await db.execute("UPDATE castles SET owner_guild_id = NULL WHERE id = ?", (castle_id,))
+            await db.commit()
+            return True, f"🏰 *QAL'A OZOD QILINDI!* '{c_name}' neytral qal'aga aylandi."
+
+        async with db.execute("SELECT id, name FROM guilds WHERE LOWER(name) = ?", (guild_name.lower().strip(),)) as cur2:
+            g_row = await cur2.fetchone()
+            if not g_row:
+                return False, f"'{guild_name}' nomli gildiya topilmadi!"
+            g_id = g_row["id"]
+            g_name = g_row["name"]
+
+        await db.execute("UPDATE castles SET owner_guild_id = ? WHERE id = ?", (g_id, castle_id))
+        await db.commit()
+        return True, f"🏰 *QAL'A TOPSHIRILDI!* '{c_name}' qal'asi rasman '{g_name}' gildiyasiga berildi!"
+
+async def clear_market_listings_admin() -> int:
+    async with get_connection() as db:
+        async with db.execute("SELECT COUNT(*) FROM market_listings WHERE status = 'active'") as cur:
+            count = (await cur.fetchone())[0]
+        await db.execute("UPDATE market_listings SET status = 'cancelled' WHERE status = 'active'")
+        await db.commit()
+        return count
+
+async def unlock_all_player_achievements(character_id: int):
+    achs = [
+        ("king_throne", "👑 Valoriya Oliy Qiroli"),
+        ("arena_champion", "⚔️ Arena Chempioni"),
+        ("mining_master", "⛏ Mohir Konchi"),
+        ("alchemy_master", "🧪 Mohir Alximik"),
+        ("market_trader", "🛒 Savdo Magnati"),
+        ("demon_pact", "🩸 Zulmat Qurboni"),
+        ("castle_conqueror", "🏰 Qal'a Fotihi")
+    ]
+    for a_id, a_title in achs:
+        await unlock_achievement(character_id, a_id, a_title)
+    return len(achs)
+
+async def complete_all_daily_quests_admin(character_id: int):
+    await get_or_create_daily_quests(character_id)
+    async with get_connection() as db:
+        await db.execute("""
+        UPDATE daily_quests SET
+            arena_wins = 2,
+            mining_count = 2,
+            market_or_tavern = 1
+        WHERE character_id = ?;
+        """, (character_id,))
+        await db.commit()
+    return True
+
 async def create_character(user_id: int, name: str, class_id: str = "warrior", invited_by: int = None, is_owner: bool = False):
     class_data = CLASSES.get(class_id, CLASSES["warrior"])
     hide_leaderboard = 1 if is_owner else 0
@@ -1454,9 +1622,12 @@ async def challenge_king(challenger_character_id: int) -> Tuple[bool, str]:
 # 5. JONLI P2P OCHIQ BOZOR (LIVE PLAYER MARKETPLACE)
 # =====================================================================
 
-async def create_market_listing(seller_character_id: int, category: str, item_name: str, quantity: int, price_per_unit: int, item_data: dict) -> Tuple[bool, str]:
+async def create_market_listing(seller_character_id: int, category: str, item_name: str, quantity: int, price_per_unit: int, item_data: dict = None) -> Tuple[bool, str]:
     if quantity <= 0 or price_per_unit <= 0:
         return False, "Miqdor va narx musbat bo'lishi shart!"
+
+    if item_data is None:
+        item_data = {}
 
     async with get_connection() as db:
         db.row_factory = aiosqlite.Row

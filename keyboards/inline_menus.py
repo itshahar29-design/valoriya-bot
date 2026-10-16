@@ -103,37 +103,68 @@ def inventory_qol_keyboard():
         ]
     ])
 
-def owner_god_mode_keyboard():
-    return InlineKeyboardMarkup(inline_keyboard=[
-        [
-            InlineKeyboardButton(text="💰 Cheksiz Xazina (+50k 🪙)", callback_data="god_grant_gold"),
-            InlineKeyboardButton(text="⚡️ God-Stats (99k HP/999 Atk)", callback_data="god_max_stats")
-        ],
-        [
-            InlineKeyboardButton(text="🗡 Afsonaviy Qilich (+999)", callback_data="god_spawn_sword"),
-            InlineKeyboardButton(text="🛡 Daxlsizlik Qalqoni (+999)", callback_data="god_spawn_shield")
-        ],
-        [
-            InlineKeyboardButton(text="🩸 Qonli Oy (Blood Moon)", callback_data="god_blood_moon"),
-            InlineKeyboardButton(text="🐉 Ajdaho Reydini Chaqirish", callback_data="god_dragon_raid")
-        ],
-        [
-            InlineKeyboardButton(text="🌧 Oltin Yomg'iri (2x Loot)", callback_data="god_golden_rain"),
-            InlineKeyboardButton(text="☄️ Meteor Qulashi (Ofat)", callback_data="god_meteor_storm")
-        ],
-        [
-            InlineKeyboardButton(text="🎁 Barcha Ritsarlarga Airdrop", callback_data="god_airdrop_all"),
-            InlineKeyboardButton(text="📢 Barcha Guruhlarga E'lon", callback_data="god_broadcast_all")
-        ],
-        [
-            InlineKeyboardButton(text="📊 Dunyo Telemetriyasi", callback_data="god_inspect"),
-            InlineKeyboardButton(text="💾 Yangi Snapshot Saqlash", callback_data="god_save_snapshot")
-        ],
-        [
-            InlineKeyboardButton(text="👤 O'yinchilarni Boshqarish (Pul/Buyum/Jazo)", callback_data="god_player_mgmt_guide")
-        ],
-        [
-            InlineKeyboardButton(text="⏪ 1-Soatlik Rollback Qilish", callback_data="god_rollback"),
-            InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")
-        ]
-    ])
+def owner_god_mode_keyboard(page: int = 1):
+    if page == 1:
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="💰 +50k Oltin", callback_data="god_grant_gold"),
+                InlineKeyboardButton(text="💎 +1,000 Javohir", callback_data="god_grant_gems")
+            ],
+            [
+                InlineKeyboardButton(text="⚡️ God-Stats (99k HP)", callback_data="god_max_stats"),
+                InlineKeyboardButton(text="👑 Valoriya Qiroli Bo'lish", callback_data="god_claim_throne_instant")
+            ],
+            [
+                InlineKeyboardButton(text="🗡 Qonli Qilich (+999 ATK)", callback_data="god_spawn_sword"),
+                InlineKeyboardButton(text="🛡 Titan Zirhi (+999 DEF)", callback_data="god_spawn_shield")
+            ],
+            [
+                InlineKeyboardButton(text="🔮 Barcha Runalar (x10 Paket)", callback_data="god_spawn_runes"),
+                InlineKeyboardButton(text="🧪 Barcha Eliksirlar (x20)", callback_data="god_spawn_potions")
+            ],
+            [
+                InlineKeyboardButton(text="🦄 Qanotli Pegas Tulpori", callback_data="god_spawn_pegasus"),
+                InlineKeyboardButton(text="🩸 Iblis Qonli Ahdi (Pact)", callback_data="god_toggle_demon_pact")
+            ],
+            [
+                InlineKeyboardButton(text="➡️ 2-Sahifa: Dunyo & Hodisalar 🌍", callback_data="god_page_2")
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")
+            ]
+        ])
+    else:
+        return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="🩸 Qonli Oy (Blood Moon)", callback_data="god_blood_moon"),
+                InlineKeyboardButton(text="🐉 Ajdaho Reydini Chaqirish", callback_data="god_dragon_raid")
+            ],
+            [
+                InlineKeyboardButton(text="🌧 Oltin Yomg'iri (2x Loot)", callback_data="god_golden_rain"),
+                InlineKeyboardButton(text="☄️ Meteor Qulashi (Ofat)", callback_data="god_meteor_storm")
+            ],
+            [
+                InlineKeyboardButton(text="🎁 Barcha Ritsarlarga Airdrop", callback_data="god_airdrop_all"),
+                InlineKeyboardButton(text="📢 Barcha Guruhlarga E'lon", callback_data="god_broadcast_all")
+            ],
+            [
+                InlineKeyboardButton(text="💖 Global Shifo (Hamma Tuzalsin)", callback_data="god_mass_heal"),
+                InlineKeyboardButton(text="⚡️ Global Qahr (Dushmanlar Yiqilsin)", callback_data="god_mass_smite")
+            ],
+            [
+                InlineKeyboardButton(text="🛒 Bozorni Tozalash (Reset)", callback_data="god_clear_market"),
+                InlineKeyboardButton(text="🏰 Qal'alarni Neytral Qilish", callback_data="god_reset_castles")
+            ],
+            [
+                InlineKeyboardButton(text="📊 Dunyo Telemetriyasi", callback_data="god_inspect"),
+                InlineKeyboardButton(text="💾 Yangi Snapshot Saqlash", callback_data="god_save_snapshot")
+            ],
+            [
+                InlineKeyboardButton(text="👤 O'yinchilarni Boshqarish Buyruqlari", callback_data="god_player_mgmt_guide"),
+                InlineKeyboardButton(text="⏪ 1-Soatlik Rollback Qilish", callback_data="god_rollback")
+            ],
+            [
+                InlineKeyboardButton(text="⬅️ 1-Sahifaga Qaytish", callback_data="god_page_1"),
+                InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")
+            ]
+        ])
