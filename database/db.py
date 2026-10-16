@@ -304,6 +304,19 @@ async def init_db():
         );
         """)
 
+        # 21. Battle Pass Progress
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS battle_pass_progress (
+            character_id INTEGER PRIMARY KEY,
+            season INTEGER DEFAULT 1,
+            total_exp INTEGER DEFAULT 0,
+            claimed_free_json TEXT DEFAULT '[]',
+            claimed_royal_json TEXT DEFAULT '[]',
+            has_royal INTEGER DEFAULT 0,
+            FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+        );
+        """)
+
         # Migrations if needed
         for col_def in [
             ("username", "TEXT DEFAULT NULL"),
@@ -322,7 +335,9 @@ async def init_db():
             ("is_king", "INTEGER DEFAULT 0"),
             ("current_city", "TEXT DEFAULT 'samarkand'"),
             ("trade_inventory_json", "TEXT DEFAULT '{}'"),
-            ("runes_inventory_json", "TEXT DEFAULT '{\"fire_rune\": 0, \"frost_rune\": 0, \"lightning_rune\": 0}'")
+            ("runes_inventory_json", "TEXT DEFAULT '{\"fire_rune\": 0, \"frost_rune\": 0, \"lightning_rune\": 0}'"),
+            ("last_wheel_spin", "TEXT DEFAULT NULL"),
+            ("active_expedition_json", "TEXT DEFAULT NULL")
         ]:
             try:
                 await db.execute(f"ALTER TABLE characters ADD COLUMN {col_def[0]} {col_def[1]};")
@@ -2288,6 +2303,206 @@ async def feed_pet(character_id: int, pet_db_id: int, food_gold: int = 50) -> Tu
         await db.execute("UPDATE character_pets SET hunger = ?, exp = ? WHERE id = ?;", (new_hunger, new_exp, pet_db_id))
         await db.commit()
         return True, f"🍖 *HAMROH TO'YINDIRILDI!* {pet_dict['name']} minnatdorlik bilan ovqatlandi (+35 To'qlik, +25 XP)!"
+
+# =====================================================================
+# MAVSUMIY JANG CHIPTASI (BATTLE PASS)
+# =====================================================================
+async def get_or_create_battle_pass(character_id: int) -> Dict[str, Any]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM battle_pass_progress WHERE character_id = ?;", (character_id,)) as cur:
+            row = await cur.fetchone()
+        if not row:
+            await db.execute("""
+            INSERT INTO battle_pass_progress (character_id, season, total_exp, claimed_free_json, claimed_royal_json, has_royal)
+            VALUES (?, 1, 0, '[]', '[]', 0);
+            """, (character_id,))
+            await db.commit()
+            async with db.execute("SELECT * FROM battle_pass_progress WHERE character_id = ?;", (character_id,)) as cur:
+                row = await cur.fetchone()
+        return dict(row)
+
+async def add_battle_pass_exp(character_id: int, exp_amount: int) -> Dict[str, Any]:
+    bp = await get_or_create_battle_pass(character_id)
+    new_exp = bp["total_exp"] + exp_amount
+    async with get_connection() as db:
+        await db.execute("UPDATE battle_pass_progress SET total_exp = ? WHERE character_id = ?;", (new_exp, character_id))
+        await db.commit()
+    bp["total_exp"] = new_exp
+    return bp
+
+async def claim_bp_reward(character_id: int, tier: int, track: str = "free") -> Tuple[bool, str]:
+    from game.battle_pass import BATTLE_PASS_TIERS, calculate_bp_tier
+    if tier not in BATTLE_PASS_TIERS:
+        return False, "Bunday daraja mavjud emas!"
+
+    bp = await get_or_create_battle_pass(character_id)
+    current_tier = calculate_bp_tier(bp["total_exp"])
+    if current_tier < tier:
+        return False, f"Siz hali bu darajaga yetmadingiz! Sizning darajangiz: {current_tier}, Kerak: {tier}."
+
+    claimed_col = "claimed_free_json" if track == "free" else "claimed_royal_json"
+    claimed_list = json.loads(bp.get(claimed_col) or "[]")
+    if tier in claimed_list:
+        return False, "Bu mukofot allaqachon olingan!"
+
+    if track == "royal" and bp.get("has_royal") != 1:
+        return False, "Sizda Qirollik (Royal Pass) faollashtirilmagan!"
+
+    reward = BATTLE_PASS_TIERS[tier][track]
+    claimed_list.append(tier)
+
+    async with get_connection() as db:
+        await db.execute(f"UPDATE battle_pass_progress SET {claimed_col} = ? WHERE character_id = ?;", (json.dumps(claimed_list), character_id))
+        
+        # Grant reward
+        if reward["type"] == "gold":
+            await db.execute("UPDATE characters SET gold = gold + ? WHERE id = ?;", (reward["amount"], character_id))
+        elif reward["type"] == "gems":
+            await db.execute("UPDATE characters SET gems = gems + ? WHERE id = ?;", (reward["amount"], character_id))
+        await db.commit()
+
+    return True, f"🎁 *MUKOFOT OLINDI!* {reward['name']} sizning hisobingizga qo'shildi!"
+
+# =====================================================================
+# OMAD G'ILDIRAGI (LUCKY WHEEL)
+# =====================================================================
+async def spin_lucky_wheel(character_id: int, use_gems: bool = False) -> Tuple[bool, str, Dict[str, Any]]:
+    import time
+    from game.tavern_games import spin_wheel, WHEEL_COOLDOWN_SECONDS
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?;", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        now = int(time.time())
+        last_spin = int(char.get("last_wheel_spin") or 0)
+        time_passed = now - last_spin
+
+        is_free = time_passed >= WHEEL_COOLDOWN_SECONDS
+
+        if not is_free:
+            if use_gems:
+                if char["gems"] < 1:
+                    return False, "Aylantirish uchun 1 💎 Javohir kerak!", {}
+                await db.execute("UPDATE characters SET gems = gems - 1 WHERE id = ?;", (character_id,))
+            else:
+                if char["gold"] < 100:
+                    left = (WHEEL_COOLDOWN_SECONDS - time_passed) // 60
+                    return False, f"Bepul aylantirishga yana {left} daqiqa bor. Pullik aylantirish narxi: 100 🪙 Oltin.", {}
+                await db.execute("UPDATE characters SET gold = gold - 100 WHERE id = ?;", (character_id,))
+        else:
+            await db.execute("UPDATE characters SET last_wheel_spin = ? WHERE id = ?;", (str(now), character_id))
+
+        slot = spin_wheel()
+
+        # Grant prize
+        if slot["type"] == "gold":
+            await db.execute("UPDATE characters SET gold = gold + ? WHERE id = ?;", (slot["amount"], character_id))
+        elif slot["type"] == "gems":
+            await db.execute("UPDATE characters SET gems = gems + ? WHERE id = ?;", (slot["amount"], character_id))
+        elif slot["type"] == "jackpot":
+            await db.execute("UPDATE characters SET gold = gold + ?, gems = gems + ? WHERE id = ?;", (slot["gold"], slot["gems"], character_id))
+
+        await db.commit()
+
+    if slot["type"] == "egg":
+        from game.pets_engine import generate_companion
+        new_pet = generate_companion(stage=1)
+        await add_character_pet(character_id, new_pet)
+
+    await add_battle_pass_exp(character_id, 35)
+    await unlock_achievement(character_id, "lucky_spinner", "🎡 Omad Farzandi")
+
+    return True, f"🎉 *OMAD G'ILDIRAGI YUTUG'I!* Siz yutib oldingiz: *{slot['name']}*!", slot
+
+# =====================================================================
+# OFLAYN AFK EKSPEDITSIYALAR (OFFLINE EXPEDITIONS)
+# =====================================================================
+async def start_expedition(character_id: int, region_key: str) -> Tuple[bool, str]:
+    import time
+    from game.expeditions_engine import EXPEDITION_REGIONS
+    if region_key not in EXPEDITION_REGIONS:
+        return False, "Bunday ekspeditsiya hududi mavjud emas!"
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT active_expedition_json FROM characters WHERE id = ?;", (character_id,)) as cur:
+            row = await cur.fetchone()
+        
+        if row and row["active_expedition_json"]:
+            try:
+                active_exp = json.loads(row["active_expedition_json"])
+                if active_exp:
+                    return False, "Sizning qahramoningiz allaqachon ekspeditsiyada! Avval uni yakunlang."
+            except Exception:
+                pass
+
+        reg = EXPEDITION_REGIONS[region_key]
+        now = int(time.time())
+        exp_data = {
+            "region_key": region_key,
+            "region_name": reg["name_uz"],
+            "started_at": now,
+            "finishes_at": now + reg["duration_seconds"],
+            "duration_hours": reg["duration_hours"]
+        }
+
+        await db.execute("UPDATE characters SET active_expedition_json = ? WHERE id = ?;", (json.dumps(exp_data), character_id))
+        await db.commit()
+        return True, f"🧭 *EKSPEDITSIYA BOSHLANDI!* Qahramon va hamrohingiz *{reg['name_uz']}* sari yo'l oldi. Qaytish vaqti: {reg['duration_hours']} soatdan so'ng."
+
+async def claim_expedition(character_id: int) -> Tuple[bool, str, Dict[str, Any]]:
+    import time
+    from game.expeditions_engine import calculate_expedition_rewards, EXPEDITION_REGIONS
+
+    active_p = await get_active_pet(character_id)
+    comp_mult = 1.0 + (active_p.get("stage", 1) * 0.25) if active_p else 1.0
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?;", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        raw_json = char.get("active_expedition_json")
+        if not raw_json:
+            return False, "Hozirda faol ekspeditsiya yo'q!", {}
+
+        try:
+            exp_data = json.loads(raw_json)
+        except Exception:
+            return False, "Ekspeditsiya ma'lumotlari buzilgan!", {}
+
+        if not exp_data:
+            return False, "Hozirda faol ekspeditsiya yo'q!", {}
+
+        now = int(time.time())
+        if now < exp_data["finishes_at"]:
+            left_secs = exp_data["finishes_at"] - now
+            hours = left_secs // 3600
+            mins = (left_secs % 3600) // 60
+            return False, f"⏳ Ekspeditsiya hali yakunlanmadi! Qolgan vaqt: {hours} soat {mins} daqiqa.", {}
+
+        rewards = calculate_expedition_rewards(exp_data["region_key"], companion_mult=comp_mult)
+
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold + ?,
+            xp = xp + ?,
+            active_expedition_json = NULL
+        WHERE id = ?;
+        """, (rewards["gold"], rewards["xp"], character_id))
+
+        if active_p:
+            await db.execute("UPDATE character_pets SET exp = exp + ? WHERE id = ?;", (rewards["pet_exp"], active_p["id"]))
+
+        await db.commit()
+
+    await add_battle_pass_exp(character_id, 50)
+    await unlock_achievement(character_id, "traveler", "🧭 Dunyo Sayyohi")
+
+    return True, f"🎉 *EKSPEDITSIYA MUVOFAQIShLI YAKUNLANDI!* Qahramon qaytib keldi:\n• 💰 +{rewards['gold']:,} 🪙 Oltin\n• 🌟 +{rewards['xp']} EXP\n• 🐾 Hamroh tajribasi: +{rewards['pet_exp']} EXP", rewards
 
 
 

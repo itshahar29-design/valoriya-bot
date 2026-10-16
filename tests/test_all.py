@@ -570,9 +570,71 @@ async def run_comprehensive_tests():
     grand_total = total_procedural + skills_matrix["total_skill_upgrades"] + pet_matrix["total_companion_variants"]
     print(f"✅ TEST 17 O'TDI: Barcha 675 ta mahorat va 960 ta hamrohlar muvaffaqiyatli ishga tushirildi! Jami Grand Kontent Fondi: {grand_total:,} ta!")
 
+    # =====================================================================
+    # 18. RETENTION MEGA-TIZIMLARI: BATTLE PASS, OMAD G'ILDIRAGI & AFK EKSPEDITSIYA
+    # =====================================================================
+    print("\n[TEST 18] Foydalanuvchilarni Olib Qolish Tizimlari (Retention Systems)...")
+    from game.battle_pass import BATTLE_PASS_TIERS, SEASON_INFO, calculate_bp_tier
+    from game.tavern_games import WHEEL_SLOTS, play_dice_duel
+    from game.expeditions_engine import EXPEDITION_REGIONS
+    from database.db import (
+        get_or_create_battle_pass, add_battle_pass_exp, claim_bp_reward,
+        spin_lucky_wheel, start_expedition, claim_expedition, get_connection
+    )
+
+    # 1. Battle Pass (50 Tiers)
+    assert len(BATTLE_PASS_TIERS) == 50, "Battle Pass 50 ta daraja emas!"
+    bp = await add_battle_pass_exp(char["id"], 250)
+    assert bp["total_exp"] >= 250, "Mavsumiy EXP qo'shilmadi!"
+    cur_tier = calculate_bp_tier(bp["total_exp"])
+    assert cur_tier >= 3, "Tier to'g'ri hisoblanmadi!"
+
+    # Claim tier 1 reward
+    claim_ok, claim_msg = await claim_bp_reward(char["id"], 1, "free")
+    assert claim_ok, f"Mavsumiy mukofot olinmadi: {claim_msg}"
+    claim_again, _ = await claim_bp_reward(char["id"], 1, "free")
+    assert not claim_again, "Qayta mukofot olishga yo'l qo'yildi!"
+    print(f"   🎟 Battle Pass: 50 ta Tier (Joriy Tier: {cur_tier}, Olingan sovrin: {claim_msg})")
+
+    # 2. Omad G'ildiragi (Lucky Wheel) & Suyak Tashlash
+    assert len(WHEEL_SLOTS) >= 8, "G'ildirak slotlari kam!"
+    spin_ok, spin_msg, slot = await spin_lucky_wheel(char["id"])
+    assert spin_ok, f"G'ildirak aylanmadi: {spin_msg}"
+    assert slot is not None, "Yutuq qaytmadi!"
+
+    dice_res = play_dice_duel(bet_gold=100)
+    assert dice_res["result"] in ["win", "loss", "tie"], "Suyak natijasi noto'g'ri!"
+    print(f"   🎡 Taverna Omad G'ildiragi: {len(WHEEL_SLOTS)} ta mukofot sloti (Yutuq: '{slot['name']}', Suyak: {dice_res['result']})")
+
+    # 3. Oflayn AFK Ekspeditsiyalar (2h, 4h, 8h, 12h, 24h)
+    assert len(EXPEDITION_REGIONS) == 5, "Ekspeditsiya hududlari 5 ta emas!"
+    exp_ok, exp_msg = await start_expedition(char["id"], "exp_dark_forest")
+    assert exp_ok, f"Ekspeditsiya boshlanmadi: {exp_msg}"
+
+    # Ekspeditsiya vaqtini sun'iy ravishda o'tkazib claim qilish testi
+    import time
+    async with get_connection() as db:
+        finished_time = int(time.time()) - 10
+        mock_data = json.dumps({
+            "region_key": "exp_dark_forest",
+            "region_name": "🌲 Tumanli Qorong'u O'rmon",
+            "started_at": finished_time - 7200,
+            "finishes_at": finished_time,
+            "duration_hours": 2
+        })
+        await db.execute("UPDATE characters SET active_expedition_json = ? WHERE id = ?;", (mock_data, char["id"]))
+        await db.commit()
+
+    claim_exp_ok, claim_exp_msg, exp_rewards = await claim_expedition(char["id"])
+    assert claim_exp_ok, f"Ekspeditsiya o'ljalari olinmadi: {claim_exp_msg}"
+    assert exp_rewards["gold"] > 0, "Ekspeditsiya oltini 0!"
+    print(f"   ⛺️ AFK Ekspeditsiyalar: 5 ta hudud (Olingan o'lja: +{exp_rewards['gold']} 🪙, +{exp_rewards['xp']} EXP)")
+
+    print(f"✅ TEST 18 O'TDI: Barcha Retention tizimlari (Battle Pass, Omad G'ildiragi, AFK Ekspeditsiyalar) 100% muvaffaqiyatli ishga tushirildi!")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 17 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print(f"👑 VALORIYA: {grand_total:,} TA ENTITY VA MEXANIKALAR BILAN JONLI!")
+    print("🎉 BARCHA 18 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: FOYDALANUVCHILARNI MAXSUS ENGAGE QILUVCHI GRAND MMORPG!")
     print("=========================================================")
 
 if __name__ == "__main__":

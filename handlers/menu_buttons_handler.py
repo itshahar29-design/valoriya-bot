@@ -649,6 +649,7 @@ async def btn_explore(message: Message):
         buttons.append([
             InlineKeyboardButton(text=choice_label, callback_data=f"expact_{event['id']}_{choice_key}")
         ])
+    buttons.append([InlineKeyboardButton(text="⛺️ Oflayn AFK Ekspeditsiyalar (2h-24h)", callback_data="menu_expeditions")])
     buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
 
     await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
@@ -1307,4 +1308,103 @@ async def cb_pet_activate(callback: CallbackQuery):
     await set_active_pet(char["id"], pet_db_id)
     await callback.answer("Tanlangan jonivor faol jangovar hamroh etib belgilandi!", show_alert=True)
     await cb_pets_hub(callback)
+
+# =====================================================================
+# 22. OFLAYN AFK EKSPEDITSIYALAR (OFFLINE EXPEDITIONS)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("/expedition") | F.text.startswith("/afk"))
+@menu_buttons_router.callback_query(F.data == "menu_expeditions")
+async def cb_expeditions_menu(event_obj):
+    message = event_obj if isinstance(event_obj, Message) else event_obj.message
+    user_id = event_obj.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    import json, time
+    from game.expeditions_engine import EXPEDITION_REGIONS
+    from database.db import get_active_pet
+
+    active_pet = await get_active_pet(char["id"])
+    pet_name = active_pet["name"] if active_pet else "Hamrohsiz (Oddiy tezlik)"
+    pet_mult = f"+{int(active_pet['stage'] * 25)}% Bonus!" if active_pet else "Bonus yo'q"
+
+    raw_json = char.get("active_expedition_json")
+    exp_data = None
+    if raw_json:
+        try:
+            exp_data = json.loads(raw_json)
+        except Exception:
+            pass
+
+    buttons = []
+    if exp_data:
+        now = int(time.time())
+        if now >= exp_data["finishes_at"]:
+            text = (
+                f"🎉 *EKSPEDITSIYA MUVAFFAQIShLI YAKUNLANDI!* 🧭\n\n"
+                f"Qahramoningiz *{exp_data['region_name']}* safaridan qaytib keldi va ko'plab o'ljalar bilan kutmoqda!\n\n"
+                f"Mukofotlarni olish uchun quyidagi tugmani bosing:"
+            )
+            buttons.append([InlineKeyboardButton(text="💰 O'ljalarni Olish", callback_data="expedition_claim_action")])
+        else:
+            left_secs = exp_data["finishes_at"] - now
+            hours = left_secs // 3600
+            mins = (left_secs % 3600) // 60
+            text = (
+                f"⏳ *QAHRAMONINGIZ HOZIR EKSPEDITSIYADA!* 🧭\n\n"
+                f"📍 Hudud: *{exp_data['region_name']}*\n"
+                f"🐾 Hamroh: *{pet_name}*\n"
+                f"⌛️ Qaytishiga qoldi: *{hours} soat {mins} daqiqa*\n\n"
+                f"Siz botdan chiqib o'z ishlaringiz bilan mashg'ul bo'lishingiz mumkin, "
+                f"vaqt tugagach qaytib keling va mo'l-ko'l boyliklarni oling!"
+            )
+    else:
+        text = (
+            "🧭 *VALORIYA OFLAYN AFK EKSPEDITSIYALARI* 🏕\n\n"
+            "O'yin o'ynamayotgan vaqtingizda ham qahramoningiz bekor turmasin! "
+            "Uni xavfli hududlarga uzoq safarga jo'nating. Qaytganingizda u sizga oltin, "
+            "rudalar, nodir qurollar va hamroh tajribasini olib keladi.\n\n"
+            f"🐾 *Faol Hamrohingiz:* {pet_name} ({pet_mult})\n\n"
+            "Safar hududini tanlang:"
+        )
+        for r_key, r_info in EXPEDITION_REGIONS.items():
+            buttons.append([
+                InlineKeyboardButton(
+                    text=f"{r_info['name_uz']} ({r_info['duration_hours']} soat)",
+                    callback_data=f"exp_start_{r_key}"
+                )
+            ])
+
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    if isinstance(event_obj, Message):
+        await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+    else:
+        await message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("exp_start_"))
+async def cb_expedition_start_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    r_key = callback.data.replace("exp_start_", "")
+    from database.db import start_expedition
+    success, msg = await start_expedition(char["id"], r_key)
+    await callback.answer(msg, show_alert=True)
+    await cb_expeditions_menu(callback)
+
+@menu_buttons_router.callback_query(F.data == "expedition_claim_action")
+async def cb_expedition_claim_action(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import claim_expedition
+    success, msg, rewards = await claim_expedition(char["id"])
+    await callback.answer(msg, show_alert=True)
+    await cb_expeditions_menu(callback)
 

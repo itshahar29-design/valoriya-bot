@@ -55,6 +55,9 @@ async def show_tavern_menu(callback: CallbackQuery):
             InlineKeyboardButton(text="🎰 Oltin Baraban (100 🪙)", callback_data="tavern_slots")
         ],
         [
+            InlineKeyboardButton(text="🎡 Omad G'ildiragi (Har 8 soatda BEPUL!)", callback_data="tavern_lucky_wheel")
+        ],
+        [
             InlineKeyboardButton(text="🍗 Shohona Ziyofat (Jon 100% - 30 🪙)", callback_data="tavern_eat"),
             InlineKeyboardButton(text="🤫 Mayxona Mish-Mishlari", callback_data="tavern_rumors")
         ],
@@ -68,6 +71,58 @@ async def show_tavern_menu(callback: CallbackQuery):
         [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
     ]
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@tavern_router.callback_query(F.data == "tavern_lucky_wheel")
+async def cb_lucky_wheel_view(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    import time
+    from game.tavern_games import WHEEL_COOLDOWN_SECONDS
+
+    now = int(time.time())
+    last_spin = int(char.get("last_wheel_spin") or 0)
+    time_passed = now - last_spin
+    is_free = time_passed >= WHEEL_COOLDOWN_SECONDS
+
+    if is_free:
+        status_str = "🟢 *Hozir BEPUL aylantirish mumkin!*"
+    else:
+        left_mins = (WHEEL_COOLDOWN_SECONDS - time_passed) // 60
+        status_str = f"⏳ Bepul aylantirishga: *{left_mins} daqiqa* qoldi. (Pullik: 100 🪙 yoki 1 💎)"
+
+    text = (
+        "🎡 *VALORIYA OMAD G'ILDIRAGI (LUCKY WHEEL)* 🎡\n\n"
+        "Har 8 soatda kelib bepul aylantiring va shohona sovrinlarni yutib oling!\n\n"
+        f"👑 *Bosh Sovrin (Jackpot):* `10,000 🪙 Oltin + 50 💎 Javohir`\n"
+        f"🥚 Hamroh Tuxumi | 🗡 Afsonaviy Qurollar | ⚡️ Runalar\n\n"
+        f"{status_str}\n\n"
+        f"Sizda mavjud: *{char['gold']:,} 🪙* | *{char['gems']} 💎*"
+    )
+
+    buttons = [
+        [InlineKeyboardButton(text="🎡 G'ildirakni Aylantirish!", callback_data="tavern_wheel_spin_action")],
+        [InlineKeyboardButton(text="⬅️ Taverna", callback_data="menu_tavern")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@tavern_router.callback_query(F.data == "tavern_wheel_spin_action")
+async def cb_lucky_wheel_spin(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import spin_lucky_wheel
+    success, msg, slot = await spin_lucky_wheel(char["id"])
+    if not success:
+        await callback.answer(msg, show_alert=True)
+        return
+
+    await callback.answer(f"Yutuq: {slot['name']}!", show_alert=True)
+    await cb_lucky_wheel_view(callback)
 
 @tavern_router.callback_query(F.data == "tavern_slots")
 async def play_tavern_slots(callback: CallbackQuery):
