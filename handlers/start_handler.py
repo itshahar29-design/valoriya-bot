@@ -214,6 +214,7 @@ async def show_character_profile(callback: CallbackQuery):
     )
 
     buttons = []
+    buttons.append([InlineKeyboardButton(text="🪪 Vizual Ritsar Kartasi (Banner)", callback_data="menu_card")])
     if wounds_list:
         buttons.append([InlineKeyboardButton(text="🏥 Tabibga Borish (Davolash)", callback_data="tavern_healer_menu")])
     if sanity < 80:
@@ -221,6 +222,67 @@ async def show_character_profile(callback: CallbackQuery):
     buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
 
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@start_router.message(F.text.startswith("/card") | F.text.startswith("/banner"))
+async def cmd_knight_card(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.answer("Avval /start orqali qahramon yarating!")
+        return
+
+    from services.card_generator import generate_knight_card
+    from database.db import get_character_equipment, get_guild_info
+    from aiogram.types import BufferedInputFile
+
+    eq = await get_character_equipment(char["id"])
+    guild = await get_guild_info(char.get("guild_id", 0)) if char.get("guild_id") else None
+    guild_name = guild["name"] if guild else None
+
+    buf = generate_knight_card(char, equipment=eq, guild_name=guild_name)
+    photo = BufferedInputFile(buf.getvalue(), filename=f"knight_{user_id}.png")
+    caption = (
+        f"🪪 *RITSAR RASMIY YORLIG'I: {char['name']}*\n\n"
+        f"👑 Qirollik: {char.get('kingdom_id', 'Valoriya')} | Daraja: {char['level']}\n"
+        f"⚔️ G'alabalar: {char['wins']} | Mag'lubiyatlar: {char['losses']}\n"
+        f"💰 Xazina: {char['gold']:,} 🪙 | {char.get('gems', 0)} 💎"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="⚔️ Arenada Jang", callback_data="menu_arena")],
+        [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+    ]
+    await message.answer_photo(photo, caption=caption, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@start_router.callback_query(F.data == "menu_card")
+async def cb_knight_card(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await callback.answer("Avval /start bosing!", show_alert=True)
+        return
+
+    from services.card_generator import generate_knight_card
+    from database.db import get_character_equipment, get_guild_info
+    from aiogram.types import BufferedInputFile
+
+    await callback.answer("🪪 Ritsar kartasi chizilmoqda...", show_alert=False)
+    eq = await get_character_equipment(char["id"])
+    guild = await get_guild_info(char.get("guild_id", 0)) if char.get("guild_id") else None
+    guild_name = guild["name"] if guild else None
+
+    buf = generate_knight_card(char, equipment=eq, guild_name=guild_name)
+    photo = BufferedInputFile(buf.getvalue(), filename=f"knight_{user_id}.png")
+    caption = (
+        f"🪪 *RITSAR RASMIY YORLIG'I: {char['name']}*\n\n"
+        f"👑 Qirollik: {char.get('kingdom_id', 'Valoriya')} | Daraja: {char['level']}\n"
+        f"⚔️ G'alabalar: {char['wins']} | Mag'lubiyatlar: {char['losses']}\n"
+        f"💰 Xazina: {char['gold']:,} 🪙 | {char.get('gems', 0)} 💎"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="⚔️ Arenada Jang", callback_data="menu_arena")],
+        [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.answer_photo(photo, caption=caption, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
 # =====================================================================
 # REFERAL TIZIMI: MENYU VA BUYRUQLAR

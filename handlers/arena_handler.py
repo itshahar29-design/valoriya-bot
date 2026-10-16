@@ -24,7 +24,22 @@ async def start_arena_duel(callback: CallbackQuery):
     
     # Zulmat Tizimi: Haqiqiy statlar va travmalar hisobi
     from game.dark_engine import DarkEngine
+    import json
+    from database.db import get_character_equipment, increment_quest_progress, unlock_achievement
     eff_stats = DarkEngine.calculate_effective_stats(char)
+
+    eq_items = await get_character_equipment(char["id"])
+    weapon = next((i for i in eq_items if i.get("slot_type") == "weapon" and i.get("is_equipped") == 1), None)
+    armor = next((i for i in eq_items if i.get("slot_type") == "armor" and i.get("is_equipped") == 1), None)
+
+    player_runes = []
+    if weapon and weapon.get("runes_json"):
+        try:
+            player_runes.extend(json.loads(weapon["runes_json"]))
+        except Exception:
+            pass
+    w_atk = weapon["attack"] if weapon else 12
+    a_def = armor["defense"] if armor else 8
 
     # Jang sessiyasi
     ACTIVE_BATTLES[user_id] = {
@@ -36,11 +51,12 @@ async def start_arena_duel(callback: CallbackQuery):
             "strength": char["strength"],
             "constitution": char["constitution"],
             "agility": eff_stats["eff_agi"],
-            "weapon_attack": 12,
-            "armor_defense": 8,
+            "weapon_attack": w_atk,
+            "armor_defense": a_def,
             "sanity": char.get("sanity", 100),
             "bloodline_trait": char.get("bloodline_trait", "noble_blood"),
             "stamina_drain_round": eff_stats["stamina_drain_round"],
+            "runes": player_runes,
             "is_defending": False
         },
         "opponent": bot_opponent,
@@ -53,11 +69,12 @@ async def start_arena_duel(callback: CallbackQuery):
     sanity_badge, _, sanity_desc = DarkEngine.get_sanity_status(char.get("sanity", 100))
     wound_warn = f"\n⚠️ *Jarohatlar:* {eff_stats['wounds_count']} ta og'ir travma mavjud!" if eff_stats["wounds_count"] > 0 else ""
     pact_warn = "\n🩸 *Zulmat Ahdi faol (+45 Dark ATK, 20% Lifesteal)!*" if eff_stats["has_blood_pact"] else ""
+    runes_warn = f"\n🔮 *Qurol Runalari:* {' '.join(['🔥' if r=='fire_rune' else ('❄️' if r=='frost_rune' else '⚡️') for r in player_runes])}" if player_runes else ""
 
     await callback.message.edit_text(
         f"⚔️ *ARENA: 1v1 SHON-SHARAF DUELI (1-Raund)* ⚔️\n\n"
         f"👤 *Siz:* ❤️ {battle['player']['hp']}/{battle['player']['max_hp']} HP | ⚡️ {battle['player']['stamina']} Stamina\n"
-        f"🧠 Ruh holati: *{sanity_badge}* ({battle['player']['sanity']}%){wound_warn}{pact_warn}\n"
+        f"🧠 Ruh holati: *{sanity_badge}* ({battle['player']['sanity']}%){wound_warn}{pact_warn}{runes_warn}\n"
         f"🆚\n"
         f"🤖 *Raqib:* {bot_opponent['name']} (Lvl {bot_opponent['level']})\n"
         f"❤️ {bot_opponent['hp']}/{bot_opponent['max_hp']} HP | Xarakter: *{bot_opponent['persona'].upper()}*\n\n"
@@ -105,6 +122,11 @@ async def process_battle_turn(callback: CallbackQuery):
             honor=char["honor"] + 25
         )
         await award_referral_cashback(char["id"], loot_gold)
+
+        # Kundalik kvest va yutuqlar
+        await increment_quest_progress(char["id"], "arena_wins", 1)
+        if (char["wins"] + 1) >= 10:
+            await unlock_achievement(char["id"], "arena_champion", "⚔️ Arena Chempioni")
         
         # Tasodifiy Dervish sovg'asi (Dopamin qopqoni)
         has_dervish, gift, dervish_msg = RetentionEngine.check_random_dervish_encounter()
@@ -115,7 +137,8 @@ async def process_battle_turn(callback: CallbackQuery):
             f"Siz {opp['name']} ustidan qonli g'alabaga erishdingiz!\n\n"
             f"💰 *O'lja:* +{loot_gold} Oltin\n"
             f"✨ *Tajriba:* +{loot_xp} XP\n"
-            f"🎖 *Shon-sharaf:* +25 Honor{bonus_text}",
+            f"🎖 *Shon-sharaf:* +25 Honor\n"
+            f"📜 *Kundalik Kvest:* Arenadagi g'alaba hisobga olindi!{bonus_text}",
             parse_mode="Markdown",
             reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0)))
         )
@@ -129,9 +152,13 @@ async def process_battle_turn(callback: CallbackQuery):
         char = await get_character_by_user_id(user_id)
         loot_gold = opp["loot_gold"]
         await update_character(char["id"], gold=char["gold"] + loot_gold, wins=char["wins"] + 1)
+        await increment_quest_progress(char["id"], "arena_wins", 1)
+        if (char["wins"] + 1) >= 10:
+            await unlock_achievement(char["id"], "arena_champion", "⚔️ Arena Chempioni")
         await callback.message.edit_text(
             f"🏳️ *DUSHMAN TASLIM BO'LDI!* 🏳️\n\n"
-            f"{opp['name']} qo'rquvdan tiz cho'kib jonini saqlab qolish uchun {loot_gold} oltin to'ladi!",
+            f"{opp['name']} qo'rquvdan tiz cho'kib jonini saqlab qolish uchun {loot_gold} oltin to'ladi!\n"
+            f"📜 *Kundalik Kvest:* Arenadagi g'alaba hisobga olindi!",
             parse_mode="Markdown",
             reply_markup=main_menu_keyboard(bool(char.get("is_owner", 0)))
         )

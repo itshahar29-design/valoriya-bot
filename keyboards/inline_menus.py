@@ -9,14 +9,18 @@ def main_menu_keyboard(is_owner: bool = False):
         ],
         [
             InlineKeyboardButton(text="🎒 Inventar (8 Slot)", callback_data="menu_inventory"),
-            InlineKeyboardButton(text="🔨 Temirchi (+1..+10)", callback_data="menu_forge")
+            InlineKeyboardButton(text="🔨 Temirchi & Runalar", callback_data="menu_forge")
         ],
         [
             InlineKeyboardButton(text="🗺 Zindonlar (PvE)", callback_data="menu_dungeon"),
             InlineKeyboardButton(text="🎁 Kundalik Sovg'a", callback_data="menu_daily")
         ],
         [
-            InlineKeyboardButton(text="🏛 Auksion & Bozor", callback_data="menu_auction"),
+            InlineKeyboardButton(text="🛒 Jonli Bozor (P2P)", callback_data="menu_market"),
+            InlineKeyboardButton(text="📜 Kvestlar & Yutuqlar", callback_data="menu_quests")
+        ],
+        [
+            InlineKeyboardButton(text="🐫 Karvon Savdosi", callback_data="menu_trade"),
             InlineKeyboardButton(text="🍻 Taverna & Qimor", callback_data="menu_tavern")
         ],
         [
@@ -28,7 +32,7 @@ def main_menu_keyboard(is_owner: bool = False):
             InlineKeyboardButton(text="👑 Oliy Taxt & Turnir", callback_data="menu_tournament")
         ],
         [
-            InlineKeyboardButton(text="👤 Ritsar Profili", callback_data="menu_profile"),
+            InlineKeyboardButton(text="👤 Profil & 🪪 Karta", callback_data="menu_profile"),
             InlineKeyboardButton(text="🏆 Reyting (Top)", callback_data="menu_top")
         ]
     ]

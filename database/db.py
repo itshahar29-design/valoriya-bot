@@ -230,6 +230,46 @@ async def init_db():
         );
         """)
 
+        # 16. P2P Open Market Listings (Jonli O'yinchilar Bozori)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS market_listings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            seller_id INTEGER NOT NULL,
+            seller_name TEXT NOT NULL,
+            category TEXT NOT NULL,
+            item_name TEXT NOT NULL,
+            item_data_json TEXT NOT NULL,
+            quantity INTEGER DEFAULT 1,
+            price_per_unit INTEGER NOT NULL,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        """)
+
+        # 17. Daily Quests (Kundalik Kvestlar)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS daily_quests (
+            character_id INTEGER PRIMARY KEY,
+            quest_date TEXT NOT NULL,
+            arena_wins INTEGER DEFAULT 0,
+            mining_count INTEGER DEFAULT 0,
+            market_or_tavern INTEGER DEFAULT 0,
+            is_claimed INTEGER DEFAULT 0
+        );
+        """)
+
+        # 18. Achievements (Faxriy Yutuqlar va Medallar)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS achievements (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            character_id INTEGER NOT NULL,
+            achievement_id TEXT NOT NULL,
+            title TEXT NOT NULL,
+            unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(character_id, achievement_id)
+        );
+        """)
+
         # Migrations if needed
         for col_def in [
             ("username", "TEXT DEFAULT NULL"),
@@ -244,7 +284,10 @@ async def init_db():
             ("professions_json", "TEXT DEFAULT '{\"mining_level\": 1, \"alchemy_level\": 1, \"iron_ore\": 0, \"gold_ore\": 0, \"mithril_ore\": 0, \"herbs\": 0, \"potions\": {}}'"),
             ("active_buff_potion", "TEXT DEFAULT NULL"),
             ("buff_potion_battles", "INTEGER DEFAULT 0"),
-            ("is_king", "INTEGER DEFAULT 0")
+            ("is_king", "INTEGER DEFAULT 0"),
+            ("current_city", "TEXT DEFAULT 'samarkand'"),
+            ("trade_inventory_json", "TEXT DEFAULT '{}'"),
+            ("runes_inventory_json", "TEXT DEFAULT '{\"fire_rune\": 0, \"frost_rune\": 0, \"lightning_rune\": 0}'")
         ]:
             try:
                 await db.execute(f"ALTER TABLE characters ADD COLUMN {col_def[0]} {col_def[1]};")
@@ -1236,6 +1279,16 @@ async def mine_resources(character_id: int) -> Tuple[bool, str, dict]:
         profs["mithril_ore"] = profs.get("mithril_ore", 0) + mithril_found
         profs["herbs"] = profs.get("herbs", 0) + herbs_found
 
+        # 12% qadimiy runa topish ehtimoli
+        rune_found_msg = ""
+        if random.random() < 0.12:
+            r_types = ["fire_rune", "frost_rune", "lightning_rune"]
+            r_choice = random.choice(r_types)
+            runes = await get_runes_inventory(character_id)
+            runes[r_choice] = runes.get(r_choice, 0) + 1
+            await db.execute("UPDATE characters SET runes_inventory_json = ? WHERE id = ?", (json.dumps(runes), character_id))
+            rune_found_msg = f"\n• 🔮 *QADIMIY RUNA:* {RUNES_DATA[r_choice]['name']} topildi!"
+
         await db.execute("""
         UPDATE characters SET
             stamina = stamina - 20,
@@ -1244,13 +1297,17 @@ async def mine_resources(character_id: int) -> Tuple[bool, str, dict]:
         """, (json.dumps(profs), character_id))
         await db.commit()
 
+        # Kundalik kvest va yutuqlar
+        await increment_quest_progress(character_id, "mining_count", 1)
+        await unlock_achievement(character_id, "mining_master", "⛏ Mohir Konchi")
+
         msg = f"⛏ *SHAXTADA RUDA QAZIB OLINDI!* (-20 Stamina)\n"
         msg += f"• 🔩 Temir rudasi: +{iron_found}\n"
         if gold_found:
             msg += f"• 🪙 Oltin rudasi: +{gold_found}\n"
         if mithril_found:
             msg += f"• ✨ Sehrli Mithril: +{mithril_found}\n"
-        msg += f"• 🌿 Shifobaxsh O'tlar: +{herbs_found}"
+        msg += f"• 🌿 Shifobaxsh O'tlar: +{herbs_found}{rune_found_msg}"
 
         return True, msg, profs
 
@@ -1284,6 +1341,8 @@ async def brew_potion(character_id: int, potion_type: str) -> Tuple[bool, str]:
         name = "🧪 Zulmat Zaxari (+40 Qo'shimcha Zahar Zarbasi)"
     else:
         return False, "Noma'lum damlama turi!"
+
+    await unlock_achievement(character_id, "alchemy_master", "🧪 Mohir Alximik")
 
     profs["potions"] = potions
     async with get_connection() as db:
@@ -1387,9 +1446,478 @@ async def challenge_king(challenger_character_id: int) -> Tuple[bool, str]:
             )
         else:
             await db.execute("UPDATE tournament_throne SET defense_wins = defense_wins + 1 WHERE id = 1")
-            await db.execute("UPDATE characters SET hp = MAX(10, hp // 2) WHERE id = ?", (challenger_character_id,))
+            await db.execute("UPDATE characters SET hp = MAX(10, hp / 2) WHERE id = ?", (challenger_character_id,))
             await db.commit()
             return False, f"🩸 *DUELDA MAG'LUBIYAT!* Amaldagi qirol o'zining afsonaviy zarbasi bilan da'vongizni chippakka chiqardi!"
+
+# =====================================================================
+# 5. JONLI P2P OCHIQ BOZOR (LIVE PLAYER MARKETPLACE)
+# =====================================================================
+
+async def create_market_listing(seller_character_id: int, category: str, item_name: str, quantity: int, price_per_unit: int, item_data: dict) -> Tuple[bool, str]:
+    if quantity <= 0 or price_per_unit <= 0:
+        return False, "Miqdor va narx musbat bo'lishi shart!"
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT name FROM characters WHERE id = ?", (seller_character_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Qahramon topilmadi!"
+            seller_name = row["name"]
+
+        await db.execute("""
+        INSERT INTO market_listings (seller_id, seller_name, category, item_name, item_data_json, quantity, price_per_unit, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'active');
+        """, (seller_character_id, seller_name, category, item_name, json.dumps(item_data), quantity, price_per_unit))
+        await db.commit()
+        return True, f"📦 *BOZORGA QO'YILDI!* {quantity}x *{item_name}* donasi {price_per_unit:,} 🪙 dan sotuvga chiqarildi!"
+
+async def get_active_market_listings(category: str = None) -> list:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        if category:
+            query = "SELECT * FROM market_listings WHERE status = 'active' AND category = ? ORDER BY created_at DESC LIMIT 25"
+            params = (category,)
+        else:
+            query = "SELECT * FROM market_listings WHERE status = 'active' ORDER BY created_at DESC LIMIT 25"
+            params = ()
+        async with db.execute(query, params) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+async def get_player_market_listings(seller_character_id: int) -> list:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM market_listings WHERE seller_id = ? AND status = 'active' ORDER BY created_at DESC", (seller_character_id,)) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+async def cancel_market_listing(seller_character_id: int, listing_id: int) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM market_listings WHERE id = ? AND seller_id = ? AND status = 'active'", (listing_id, seller_character_id)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "E'lon topilmadi yoki allaqachon bekor qilingan!"
+            listing = dict(row)
+
+        await db.execute("UPDATE market_listings SET status = 'cancelled' WHERE id = ?", (listing_id,))
+        
+        # Mahsulotni egasiga qaytarish
+        cat = listing["category"]
+        qty = listing["quantity"]
+        item_data = json.loads(listing["item_data_json"])
+        
+        if cat in ["ore", "potion"]:
+            profs = await get_player_professions(seller_character_id)
+            if cat == "ore":
+                ore_key = item_data.get("key", "iron_ore")
+                profs[ore_key] = profs.get(ore_key, 0) + qty
+            elif cat == "potion":
+                pot_key = item_data.get("key", "rage")
+                profs.setdefault("potions", {})[pot_key] = profs.setdefault("potions", {}).get(pot_key, 0) + qty
+            await db.execute("UPDATE characters SET professions_json = ? WHERE id = ?", (json.dumps(profs), seller_character_id))
+        elif cat == "rune":
+            runes = await get_runes_inventory(seller_character_id)
+            r_key = item_data.get("key", "fire_rune")
+            runes[r_key] = runes.get(r_key, 0) + qty
+            await db.execute("UPDATE characters SET runes_inventory_json = ? WHERE id = ?", (json.dumps(runes), seller_character_id))
+        elif cat == "trade_good":
+            t_inv = await get_trade_inventory(seller_character_id)
+            g_key = item_data.get("key", "silk")
+            t_inv[g_key] = t_inv.get(g_key, 0) + qty
+            await db.execute("UPDATE characters SET trade_inventory_json = ? WHERE id = ?", (json.dumps(t_inv), seller_character_id))
+        elif cat == "equipment":
+            eq = item_data
+            await db.execute("""
+            INSERT INTO equipment (character_id, slot_type, item_name, rarity, attack, defense, durability, max_durability, is_equipped)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0);
+            """, (seller_character_id, eq.get("slot_type", "weapon"), eq.get("item_name", "Qilich"), eq.get("rarity", "common"), eq.get("attack", 10), eq.get("defense", 5), eq.get("durability", 100), eq.get("max_durability", 100)))
+
+        await db.commit()
+        return True, f"↩️ *E'LON BEKOR QILINDI!* {listing['item_name']} inventaringizga qaytarildi."
+
+async def buy_market_listing(buyer_character_id: int, listing_id: int) -> Tuple[bool, str, int, int, str]:
+    """
+    Mahsulot sotib olish.
+    Returns: (success, msg, seller_user_id, net_gold_for_seller, item_name)
+    """
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM market_listings WHERE id = ? AND status = 'active'", (listing_id,)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Mahsulot allaqachon sotib olingan yoki sotuvdan olingan!", 0, 0, ""
+            listing = dict(row)
+
+        if listing["seller_id"] == buyer_character_id:
+            return False, "O'zingizning mahsulotingizni sotib ololmaysiz!", 0, 0, ""
+
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (buyer_character_id,)) as cur2:
+            buyer = dict(await cur2.fetchone())
+
+        total_price = listing["price_per_unit"] * listing["quantity"]
+        if buyer["gold"] < total_price:
+            return False, f"Oltin yetarli emas! Narxi: {total_price:,} 🪙. Sizda: {buyer['gold']:,} 🪙.", 0, 0, ""
+
+        # 3% Qirollik / Bozor solig'i
+        tax = max(1, int(total_price * 0.03))
+        net_gold = total_price - tax
+
+        # Sotuvchining telegram user_id sini olish
+        seller_user_id = 0
+        async with db.execute("SELECT user_id FROM characters WHERE id = ?", (listing["seller_id"],)) as cur_s:
+            s_row = await cur_s.fetchone()
+            if s_row:
+                seller_user_id = s_row[0]
+
+        # Mablag'larni yangilash
+        await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?", (total_price, buyer_character_id))
+        await db.execute("UPDATE characters SET gold = gold + ? WHERE id = ?", (net_gold, listing["seller_id"]))
+        await db.execute("UPDATE market_listings SET status = 'sold' WHERE id = ?", (listing_id,))
+
+        # Mahsulotni xaridorga topshirish
+        cat = listing["category"]
+        qty = listing["quantity"]
+        item_data = json.loads(listing["item_data_json"])
+
+        if cat in ["ore", "potion"]:
+            profs = await get_player_professions(buyer_character_id)
+            if cat == "ore":
+                ore_key = item_data.get("key", "iron_ore")
+                profs[ore_key] = profs.get(ore_key, 0) + qty
+            elif cat == "potion":
+                pot_key = item_data.get("key", "rage")
+                profs.setdefault("potions", {})[pot_key] = profs.setdefault("potions", {}).get(pot_key, 0) + qty
+            await db.execute("UPDATE characters SET professions_json = ? WHERE id = ?", (json.dumps(profs), buyer_character_id))
+        elif cat == "rune":
+            runes = await get_runes_inventory(buyer_character_id)
+            r_key = item_data.get("key", "fire_rune")
+            runes[r_key] = runes.get(r_key, 0) + qty
+            await db.execute("UPDATE characters SET runes_inventory_json = ? WHERE id = ?", (json.dumps(runes), buyer_character_id))
+        elif cat == "trade_good":
+            t_inv = await get_trade_inventory(buyer_character_id)
+            g_key = item_data.get("key", "silk")
+            t_inv[g_key] = t_inv.get(g_key, 0) + qty
+            await db.execute("UPDATE characters SET trade_inventory_json = ? WHERE id = ?", (json.dumps(t_inv), buyer_character_id))
+        elif cat == "equipment":
+            eq = item_data
+            await db.execute("""
+            INSERT INTO equipment (character_id, slot_type, item_name, rarity, attack, defense, durability, max_durability, is_equipped)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0);
+            """, (buyer_character_id, eq.get("slot_type", "weapon"), eq.get("item_name", "Qilich"), eq.get("rarity", "common"), eq.get("attack", 10), eq.get("defense", 5), eq.get("durability", 100), eq.get("max_durability", 100)))
+
+        await db.commit()
+
+        # Kundalik kvest va yutuqlar
+        await increment_quest_progress(buyer_character_id, "market_or_tavern", 1)
+        await unlock_achievement(buyer_character_id, "market_trader", "🛒 Savdo Magnati")
+        await unlock_achievement(listing["seller_id"], "market_trader", "🛒 Savdo Magnati")
+
+        return True, f"🎉 *XARID MUVAFFAQIYATLI!* Siz {listing['item_name']} ni {total_price:,} 🪙 evaziga sotib oldingiz!", seller_user_id, net_gold, listing["item_name"]
+
+# =====================================================================
+# 6. KUNDALIK KVESTLAR VA FAXRIY YUTUQLAR (DAILY QUESTS & ACHIEVEMENTS)
+# =====================================================================
+
+async def get_or_create_daily_quests(character_id: int) -> dict:
+    import datetime
+    today_str = datetime.date.today().isoformat()
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM daily_quests WHERE character_id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            if row:
+                q = dict(row)
+                if q["quest_date"] == today_str:
+                    return q
+                # Yangi kun kvestlari
+                await db.execute("""
+                UPDATE daily_quests SET
+                    quest_date = ?, arena_wins = 0, mining_count = 0,
+                    market_or_tavern = 0, is_claimed = 0
+                WHERE character_id = ?;
+                """, (today_str, character_id))
+                await db.commit()
+                q.update({"quest_date": today_str, "arena_wins": 0, "mining_count": 0, "market_or_tavern": 0, "is_claimed": 0})
+                return q
+
+        # Birinchi marta yaratish
+        await db.execute("""
+        INSERT INTO daily_quests (character_id, quest_date, arena_wins, mining_count, market_or_tavern, is_claimed)
+        VALUES (?, ?, 0, 0, 0, 0);
+        """, (character_id, today_str))
+        await db.commit()
+        return {
+            "character_id": character_id,
+            "quest_date": today_str,
+            "arena_wins": 0,
+            "mining_count": 0,
+            "market_or_tavern": 0,
+            "is_claimed": 0
+        }
+
+async def increment_quest_progress(character_id: int, quest_key: str, amount: int = 1):
+    valid_keys = ["arena_wins", "mining_count", "market_or_tavern"]
+    if quest_key not in valid_keys:
+        return
+    await get_or_create_daily_quests(character_id)
+    async with get_connection() as db:
+        await db.execute(f"UPDATE daily_quests SET {quest_key} = {quest_key} + ? WHERE character_id = ?", (amount, character_id))
+        await db.commit()
+
+async def claim_daily_quest_reward(character_id: int) -> Tuple[bool, str]:
+    q = await get_or_create_daily_quests(character_id)
+    if q["is_claimed"] == 1:
+        return False, "Siz bugungi barcha kvest mukofotlarini allaqachon olgansiz!"
+
+    # Tekshiruv: 2 arena, 2 shaxta, 1 taverna/bozor
+    is_done = (q["arena_wins"] >= 2 and q["mining_count"] >= 2 and q["market_or_tavern"] >= 1)
+    if not is_done:
+        return False, "Hali barcha 3 ta kvest bajarilmadi! Vazifalar jurnalini ko'ring."
+
+    bonus_gold = 1500
+    bonus_gems = 2
+    bonus_xp = 300
+
+    async with get_connection() as db:
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold + ?,
+            gems = gems + ?,
+            xp = xp + ?
+        WHERE id = ?;
+        """, (bonus_gold, bonus_gems, bonus_xp, character_id))
+        await db.execute("UPDATE daily_quests SET is_claimed = 1 WHERE character_id = ?", (character_id,))
+        await db.commit()
+
+    return True, (
+        f"🎁 *KUNDALIK KVESTLAR TO'LIQ BAJARILDI!* 🏆\n\n"
+        f"Siz jasorat bilan kunlik vazifalarni yakunladingiz!\n\n"
+        f"💰 *Mukofot:* +{bonus_gold:,} 🪙 Oltin | +{bonus_gems} 💎 Qimmatbaho Javohir | +{bonus_xp} XP!\n"
+        f"Ertaga yangi vazifalar sizni kutadi."
+    )
+
+async def unlock_achievement(character_id: int, achievement_id: str, title: str) -> bool:
+    async with get_connection() as db:
+        try:
+            await db.execute("""
+            INSERT OR IGNORE INTO achievements (character_id, achievement_id, title)
+            VALUES (?, ?, ?);
+            """, (character_id, achievement_id, title))
+            await db.commit()
+            return True
+        except Exception:
+            return False
+
+async def get_player_achievements(character_id: int) -> list:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM achievements WHERE character_id = ? ORDER BY unlocked_at DESC", (character_id,)) as cur:
+            return [dict(r) for r in await cur.fetchall()]
+
+# =====================================================================
+# 7. QUROLLARGA RUNALAR O'RNATISH (RUNE SOCKETING)
+# =====================================================================
+
+RUNES_DATA = {
+    "fire_rune": {"name": "🔥 Olov Runasi", "desc": "Kuydirish: Jangda har raund +25 olov zarari!", "cost": 400},
+    "frost_rune": {"name": "❄️ Muz Runasi", "desc": "Muzlatish: Dushmanning zarbadan qochish imkonini 0 qiladi!", "cost": 450},
+    "lightning_rune": {"name": "⚡️ Momaqaldiroq Runasi", "desc": "Yorish: Qalqonni 100% teshib o'tadi va dushman staminasini 0 qiladi!", "cost": 500}
+}
+
+async def get_runes_inventory(character_id: int) -> dict:
+    async with get_connection() as db:
+        async with db.execute("SELECT runes_inventory_json FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            raw = row[0] if row and row[0] else "{}"
+            try:
+                data = json.loads(raw)
+            except Exception:
+                data = {}
+            default = {"fire_rune": 0, "frost_rune": 0, "lightning_rune": 0}
+            default.update(data)
+            return default
+
+async def socket_rune_to_equipment(character_id: int, item_id: int, rune_type: str) -> Tuple[bool, str]:
+    if rune_type not in RUNES_DATA:
+        return False, "Noma'lum runa turi!"
+
+    runes = await get_runes_inventory(character_id)
+    if runes.get(rune_type, 0) <= 0:
+        return False, f"Sizda {RUNES_DATA[rune_type]['name']} yo'q! Bozordan yoki shaxtadan toping."
+
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM equipment WHERE id = ? AND character_id = ?", (item_id, character_id)) as cur:
+            row = await cur.fetchone()
+            if not row:
+                return False, "Anjom topilmadi!"
+            item = dict(row)
+
+        current_runes = []
+        try:
+            current_runes = json.loads(item.get("runes_json", "[]"))
+        except Exception:
+            current_runes = []
+
+        if len(current_runes) >= 2:
+            return False, "Ushbu anjomda maksimal 2 ta runa o'rni to'lgan!"
+
+        current_runes.append(rune_type)
+        runes[rune_type] -= 1
+
+        # Runa belgisi nomiga qo'shiladi
+        rune_icon = "🔥" if rune_type == "fire_rune" else ("❄️" if rune_type == "frost_rune" else "⚡️")
+        new_name = f"{item['item_name']} [{rune_icon}]"
+
+        await db.execute("""
+        UPDATE equipment SET item_name = ?, runes_json = ? WHERE id = ?;
+        """, (new_name, json.dumps(current_runes), item_id))
+        await db.execute("UPDATE characters SET runes_inventory_json = ? WHERE id = ?", (json.dumps(runes), character_id))
+        await db.commit()
+
+        return True, f"✨ *RUNA O'RNATILDI!* {RUNES_DATA[rune_type]['name']} anjomga muvaffaqiyatli singdirildi: *{new_name}*!"
+
+# =====================================================================
+# 8. SHAHARLARARO TIJORAT VA SAYOHAT (MERCHANT ARBITRAGE)
+# =====================================================================
+
+TRADE_CITIES = {
+    "samarkand": {
+        "name": "Samarqand Poytaxti",
+        "goods": {
+            "silk": {"name": "Ipak Mato", "buy": 100, "sell": 90},
+            "spices": {"name": "Sharq Ziravorlari", "buy": 150, "sell": 135},
+            "fur": {"name": "Qimmatbaho Mo'yna", "buy": 320, "sell": 300}
+        }
+    },
+    "frost_peak": {
+        "name": "Muzli Cho'qqi (Qonxo'r Ragnar)",
+        "goods": {
+            "silk": {"name": "Ipak Mato", "buy": 380, "sell": 350}, # Judayam qimmat!
+            "spices": {"name": "Sharq Ziravorlari", "buy": 260, "sell": 240},
+            "fur": {"name": "Qimmatbaho Mo'yna", "buy": 80, "sell": 70}   # Judayam arzon!
+        }
+    },
+    "lionguard": {
+        "name": "Oltin Sher Qirolligi",
+        "goods": {
+            "silk": {"name": "Ipak Mato", "buy": 220, "sell": 200},
+            "spices": {"name": "Sharq Ziravorlari", "buy": 110, "sell": 95}, # Arzon!
+            "fur": {"name": "Qimmatbaho Mo'yna", "buy": 240, "sell": 220}
+        }
+    }
+}
+
+async def travel_to_city(character_id: int, target_city: str) -> Tuple[bool, str]:
+    if target_city not in TRADE_CITIES:
+        return False, "Noma'lum shahar manzili!"
+
+    import random
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT current_city, stamina, gold FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        if char.get("current_city") == target_city:
+            return False, f"Siz allaqachon *{TRADE_CITIES[target_city]['name']}* shahridamisiz!"
+
+        if char["stamina"] < 25:
+            return False, "Karvonda sayohat qilish uchun kamida 25 Stamina kerak!"
+
+        # 20% qaroqchilar hujumi xavfi
+        ambush_txt = ""
+        if random.random() < 0.20:
+            lost_gold = min(char["gold"], 150)
+            await db.execute("UPDATE characters SET gold = gold - ?, hp = MAX(10, hp - 15) WHERE id = ?", (lost_gold, character_id))
+            ambush_txt = f"\n⚠️ *QAROQCHILAR PISTIRMASI:* Yo'lda sahro qaroqchilari karvonga hujum qildi! -{lost_gold} 🪙 yo'qotildi va -15 HP jarohatlandingiz!"
+
+        await db.execute("""
+        UPDATE characters SET current_city = ?, stamina = stamina - 25 WHERE id = ?;
+        """, (target_city, character_id))
+        await db.commit()
+
+        return True, f"🐫 *KARVON MANZILGA YETDI!* Siz *{TRADE_CITIES[target_city]['name']}* shahriga qadam qo'ydingiz! (-25 Stamina){ambush_txt}"
+
+async def get_trade_inventory(character_id: int) -> dict:
+    async with get_connection() as db:
+        async with db.execute("SELECT trade_inventory_json FROM characters WHERE id = ?", (character_id,)) as cur:
+            row = await cur.fetchone()
+            raw = row[0] if row and row[0] else "{}"
+            try:
+                data = json.loads(raw)
+            except Exception:
+                data = {}
+            default = {"silk": 0, "spices": 0, "fur": 0}
+            default.update(data)
+            return default
+
+async def buy_trade_good(character_id: int, good_key: str, amount: int = 1) -> Tuple[bool, str]:
+    if amount <= 0:
+        return False, "Miqdor musbat bo'lishi kerak!"
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        city_key = char.get("current_city") or "samarkand"
+        city = TRADE_CITIES.get(city_key, TRADE_CITIES["samarkand"])
+        if good_key not in city["goods"]:
+            return False, "Ushbu shaharda bu tovar sotilmaydi!"
+
+        good = city["goods"][good_key]
+        total_cost = good["buy"] * amount
+        if char["gold"] < total_cost:
+            return False, f"Oltin yetarli emas! Kerak: {total_cost:,} 🪙. Sizda: {char['gold']:,} 🪙."
+
+        trade_inv = await get_trade_inventory(character_id)
+        trade_inv[good_key] = trade_inv.get(good_key, 0) + amount
+
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold - ?,
+            trade_inventory_json = ?
+        WHERE id = ?;
+        """, (total_cost, json.dumps(trade_inv), character_id))
+        await db.commit()
+
+        await increment_quest_progress(character_id, "market_or_tavern", 1)
+        return True, f"📦 *XARID QILINDI!* {amount}x {good['name']} jami {total_cost:,} 🪙 ga sotib olindi!"
+
+async def sell_trade_good(character_id: int, good_key: str, amount: int = 1) -> Tuple[bool, str]:
+    if amount <= 0:
+        return False, "Miqdor musbat bo'lishi kerak!"
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+
+        city_key = char.get("current_city") or "samarkand"
+        city = TRADE_CITIES.get(city_key, TRADE_CITIES["samarkand"])
+        if good_key not in city["goods"]:
+            return False, "Ushbu shaharda bu tovar qabul qilinmaydi!"
+
+        trade_inv = await get_trade_inventory(character_id)
+        if trade_inv.get(good_key, 0) < amount:
+            return False, f"Sizda yetarli {good_key} yo'q! Sizda: {trade_inv.get(good_key, 0)} dona."
+
+        good = city["goods"][good_key]
+        total_revenue = good["sell"] * amount
+        trade_inv[good_key] -= amount
+
+        await db.execute("""
+        UPDATE characters SET
+            gold = gold + ?,
+            trade_inventory_json = ?
+        WHERE id = ?;
+        """, (total_revenue, json.dumps(trade_inv), character_id))
+        await db.commit()
+
+        await increment_quest_progress(character_id, "market_or_tavern", 1)
+        await unlock_achievement(character_id, "market_trader", "🛒 Savdo Magnati")
+        return True, f"💰 *SOTILDI!* {amount}x {good['name']} jami {total_revenue:,} 🪙 ga sotildi!"
+
+
 
 
 

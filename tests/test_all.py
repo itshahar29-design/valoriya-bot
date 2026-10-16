@@ -151,7 +151,7 @@ async def run_comprehensive_tests():
         "weapon_attack": 15, "bloodline_trait": "demon_pact", "hp": 50, "max_hp": 100
     }
     pact_defender = {"name": "Qurbon", "hp": 100, "constitution": 10, "armor_defense": 5}
-    dmg_pact, log_pact, _ = BattleEngine.calculate_round(pact_attacker, pact_defender)
+    dmg_pact, log_pact, _ = BattleEngine.calculate_round(pact_attacker, pact_defender, action="skill")
     assert dmg_pact > 50, "Dark ATK qo'shilmadi!"
     assert pact_attacker["hp"] > 50, "Lifesteal ishlamadi!"
     print(f"✅ TEST 10.3 (Qonli Ahd & Lifesteal): Zarar: {dmg_pact} DMG, Tiklangan jon: +{pact_attacker['hp'] - 50} HP")
@@ -228,10 +228,115 @@ async def run_comprehensive_tests():
     current_king = await get_current_king()
     print(f"✅ TEST 11.6 (Valoriya Oliy Taxti): {k_msg[:50]}... Hozirgi Qirol: {current_king.get('king_name', 'Bo\'sh')}")
 
+    # =====================================================================
+    # 12. P2P OCHIQ BOZOR, KVESTLAR, VIZUAL KARTA, RUNALAR VA TIJORAT
+    # =====================================================================
+    print("\n[TEST 12] 5 Ta Yangi Mukammal Tizim (Market, Quests, Card, Runes, Arbitrage)...")
+    from database.db import (
+        create_market_listing, get_active_market_listings, get_player_market_listings,
+        cancel_market_listing, buy_market_listing,
+        get_or_create_daily_quests, increment_quest_progress, claim_daily_quest_reward,
+        unlock_achievement, get_player_achievements,
+        get_runes_inventory, socket_rune_to_equipment,
+        get_trade_inventory, buy_trade_good, sell_trade_good, travel_to_city
+    )
+    from services.card_generator import generate_knight_card
+
+    # 12.1 P2P Market: Listing, Cancelling, Buying with 3% Tax
+    buyer_user_id = base_id + 999
+    buyer_id = await create_character(user_id=buyer_user_id, name="Savdogar Bobur", class_id="scout")
+    await update_character(buyer_id, gold=10000)
+
+    # Listing yaratish
+    list_ok, list_msg = await create_market_listing(
+        seller_character_id=char["id"],
+        category="ore",
+        item_name="Sehrli Mithril Rudasi",
+        quantity=2,
+        price_per_unit=500,
+        item_data={"key": "mithril_ore"}
+    )
+    assert list_ok is True, "Bozorga listing qo'yilmadi!"
+    active_listings = await get_active_market_listings("ore")
+    assert len(active_listings) >= 1, "Faol listinglar topilmadi!"
+    target_listing = active_listings[0]
+
+    # Xarid qilish (Buyer buys seller's listing)
+    buy_ok, buy_msg, seller_uid, net_g, item_n = await buy_market_listing(buyer_id, target_listing["id"])
+    assert buy_ok is True, f"Xarid amalga oshmadi: {buy_msg}"
+    assert net_g == int(1000 * 0.97), "3% soliq noto'g'ri hisoblandi!"
+    print(f"✅ TEST 12.1 (P2P Bozor & 3% Soliq): {list_msg[:45]}... | Xarid sof tushum: {net_g}🪙 (Soliq: 30🪙)")
+
+    # 12.2 Daily Quests & Achievements
+    q = await get_or_create_daily_quests(char["id"])
+    assert q["quest_date"] is not None, "Kundalik kvest sanasi yo'q!"
+    await increment_quest_progress(char["id"], "arena_wins", 2)
+    await increment_quest_progress(char["id"], "mining_count", 2)
+    await increment_quest_progress(char["id"], "market_or_tavern", 1)
+    claim_ok, claim_msg = await claim_daily_quest_reward(char["id"])
+    assert claim_ok is True, f"Kvest mukofoti berilmadi: {claim_msg}"
+    await unlock_achievement(char["id"], "market_trader", "🛒 Savdo Magnati")
+    achievements = await get_player_achievements(char["id"])
+    assert len(achievements) >= 1, "Yutuqlar topilmadi!"
+    print(f"✅ TEST 12.2 (Kundalik Kvestlar & Yutuqlar): Mukofot olindi! Yutuqlar soni: {len(achievements)} ta.")
+
+    # 12.3 Pillow Visual Knight Identity Banner Card
+    buf = generate_knight_card(char, equipment=gear, guild_name="Bo'rilar Klani")
+    card_bytes = buf.getvalue()
+    assert len(card_bytes) > 10000, "Ritsar kartasi chizilmadi yoki hajmi juda kichik!"
+    print(f"✅ TEST 12.3 (Pillow Ritsar Kartasi): 800x530 yuqori sifatli banner tayyorlandi ({len(card_bytes)} bayt).")
+
+    # 12.4 Elemental Rune Socketing & Battle Mechanics
+    await update_character(char["id"], runes_inventory_json=json.dumps({"fire_rune": 2, "frost_rune": 1, "lightning_rune": 1}))
+    sock_ok, sock_msg = await socket_rune_to_equipment(char["id"], test_weapon["id"], "fire_rune")
+    assert sock_ok is True, f"Runa o'rnatilmadi: {sock_msg}"
+
+    # Jangda Olov Runasi tekshiruvi (+25 Burn DMG)
+    rune_attacker = {
+        "name": "Runa Ritsari", "strength": 20, "agility": 15, "stamina": 100,
+        "weapon_attack": 15, "runes": ["fire_rune"], "hp": 100, "max_hp": 100
+    }
+    rune_defender = {"name": "Himoyachi", "hp": 100, "constitution": 10, "agility": 10, "armor_defense": 5}
+    r_dmg, r_log, _ = BattleEngine.calculate_round(rune_attacker, rune_defender)
+    assert any("Olov Runasi" in l for l in r_log), "Olov runasi jangda ishlamadi!"
+
+    # Muz Runasi tekshiruvi (0% dodge)
+    frost_attacker = {
+        "name": "Muz Ritsari", "strength": 20, "agility": 5, "stamina": 100,
+        "weapon_attack": 15, "runes": ["frost_rune"], "hp": 100, "max_hp": 100
+    }
+    f_dmg, f_log, _ = BattleEngine.calculate_round(frost_attacker, rune_defender)
+    assert any("Muz Runasi" in l for l in f_log), "Muz runasi dushmanni muzlatmadi!"
+
+    # Momaqaldiroq Runasi tekshiruvi (Shield Pierce & Stamina Break)
+    shield_defender = {"name": "Qalqonchi", "hp": 100, "constitution": 10, "armor_defense": 5, "is_defending": True, "stamina": 100}
+    light_attacker = {
+        "name": "Chaqmoq Ritsari", "strength": 20, "agility": 15, "stamina": 100,
+        "weapon_attack": 15, "runes": ["lightning_rune"]
+    }
+    l_dmg, l_log, _ = BattleEngine.calculate_round(light_attacker, shield_defender)
+    assert shield_defender["stamina"] == 0, "Momaqaldiroq runasi staminani 0 qilmadi!"
+    print("✅ TEST 12.4 (Elementar Runalar & Jang): 🔥 Olov (+25 DMG), ❄️ Muz (0% Dodge), ⚡️ Chaqmoq (Qalqon teshish) muvaffaqiyatli!")
+
+    # 12.5 Inter-City Commodity Trading & Arbitrage
+    await update_character(char["id"], gold=2000, stamina=100, current_city="samarkand")
+    buy_g_ok, buy_g_msg = await buy_trade_good(char["id"], "silk", 2)
+    assert buy_g_ok is True, f"Tovar olinmadi: {buy_g_msg}"
+    
+    # Muzli Cho'qqiga sayohat
+    tr_ok, tr_msg = await travel_to_city(char["id"], "frost_peak")
+    assert tr_ok is True, f"Sayohat qilib bo'lmadi: {tr_msg}"
+
+    # Muzli Cho'qqida Ipakni qimmat narxda sotish
+    sell_g_ok, sell_g_msg = await sell_trade_good(char["id"], "silk", 2)
+    assert sell_g_ok is True, f"Tovar sotilmadi: {sell_g_msg}"
+    print(f"✅ TEST 12.5 (Shaharlararo Karvon Tijorati): Samarqanddan olindi, Muzli Cho'qqida sotildi: {sell_g_msg}")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 11 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print("🎉 BARCHA 12 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
     print("👑 VALORIYA QIT'ASI TO'LIQ VA BEKAMU-KO'ST HOLATDA TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":
     asyncio.run(run_comprehensive_tests())
+

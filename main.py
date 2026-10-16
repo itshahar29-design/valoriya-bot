@@ -25,6 +25,9 @@ from handlers.profession_handler import profession_router
 from handlers.caravan_handler import caravan_router
 from handlers.horse_race_handler import horse_race_router
 from handlers.tournament_handler import tournament_router
+from handlers.market_handler import router as market_router
+from handlers.quest_handler import router as quest_router
+from handlers.trade_travel_handler import router as trade_travel_router
 from game.npc_broadcaster import npc_periodic_broadcaster_loop
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -82,6 +85,9 @@ async def main():
     dp.include_router(caravan_router)
     dp.include_router(horse_race_router)
     dp.include_router(tournament_router)
+    dp.include_router(market_router)
+    dp.include_router(quest_router)
+    dp.include_router(trade_travel_router)
     dp.include_router(group_router)
     dp.include_router(chat_router)
 

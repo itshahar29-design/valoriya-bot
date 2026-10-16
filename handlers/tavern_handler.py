@@ -19,6 +19,9 @@ async def show_tavern_menu(callback: CallbackQuery):
     if not char:
         return
 
+    from database.db import increment_quest_progress
+    await increment_quest_progress(char["id"], "market_or_tavern", 1)
+
     sanity = char.get("sanity", 100)
     sanity_badge, _, _ = DarkEngine.get_sanity_status(sanity)
 
