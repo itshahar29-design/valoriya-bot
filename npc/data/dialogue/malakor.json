@@ -1,0 +1,258 @@
+{
+  "ruler_key": "malakor",
+  "title": "Boqiy Lich Malakor",
+  "empire": "Kul Nekropoli (Ash Necropolis)",
+  "openings": {
+    "iliq": [
+      "Xush kelibsan, qorong'u sirlar hamrohi {player}...",
+      "Muzdek nafasim seni qutlaydi, {player}...",
+      "Qabrlar sukunatida seni kutgandim, {player}."
+    ],
+    "neytral": [
+      "Nima uchun nekropol tinchini buzyapsan, {player}?",
+      "Foniy vujuding bilan nima maqsadda kelding, {player}?",
+      "Malakor seni tinglaydi, foniylar zurriyoti {player}."
+    ],
+    "dushmanona": [
+      "O'lim elchisi huzuriga o'z oyog'ing bilan kelding, {player}!",
+      "Muzdek sovuq qabringni tayyorlab qo'ydim, {player}!",
+      "Nafasing so'nggi marotaba chiqmoqda, {player}!"
+    ]
+  },
+  "closings": {
+    "iliq": [
+      "Abadiy qorong'ulik senga madadkor bo'lsin.",
+      "O'limdan qo'rqmaganlar abadiyatga erishadi.",
+      "Qabrimiz darvozalari sen uchun doim ochiq."
+    ],
+    "neytral": [
+      "Vaqting oz qoldi, foniyligingni unutma.",
+      "Sukunatga qayt, o'lim barchani kutadi.",
+      "Kul kulga aylanadi."
+    ],
+    "dushmanona": [
+      "Nekromantlarim ruhini tutqunlikka oladi!",
+      "Suyaklaring abadiy mening armiyamda xizmat qiladi!",
+      "Muzdek qabr seni kutmoqda!"
+    ]
+  },
+  "flavor": {
+    "iliq": [
+      "Abadiyat sirlari sening sovuq tafakkuringni ma'qullaydi.",
+      "O'lim — bu tugash emas, buyuk xizmatning boshlanishidir.",
+      "Kriptamizdagi suyaklar senga salom yo'llamoqda."
+    ],
+    "neytral": [
+      "Foniylarning hissiyotlari bema'nilikdir. Faqat o'lim abadiydir.",
+      "Har bir tirik mavjudot vaqti kelib mening lashkarimga qo'shiladi.",
+      "Muzdek sukunat eng buyuk haqiqatdir."
+    ],
+    "dushmanona": [
+      "Jonsiz tanang zangori olovda abadiy azob chekadi!",
+      "Suyaklaringni zindon darvozasiga mixlab qo'yaman!",
+      "Jon taslim qilishga tayyorlan, foniylar qurboni!"
+    ]
+  },
+  "intents": {
+    "salom": {
+      "iliq": [
+        "Bugungi kun biz uchun baxtli, chunki huzurimizda sadoqatli {player} turibdi.",
+        "Sening kelishing saroyimizga yangi umid va quvonch bag'ishladi, {player}.",
+        "Omonmisiz, ritsar {player}! Sizni doimo iliq qarshilaymiz.",
+        "Qutlug' qadamlaringiz bilan, qadrli {player}! Boshimiz uzra tinchlik bo'lsin."
+      ],
+      "neytral": [
+        "Xush kelibsiz, {player}. Bugungi xabarlaringizni tinglashga tayyorman.",
+        "Salom, {player}. Ishlaringiz o'ngidan kelmoqdami?",
+        "Salomlar bo'lsin, {player}. Bugun saroyimizga qanday reja bilan keldingiz?",
+        "Vaqtingiz xayrli bo'lsin, {player}. Diqqatim sizda."
+      ],
+      "dushmanona": [
+        "Sening sovuq saloming menga kerak emas, {player}!",
+        "Qadamlaring bu yerga faqat kulfat va mojaro olib keladi, {player}!",
+        "Salomingni yut, {player}, yuzingga qarashga ham toqatim yo'q!",
+        "Ostonamdan nariroq tur, {player}, saloming quruq nayrangdir!"
+      ]
+    },
+    "sovga_rahmat": {
+      "iliq": [
+        "Keltirgan saxovatli in'omingiz ({item}) va {gold} oltiningiz uchun tashakkur, {player}!",
+        "Bunday qimmatbaho hadya bizning do'stligimizni yanada mustahkamlaydi, {player}!",
+        "Rahmat, saxiy ritsar {player}! Sizning in'omingiz munosib qadrlandi.",
+        "Sovg'angiz xazinamizning durdonasiga aylanadi, tashakkur sizga, {player}!"
+      ],
+      "neytral": [
+        "Keltirilgan {item} va {gold} oltin qabul qilindi, {player}. Rahmat.",
+        "Hadyangiz uchun minnatdormiz, {player}. Hisobga yozildi.",
+        "In'omingiz munosib tarzda qabul qilindi, {player}.",
+        "Sovg'angiz e'tirof etildi, {player}. Xizmatlaringiz unutilmaydi."
+      ],
+      "dushmanona": [
+        "Bu arzimagan chaqalaring ({gold} oltin) bilan meni sotib olmoqchimisan, {player}?!",
+        "Menga sadaqang kerak emas, {player}! Keltirgan narsangni o'zing bilan olib ket!",
+        "Bunday arzimas hadya bilan g'azabimni bosaman deb o'ylama, {player}!",
+        "Mening qonunlarim oltin bilan sotilmaydi, {player}!"
+      ]
+    },
+    "xushomadga_javob": {
+      "iliq": [
+        "Shirin so'zlaringiz dildan chiqqanini his qilib turibman, {player}.",
+        "Lutfingiz uchun minnatdorman, {player}, buyuklikni tan olganingiz quvonarli.",
+        "Sizdek zukko kishidan bunday maqtov eshitish sharafdir, {player}.",
+        "Marhamatingiz qalbimizni quvontirdi, do'stim {player}!"
+      ],
+      "neytral": [
+        "Maqtovlaringizni eshitdim, {player}. Ammo burch va natija har doim so'zdan ustundir.",
+        "Chiroyli so'zlar, {player}. Keling, endi haqiqiy ishlarga o'taylik.",
+        "Iltifotingiz uchun rahmat, {player}. Har bir so'zning o'z qiymati bor.",
+        "Xushomad yaxshi, lekin lafz vafo bilan o'lchanadi, {player}."
+      ],
+      "dushmanona": [
+        "Lagandorlik va paxta qo'yishing meni faqat nafratlantiradi, {player}!",
+        "Til yog'lama, {player}, niyatingning tagidagi qorong'ulikni ko'rib turibman!",
+        "Bunday soxta maqtovlaringni o'zingga o'xshagan soddalarga ayt, {player}!",
+        "So'zlaring zaharli ilon kabi sirpanchiq, {player}!"
+      ]
+    },
+    "haqoratga_javob": {
+      "iliq": [
+        "Adashganingizni bilaman, {player}. Keling, buni jahlsiz hal qilamiz.",
+        "G'azab ko'zingizni ko'r qilibdi, {player}. Kechirim so'rang, unutiladi.",
+        "Achchiq tilingiz qalbingizdagi azobdan dalolat, buni kechiraman, {player}.",
+        "Men shon-sharaf egasiman, bu gaplaringizga xotirjamlik bilan javob beraman, {player}."
+      ],
+      "neytral": [
+        "Og'zingizga qarab gapiring, {player}. Bu so'zlar sizga qimmatga tushishi mumkin.",
+        "Haqoratingiz hisobga olindi, {player}. Oqibatiga tayyor turing.",
+        "Haddidan oshgan til har doim egasiga balo keltiradi, {player}.",
+        "Bunday ohangda men bilan gaplashishga ruxsat bermayman, {player}."
+      ],
+      "dushmanona": [
+        "Qanday jur'at bilan meni haqorat qilding, itvachcha {player}?! Jallod tayyor!",
+        "Tilingni sug'urib itlarga tashlashimga birgina buyruq kifoya, {player}!",
+        "Bu haqorating uchun qoning bilan javob berasan, qabringni qaziyver, {player}!",
+        "Haddidan oshgan qulning jazosi — o'limdir, {player}!"
+      ]
+    },
+    "pora_rad": {
+      "iliq": [
+        "Iltimos, bunday yo'ldan bormang, {player}. Do'stligimiz pora bilan o'lchanmaydi.",
+        "Taklifingizni qaytarib oling, {player}. Biz faqat halol bitimlarga sodiqmiz.",
+        "Oltiningiz o'zingizda qolsin, {player}. Buni eshitmagandek bo'laman.",
+        "Qonuniy yo'lni tanlang, {player}, pora bizning oramizga soya solmasin."
+      ],
+      "neytral": [
+        "Taklif qilingan {gold} oltin yetarli emas va qonunga zid. Rad etildi, {player}.",
+        "Pora taklifingiz qabul qilinmadi, {player}. Ishingizni qonuniy hal qiling.",
+        "Men bu xatarga bormayman, {player}. Oltiningizni yig'ishtirib oling.",
+        "Bu bitim xavfli va pastkashlikdir, {player}. Rad etildi."
+      ],
+      "dushmanona": [
+        "Meni arzimagan {gold} oltin bilan sotib olmoqchimisan, la'nati {player}?!",
+        "Pora taklif qilishga qanday jur'ating yetdi?! Zindonga tashlansan!",
+        "Oltining o'zing bilan go'rga ketsin, {player}, men sotilmayman!",
+        "Bunday pastkash taklif uchun boshingni tanangdan judo qilsam ham kam!"
+      ]
+    },
+    "pora_qabul": {
+      "iliq": [
+        "Xo'sh, keltirgan {gold} oltiningiz sabab bu masalani ko'rmaganga olaman, {player}.",
+        "Aqlli ritsarsiz, {player}. {gold} oltin xazinamizga tushdi, yo'lingiz ochiq.",
+        "Bunday saxovat har qanday eshikni ochadi, {player}. Masalangiz ijobiy hal bo'ldi.",
+        "Saxiy do'stlarimizning iltimosi hech qachon e'tiborsiz qolmaydi, {player}."
+      ],
+      "neytral": [
+        "{gold} oltin qabul qilindi. Masalangiz hal qilindi, ammo hech kim bilmasin, {player}.",
+        "Tanga sanaldi, ruxsat berildi. Jim yuring, {player}.",
+        "Bu to'lov evaziga ko'z yumaman, {player}. Tezroq bitiring.",
+        "Hisob joyida, {gold} tanga olindi. Endi yo'lingizda davom eting, {player}."
+      ],
+      "dushmanona": [
+        "Oltiningni olaman, lekin do'st bo'ldik deb o'ylama, {player}. Ko'zimdan yo'qol!",
+        "{gold} oltin evaziga bu safar omon qolding, {player}. Ikkinchi marta ilinmaysan!",
+        "Tanganing kuchi bilan qutulib qolding, {player}. Ammo eslab qolaman!",
+        "Xazinamga qo'shildi, ammo senga ishonchim zarracha oshmadi, {player}!"
+      ]
+    },
+    "xiroj_talab": {
+      "iliq": [
+        "Saltanatimiz osoyishtaligi uchun {gold} oltin xiroj to'lashingizni so'rayman, {player}.",
+        "Do'stona kelishuvimiz kafolati sifatida {gold} oltin to'lovni o'z vaqtida bering, {player}.",
+        "Xavfsizligingiz uchun belgilangan {gold} oltin ulushni xazinaga topshiring, {player}.",
+        "O'zaro manfaatlar yo'lida {gold} oltin badalni taqdim eting, {player}."
+      ],
+      "neytral": [
+        "Qonun bo'yicha imperiyaga {gold} oltin xiroj to'lashingiz shart, {player}.",
+        "Belgilangan muddat ichida {gold} oltin soliqni to'lang, {player}.",
+        "Xiroj miqdori: {gold} oltin. Rad etish qonunga xilofdir, {player}.",
+        "Sizdan {gold} oltin davlat boji talab qilinmoqda, {player}."
+      ],
+      "dushmanona": [
+        "Darhol {gold} oltin xirojni to'la, bo'lmasa butun mol-mulking musodara bo'ladi, {player}!",
+        "Oxirgi chaqangcha supurib olaman, {gold} oltinni hoziroq sanab ber, {player}!",
+        "Xirojni to'lamasang, boshing dor ostida qoladi, {player}!",
+        "Mening yerimda yashab xiroj bermaslikka qanday hadding sig'di?! {gold} oltin to'la!"
+      ]
+    },
+    "ogohlantirish": {
+      "iliq": [
+        "Ehtiyot bo'ling, {player}. {days} kun ichida vaziyat keskinlashishi mumkin.",
+        "Sizni ogohlantirib qo'yishni burchim deb bildim, {player}. Xatarga kirmang.",
+        "Xabardor bo'ling, aziz {player}, xiyonatkor sharpalar orqangizdan poylamoqda.",
+        "Do'stona maslahatim: keyingi qadamingizni o'ylab bosing, {player}."
+      ],
+      "neytral": [
+        "Bu so'nggi ogohlantirish, {player}. {days} kun muhlat berildi.",
+        "Qoidalarni buzmang, {player}, aks holda og'ir oqibatlar bo'ladi.",
+        "Xatolaringiz soni oshib bormoqda, {player}. O'zingizni tiying.",
+        "Ogohlantirib qo'yish burchim edi, xulosa chiqarish o'zingizdan, {player}."
+      ],
+      "dushmanona": [
+        "Senga {days} kun beraman, yo taslim bo'lasan yo qabring ochiladi, {player}!",
+        "Sabrim tugadi, {player}! Keyingi uchrashuvimiz jang maydonida bo'ladi!",
+        "Ogohlantirishimni mensimaganlar allaqachon zindon tubida chirimoqda, {player}!",
+        "Yana bir nojo'ya qadam — va jallodim o'z ishini boshlaydi, {player}!"
+      ]
+    },
+    "ultimatum": {
+      "iliq": [
+        "Keling, qon to'kilmasin, {player}. {days} kun ichida shartlarimizni qabul qiling.",
+        "Murosaga keling, {player}, bu barcha uchun eng tinch yo'ldir.",
+        "Sizdek mard inson behuda halok bo'lishini istamayman, {days} kun o'ylab ko'ring.",
+        "Shartlarimiz ochiq, {player}. Qon to'kishni to'xtating."
+      ],
+      "neytral": [
+        "Ultimatum muddati: {days} kun. Shartlar bajarilmasa, urush boshlanadi, {player}.",
+        "Yo qonuniy shartlarimizga bo'ysunasiz, yo imperiya dushmaniga aylanasiz, {player}.",
+        "{days} kun ichida talablarimiz bajarilishi shart. Muzokaralar tugadi.",
+        "Qat'iy talabimiz: {days} kun ichida barcha qurollar topshirilsin, {player}."
+      ],
+      "dushmanona": [
+        "So'nggi so'zim: {days} kun ichida taslim bo'l, yo bo'lmasa qoning daryo bo'ladi, {player}!",
+        "Ultimatumimni rad etganing zahoti qal'ang kulga aylantiriladi, {player}!",
+        "Senga berilgan {days} kun muhlat — hayotingning so'nggi kunlaridir, {player}!",
+        "Taslim bo'l yo qirilib ket, boshqa yo'l yo'q, {player}!"
+      ]
+    },
+    "xayrlashuv": {
+      "iliq": [
+        "Xayr, aziz do'stim {player}. Safaringiz bexatar bo'lsin!",
+        "Ko'rishguncha, qahramon {player}! Darvozamiz siz uchun doim ochiq.",
+        "Omon bo'ling, {player}! Sizni yana intizorlik bilan kutamiz.",
+        "Yaxshi boring, {player}! Tangri sizni o'z panohida asrasin."
+      ],
+      "neytral": [
+        "Xayr, {player}. O'z yo'lingizda davom eting.",
+        "Ko'rishguncha, {player}. Shartnomalarga amal qiling.",
+        "Salomat bo'ling, {player}. Keyingi uchrashuvgacha.",
+        "Boring, {player}. O'z vazifalaringizni bajaring."
+      ],
+      "dushmanona": [
+        "Daf bo'l ko'zimdan, {player}, ikkinchi marta ko'rmay!",
+        "Ket, qora boshing bilan birga qorong'ulikka g'oyib bo'l, {player}!",
+        "Bu yerdan tirik ketayotganing uchun shukr qil, {player}!",
+        "Qaytganingda jallod kutib oladi, yo'qol, {player}!"
+      ]
+    }
+  }
+}
