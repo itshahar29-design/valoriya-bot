@@ -724,8 +724,12 @@ async def btn_lore(message: Message):
     )
     buttons = [
         [InlineKeyboardButton(text="👺 Maxluqlar Ensiklopediyasi (Bestiariy)", callback_data="lore_menu_bestiary")],
-        [InlineKeyboardButton(text="🗡 100+ Qurollar & Sovutlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="🗡 200+ Qurollar & Sovutlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="🧪 120+ Alximiya, Rudalar & Runalar", callback_data="lore_menu_alchemy")],
         [InlineKeyboardButton(text="📜 Qadimiy Qo'lyozmalar & Mayxona Sirlari", callback_data="lore_menu_scrolls")],
+        [InlineKeyboardButton(text="🗺 Qadimiy Xazina Xaritalari", callback_data="lore_menu_treasure_maps")],
+        [InlineKeyboardButton(text="🎯 Qidiruvdagi Jinoyatchilar (Bounties)", callback_data="lore_menu_bounties")],
+        [InlineKeyboardButton(text="⚡️ 10,000+ Protsessual Generatsiya (Ko'rish)", callback_data="lore_menu_procedural")],
         [InlineKeyboardButton(text="🦁 12 Imperiya Tarixi va Armiyalari", callback_data="lore_menu_kingdoms")],
         [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
     ]
@@ -746,8 +750,53 @@ async def cb_lore_hub(callback: CallbackQuery):
         [InlineKeyboardButton(text="📜 Qadimiy Qo'lyozmalar & Mayxona Sirlari", callback_data="lore_menu_scrolls")],
         [InlineKeyboardButton(text="🗺 Qadimiy Xazina Xaritalari", callback_data="lore_menu_treasure_maps")],
         [InlineKeyboardButton(text="🎯 Qidiruvdagi Jinoyatchilar (Bounties)", callback_data="lore_menu_bounties")],
+        [InlineKeyboardButton(text="⚡️ 10,000+ Protsessual Generatsiya (Ko'rish)", callback_data="lore_menu_procedural")],
         [InlineKeyboardButton(text="🦁 12 Imperiya Tarixi va Armiyalari", callback_data="lore_menu_kingdoms")],
         [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "lore_menu_procedural")
+async def cb_lore_procedural(callback: CallbackQuery):
+    from game.procedural_loot import generate_procedural_loot, get_procedural_matrix_size
+    from game.mutation_engine import mutate_monster, get_mutation_matrix_size
+    from game.dungeon_generator import generate_procedural_room, get_dungeon_matrix_size
+
+    loot = generate_procedural_loot(player_level=15)
+    mob = mutate_monster(dungeon_floor=6)
+    room = generate_procedural_room(floor=4, room_number=3)
+
+    loot_size = get_procedural_matrix_size()
+    mob_size = get_mutation_matrix_size()
+    room_size = get_dungeon_matrix_size()
+    total_combs = loot_size["total_unique_items"] + mob_size["total_unique_encounters"] + room_size["total_rooms"]
+
+    mut_str = ", ".join([m["name_uz"] for m in mob["mutations"]]) if mob["mutations"] else "Oddiy"
+
+    text = (
+        f"🌌 *VALORIYA 10,000+ PROTSESSUAL ARXITEKTURASI* 🌌\n\n"
+        f"Valoriya dunyosi cheksiz xilma-xillik yaratuvchi kombinatorik matritsaga asoslangan:\n"
+        f"• 🗡 *Qurol-Aslaha Kombinatsiyalari:* `{loot_size['total_unique_items']:,} ta` (200 baza × 25 prefiks × 25 suffiks)\n"
+        f"• 👾 *Maxluqlar Mutatsiyasi:* `{mob_size['total_unique_encounters']:,} ta` (50 baza × 20 mutatsiya × 5 unvon)\n"
+        f"• 🏰 *Zindon Xonalari:* `{room_size['total_rooms']:,} ta` (10 mavzu × 10 xona turi × 10 tartib)\n"
+        f"• 👑 *Jami Protsessual Fond:* `+{total_combs:,} ta` kontent!\n\n"
+        f"🎲 *Jonli Generatsiya Namunasi:*\n\n"
+        f"1️⃣ *Yaratilgan Qurol:*\n"
+        f"*{loot['name']}* [{loot['rarity_display']}]\n"
+        f"⚔️ ATK: `+{loot['attack']}` | 🛡 DEF: `+{loot['defense']}` | 💎 Runa slotlari: `{loot['sockets']}`\n"
+        f"📜 _{loot['desc']}_\n\n"
+        f"2️⃣ *Mutatsiyalangan Dushman:*\n"
+        f"*{mob['name']}* (Unvon: {mob['rank_title']})\n"
+        f"❤️ HP: `{mob['hp']}` | ⚔️ ATK: `{mob['atk']}` | 🛡 DEF: `{mob['def']}`\n"
+        f"🎯 *Zaifligi:* `{mob['weakness']}`\n"
+        f"⚡️ *Mutatsiyalari:* `{mut_str}`\n\n"
+        f"3️⃣ *Kashf Qilingan Zindon Zali:*\n"
+        f"*{room['title']}*\n"
+        f"_{room['description']}_\n"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="🔄 Yana Tasodifiy Generatsiya Qilish", callback_data="lore_menu_procedural")],
+        [InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")]
     ]
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
