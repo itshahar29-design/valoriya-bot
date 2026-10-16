@@ -840,12 +840,106 @@ async def run_comprehensive_tests():
 
     print(f"✅ TEST 22 O'TDI: Xotira hajmi (50 limit siqilishi), munosabatlar va 0.6^n xushomad susayishi 100% muvaffaqiyatli ishga tushirildi!")
 
+    # =====================================================================
+    # 23. NPC OCHKO'ZLIK FORMULALARI VA CHEGARALAR (FAZA 3: TEST 23)
+    # =====================================================================
+    print("\n[TEST 23] NPC Ochko'zlik Formulalari (Soliq cap +10%, Pora P 2-95%, Xiroj cap 15%)...")
+    from npc.actions.economy import (
+        calculate_greed_drive, calculate_tax_surcharge,
+        calculate_bribe_probability, calculate_tribute_rate,
+        calculate_tribute_amount, execute_soliq_oshirish,
+        execute_xiroj_talab, execute_qarz_berish, OWNER_TELEGRAM_ID
+    )
+
+    # 1. Soliq ustamasi cap +10%
+    assert calculate_tax_surcharge(0.0) == 0, "GD=0 da soliq 0 emas!"
+    assert calculate_tax_surcharge(0.86) == 8, "GD=0.86 da soliq 8% bo'lmadi!"
+    assert calculate_tax_surcharge(1.5) == 10, "GD=1.5 da soliq 10% dan oshib ketdi!"
+    assert calculate_tax_surcharge(5.0) == 10, "GD=5.0 da soliq cap 10% ishlamadi!"
+
+    # 2. Pora qabul ehtimoli: [0.02, 0.95]
+    p_max = calculate_bribe_probability(greed=100, loyalty=0, suspicion=0, offer=100000, ask=100)
+    assert p_max <= 0.95, f"Pora ehtimoli 95% dan oshib ketdi: {p_max}"
+    assert p_max >= 0.90, "Katta porada ehtimollik yuqori bo'lmadi!"
+
+    p_min = calculate_bribe_probability(greed=0, loyalty=100, suspicion=100, offer=10, ask=50000)
+    assert p_min >= 0.02, f"Pora ehtimoli 2% dan tushib ketdi: {p_min}"
+    assert p_min <= 0.05, "Past porada ehtimollik past bo'lmadi!"
+
+    # 3. Xiroj foizi cap 15%
+    rate_normal = calculate_tribute_rate(0.5)
+    assert rate_normal == 0.02 + 0.08 * 0.5, "Xiroj formulasi noto'g'ri!"
+    rate_extreme = calculate_tribute_rate(2.5)
+    assert rate_extreme <= 0.15, f"Xiroj 15% dan oshib ketdi: {rate_extreme}"
+    assert calculate_tribute_amount(1000, 2.5) == 150, "Xiroj miqdori 15% capga mos emas!"
+
+    print(f"✅ TEST 23 O'TDI: Ochko'zlik formulalari (Soliq cap: {calculate_tax_surcharge(2.0)}%, Pora: [{p_min}, {p_max}], Xiroj: {rate_extreme*100}%) 100% tasdiqlandi!")
+
+    # =====================================================================
+    # 24. TO'YISH HOLATI (FAZA 3: TEST 24)
+    # =====================================================================
+    print("\n[TEST 24] Hukmdorning To'yishi (Xazina >= 120% maqsad -> GD * 0.5)...")
+    target_treasury = 40000.0
+    torin_greed = 98
+
+    gd_hungry = calculate_greed_drive(torin_greed, treasury=20000.0, target_treasury=target_treasury)
+    gd_satiated = calculate_greed_drive(torin_greed, treasury=50000.0, target_treasury=target_treasury)
+
+    expected_unsatiated = (torin_greed / 100.0) * 0.4
+    assert abs(gd_satiated - (expected_unsatiated * 0.5)) < 1e-6, "To'yish GD ni 50% ga tushirmadi!"
+    assert gd_satiated < gd_hungry, "To'ygan hukmdor ochko'zligi och holatidan kam emas!"
+
+    print(f"✅ TEST 24 O'TDI: To'yish holati (Och GD: {round(gd_hungry, 3)} -> To'ygan GD: {round(gd_satiated, 3)} [50% pasayish]) to'liq tasdiqlandi!")
+
+    # =====================================================================
+    # 25. QAROR DVIGATELI, SEED VA COOLDOWN (FAZA 3: TEST 25)
+    # =====================================================================
+    print("\n[TEST 25] Utility AI: Deterministik Seed, Softmax Top-3 va Cooldown Tekshiruvi...")
+    from npc.utility import decide_ruler_action, is_action_on_cooldown
+
+    async with get_connection() as db:
+        # 1. Deterministik Seed testi
+        decision_1 = await decide_ruler_action(db, "iron_bastion", seed=42, max_actions=2)
+        decision_2 = await decide_ruler_action(db, "iron_bastion", seed=42, max_actions=2)
+
+        assert len(decision_1) > 0, "Utility AI hech qanday harakat tanlamadi!"
+        assert [a["action"] for a in decision_1] == [a["action"] for a in decision_2], "Bir xil seed turli natija berdi!"
+        assert [a["score"] for a in decision_1] == [a["score"] for a in decision_2], "Bir xil seed turli ball berdi!"
+
+        # 2. Harakatni bajarish va npc_actions_log ga qayd etish
+        soliq_res = await execute_soliq_oshirish(db, "iron_bastion")
+        assert soliq_res["action"] == "soliq_oshirish", "Soliq oshirish harakati muvaffaqiyatsiz!"
+        await db.commit()
+
+        # Log bazada bormi?
+        async with db.execute("SELECT count(*) FROM npc_actions_log WHERE ruler_id = 'iron_bastion' AND action = 'soliq_oshirish';") as cur_log:
+            cnt_log = (await cur_log.fetchone())[0]
+            assert cnt_log >= 1, "Harakat npc_actions_log ga yozilmadi!"
+
+        # 3. Cooldown tekshiruvi
+        on_cd = await is_action_on_cooldown(db, "iron_bastion", "soliq_oshirish")
+        assert on_cd is True, "Bajarilgan harakat cooldown'ga tushmadi!"
+
+        # Cooldown'dagi harakat tanlanmasligi kerak
+        decision_after_cd = await decide_ruler_action(db, "iron_bastion", seed=42, max_actions=3)
+        assert not any(a["action"] == "soliq_oshirish" for a in decision_after_cd), "Cooldown'dagi harakat Utility AI tomonidan qayta tanlandi!"
+
+        # 4. Owner Daxlsizligi tekshiruvi
+        xiroj_res = await execute_xiroj_talab(db, "iron_bastion", OWNER_TELEGRAM_ID, 50000)
+        assert xiroj_res["status"] == "blocked_owner_immunity", "Ownerga xiroj solishga ruxsat berildi!"
+
+        qarz_res = await execute_qarz_berish(db, "iron_bastion", OWNER_TELEGRAM_ID, 10000)
+        assert qarz_res["status"] == "blocked_owner_immunity", "Ownerga qarz yuklashga ruxsat berildi!"
+
+    print(f"✅ TEST 25 O'TDI: Utility AI qaror dvigateli (Seed: {decision_1[0]['action']}, Cooldown: OK, Owner Immunity: 100% Himoyalangan) to'liq tasdiqlandi!")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 22 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 2 MUVAFFAQIShLI)!")
+    print("🎉 BARCHA 25 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 3 MUVAFFAQIShLI)!")
     print("=========================================================")
 
 if __name__ == "__main__":
     asyncio.run(run_comprehensive_tests())
+
 
 
