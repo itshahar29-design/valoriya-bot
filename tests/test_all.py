@@ -474,11 +474,56 @@ async def run_comprehensive_tests():
     assert ev["id"] in [e["id"] for e in WILDERNESS_EVENTS], "Sarguzasht topilmadi!"
     res_text, changes = EventsEngine.resolve_event("event_shrine", "pray", char)
     assert changes["hp"] > 0, "Ilohiy buloq joni tiklamadi!"
-    print(f"✅ TEST 15 O'TDI: {len(ITEMS_CATALOG)} ta anjom, {len(BESTIARY_DATA)} ta maxluq, {len(ORES_DATABASE)} ta ruda, {len(POTIONS_DATABASE)} ta eliksir, {len(MAIN_CAMPAIGN_QUESTS)} ta kvest, {len(WILDERNESS_EVENTS)} ta sarguzasht muvaffaqiyatli tekshirildi.")
+    # =====================================================================
+    # 16. 10,000+ PROTSESSUAL ARXITEKTURA & GENERATORLAR (131,000+ ENTITIES)
+    # =====================================================================
+    print("\n[TEST 16] 10,000+ Protsessual Arxitektura & Kombinatorik Generatorlar...")
+    from game.procedural_loot import generate_procedural_loot, get_procedural_matrix_size, ITEM_PREFIXES, ITEM_SUFFIXES
+    from game.mutation_engine import mutate_monster, get_mutation_matrix_size, MONSTER_MUTATIONS, MONSTER_RANKS
+    from game.dungeon_generator import generate_procedural_room, get_dungeon_matrix_size, DUNGEON_THEMES, ROOM_TYPES, ROOM_LAYOUTS
+
+    # 1. Qurol-aslaha affiks matritsasi (125,000+)
+    loot_matrix = get_procedural_matrix_size()
+    assert len(ITEM_PREFIXES) == 25, f"Prefikslar soni 25 ta emas ({len(ITEM_PREFIXES)})!"
+    assert len(ITEM_SUFFIXES) == 25, f"Suffikslar soni 25 ta emas ({len(ITEM_SUFFIXES)})!"
+    assert loot_matrix["total_unique_items"] >= 125000, f"Qurol matritsasi 125,000 dan kam ({loot_matrix['total_unique_items']})!"
+
+    sample_loot = generate_procedural_loot(player_level=10)
+    assert sample_loot["id"].startswith("proc_"), "Protsessual ID noto'g'ri!"
+    assert sample_loot["attack"] > 0 or sample_loot["defense"] > 0, "Qurol ko'rsatkichi 0!"
+    assert sample_loot["sockets"] in [0, 1, 2, 3], "Runa teshiklari noto'g'ri!"
+    print(f"   ⚔️ Qurol Generatori: {loot_matrix['total_unique_items']} ta kombinatsiya (Namuna: '{sample_loot['name']}', Slotlar: {sample_loot['sockets']})")
+
+    # 2. Maxluqlar mutatsiyasi matritsasi (5,000+)
+    mob_matrix = get_mutation_matrix_size()
+    assert len(MONSTER_MUTATIONS) == 20, f"Mutatsiyalar soni 20 ta emas ({len(MONSTER_MUTATIONS)})!"
+    assert len(MONSTER_RANKS) == 5, f"Unvonlar soni 5 ta emas ({len(MONSTER_RANKS)})!"
+    assert mob_matrix["total_unique_encounters"] >= 4500, f"Maxluqlar matritsasi kam ({mob_matrix['total_unique_encounters']})!"
+
+    sample_mob = mutate_monster(dungeon_floor=5, force_rank="champion")
+    assert sample_mob["rank"] == "champion", "Chempion unvoni o'rnatilmadi!"
+    assert len(sample_mob["mutations"]) == 2, "Chempionda 2 ta mutatsiya bo'lmadi!"
+    assert sample_mob["hp"] > 150, "Chempion HP oshmadi!"
+    print(f"   👾 Maxluqlar Mutatsiyasi: {mob_matrix['total_unique_encounters']} ta jangovar holat (Namuna: '{sample_mob['name']}', HP: {sample_mob['hp']})")
+
+    # 3. Zindon xonalari matritsasi (1,000+)
+    dungeon_matrix = get_dungeon_matrix_size()
+    assert len(DUNGEON_THEMES) == 10, "Mavzular 10 ta emas!"
+    assert len(ROOM_TYPES) == 10, "Xona turlari 10 ta emas!"
+    assert len(ROOM_LAYOUTS) == 10, "Tartiblar 10 ta emas!"
+    assert dungeon_matrix["total_rooms"] == 1000, f"Zindon xonalari 1000 ta emas ({dungeon_matrix['total_rooms']})!"
+
+    sample_room = generate_procedural_room(floor=3, room_number=4)
+    assert sample_room["id"].startswith("room_"), "Xona ID si xato!"
+    assert len(sample_room["description"]) > 20, "Xona tasnifi yetarli emas!"
+    print(f"   🏰 Zindon Xonalari: {dungeon_matrix['total_rooms']} ta xona (Namuna: '{sample_room['title']}')")
+
+    total_procedural = loot_matrix["total_unique_items"] + mob_matrix["total_unique_encounters"] + dungeon_matrix["total_rooms"]
+    print(f"✅ TEST 16 O'TDI: 10,000+ Arxitektura to'liq tasdiqlandi. Jami: {total_procedural:,} ta protsessual kontent birliklari!")
 
     print("\n=========================================================")
-    print("🎉 BARCHA 15 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 VALORIYA: 1,000+ ELEMENTDAN IBORAT GRAND MMORPG TAYYOR!")
+    print("🎉 BARCHA 16 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: 131,000+ ENTITYLIK PROTSESSUAL GRAND MMORPG TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":
