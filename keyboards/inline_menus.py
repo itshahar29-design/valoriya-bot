@@ -1,5 +1,18 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from game.constants import HIT_ZONES, EQUIPMENT_SLOTS
+from game.constants import HIT_ZONES, EQUIPMENT_SLOTS, KINGDOMS
+
+def arena_menu_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="⚔️ Maydonga Chiqish (Duel)", callback_data="menu_arena")],
+        [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ])
+
+def kingdom_list_keyboard():
+    buttons = []
+    for k_id, k_data in KINGDOMS.items():
+        buttons.append([InlineKeyboardButton(text=f"{k_data['name']}", callback_data=f"view_k_{k_id}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+    return InlineKeyboardMarkup(inline_keyboard=buttons)
 
 def main_menu_keyboard(is_owner: bool = False):
     buttons = [
