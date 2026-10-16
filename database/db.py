@@ -945,11 +945,16 @@ async def upgrade_equipment(item_id: int, character_id: int):
 # =====================================================================
 
 DUNGEON_FLOORS = {
-    1: {"name": "Zulmat G'ori (Goblinlar)", "boss": "Goblinlar Sardori Grik", "hp": 180, "atk": 25, "loot_gold": 250, "loot_xp": 150},
-    2: {"name": "Qora Botqoqlik (Zaharlar)", "boss": "Zaharli Botqoq Iloni", "hp": 300, "atk": 40, "loot_gold": 600, "loot_xp": 300},
-    3: {"name": "Tashlandiq Qasr (Sharpalar)", "boss": "Qora Ritsar sharpasi", "hp": 550, "atk": 65, "loot_gold": 1200, "loot_xp": 600},
-    4: {"name": "Ajdaho Qoyasi (Olovli Mag'ora)", "boss": "Qizil Ajdaho Bolasi", "hp": 900, "atk": 95, "loot_gold": 2500, "loot_xp": 1200},
-    5: {"name": "Valoriya Taqiqlangan Labirinti", "boss": "Lord Malakor — Qorong'ulik Hukmdori", "hp": 1500, "atk": 140, "loot_gold": 5000, "loot_xp": 3000}
+    1: {"name": "1. Zulmat G'ori (Goblinlar)", "boss": "Goblinlar Sardori Grik", "hp": 180, "atk": 25, "loot_gold": 250, "loot_xp": 150},
+    2: {"name": "2. Qora Botqoqlik (Zaharlar)", "boss": "Zaharli Botqoq Iloni", "hp": 300, "atk": 40, "loot_gold": 600, "loot_xp": 300},
+    3: {"name": "3. Tashlandiq Qasr (La'nat)", "boss": "Qora Ritsar Mordred", "hp": 550, "atk": 65, "loot_gold": 1200, "loot_xp": 600},
+    4: {"name": "4. Muzlik Cho'qqisi (Ayoz)", "boss": "Boqiy Ayoz Trolli", "hp": 750, "atk": 80, "loot_gold": 1800, "loot_xp": 900},
+    5: {"name": "5. Olovli Mag'ora (Ajdaho)", "boss": "Qizil Ajdaho Bolasi", "hp": 1050, "atk": 100, "loot_gold": 2800, "loot_xp": 1400},
+    6: {"name": "6. Kultepa Daxmasi (Skeletlar)", "boss": "Suyak Ritsarlari Sarkardasi", "hp": 1400, "atk": 115, "loot_gold": 3800, "loot_xp": 1900},
+    7: {"name": "7. Soya Minorasi (Tuman)", "boss": "Zulmat Qora Archimage", "hp": 1750, "atk": 130, "loot_gold": 5000, "loot_xp": 2500},
+    8: {"name": "8. Titanlar Qarorgohi (Golem)", "boss": "Uyg'ongan Qadimiy Tosh Golem", "hp": 2200, "atk": 145, "loot_gold": 6500, "loot_xp": 3200},
+    9: {"name": "9. Ajdaho Ini (Olov Qoyasi)", "boss": "Mag'rur Olov Ajdahosi Ignis", "hp": 2800, "atk": 165, "loot_gold": 8500, "loot_xp": 4200},
+    10: {"name": "10. Valoriya Taqiqlangan Labirinti", "boss": "Boqiy Lich Malakor - Zulmat Egasi", "hp": 3500, "atk": 190, "loot_gold": 12000, "loot_xp": 6000}
 }
 
 async def get_dungeon_progress(character_id: int):

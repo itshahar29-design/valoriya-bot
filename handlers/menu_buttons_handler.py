@@ -5,8 +5,12 @@ from database.db import (
     get_character_by_user_id, update_character, get_character_equipment,
     get_or_create_daily_quests, get_player_professions, get_runes_inventory,
     get_guild_info, get_all_castles, get_current_king, get_top_knights,
-    claim_daily_streak, RUNES_DATA, TRADE_CITIES
+    claim_daily_streak, RUNES_DATA, TRADE_CITIES, DUNGEON_FLOORS, get_dungeon_progress
 )
+from game.events_engine import EventsEngine
+from game.bestiary import BESTIARY_DATA
+from game.items_db import ITEMS_CATALOG
+from game.lore_db import TAVERN_RUMORS, ANCIENT_SCROLLS
 from keyboards.inline_menus import (
     main_menu_keyboard, battle_actions_keyboard,
     inventory_qol_keyboard, owner_god_mode_keyboard, class_selection_keyboard
@@ -583,3 +587,331 @@ async def btn_menu(message: Message):
         "🏰 *Valoriya Oliy Harbiy Shtabi:*",
         reply_markup=main_menu_keyboard(is_owner)
     )
+
+# =====================================================================
+# 17. ZINDON VA PVE REYDLAR (DUNGEONS)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🗺 Zindon") | (F.text == "/dungeon"))
+async def btn_dungeon(message: Message):
+    char = await get_character_by_user_id(message.from_user.id)
+    if not char:
+        await message.answer("Avval /start orqali qahramon yarating!", reply_markup=class_selection_keyboard())
+        return
+
+    max_floor = await get_dungeon_progress(char["id"])
+    sanity = char.get("sanity", 100)
+    sanity_badge, _, _ = DarkEngine.get_sanity_status(sanity)
+
+    text = (
+        "🗺 *VALORIYA TAQIQLANGAN ZINDONLARI (10 TA BOSHQICH)* 🗺\n\n"
+        "Qadimgi zulmat kuchlari qit'a ostidagi g'orlarni egallab olgan.\n"
+        "Har bir qavatda afsonaviy mahluqlar, qadimiy bosslar va xazinalar yashiringan!\n\n"
+        f"🧠 Sizning Ruhiyatingiz: *{sanity_badge}* ({sanity}%)\n"
+        f"🏆 *Siz yetib borgan eng yuqori qavat:* {max_floor}-Qavat\n\n"
+        "⚠️ *Zulmat Qoidasi:* Mag'lubiyat 25% oltinni boy berishga, ruhiyat sinishiga va qurollar darz ketishiga olib keladi!\n"
+        "Qaysi qavatga tushishga jur'at qilasiz?"
+    )
+
+    buttons = []
+    for floor_num, info in DUNGEON_FLOORS.items():
+        is_unlocked = floor_num <= max_floor
+        lock_icon = "⚔️" if is_unlocked else "🔒"
+        status_txt = f"{info['name']} (Boss: {info['boss']})" if is_unlocked else f"{floor_num}-Qavat (Qulflangan)"
+        callback_data = f"enter_dungeon_{floor_num}" if is_unlocked else "dungeon_locked"
+        buttons.append([InlineKeyboardButton(text=f"{lock_icon} {status_txt}", callback_data=callback_data)])
+
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+    await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# =====================================================================
+# 18. SAHRO VA SARGUZASHT (WILDERNESS EXPLORATION)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🧭 Sahro") | (F.text == "/explore") | (F.text == "/sahro"))
+async def btn_explore(message: Message):
+    char = await get_character_by_user_id(message.from_user.id)
+    if not char:
+        await message.answer("Avval /start orqali qahramon yarating!", reply_markup=class_selection_keyboard())
+        return
+
+    if char["stamina"] < 15:
+        await message.answer("Charchagansiz (Stamina kamida 15 bo'lishi kerak)! Tavernada ovqatlaning yoki dam oling.")
+        return
+
+    # Stamina sarflash
+    await update_character(char["id"], stamina=char["stamina"] - 15)
+    event = EventsEngine.get_random_event()
+
+    text = (
+        f"🧭 *VALORIYA SARHADLARI BO'YLAB SAYOHAT* (-15 Stamina)\n\n"
+        f"*{event['title']}*\n\n"
+        f"{event['desc']}\n\n"
+        f"Qanday qarorga kelasiz?"
+    )
+
+    buttons = []
+    for choice_key, choice_label in event["options"]:
+        buttons.append([
+            InlineKeyboardButton(text=choice_label, callback_data=f"expact_{event['id']}_{choice_key}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("expact_"))
+async def process_explore_action(callback: CallbackQuery):
+    parts = callback.data.split("_")
+    # expact_event_shrine_pray -> event_id: event_shrine, choice: pray
+    if len(parts) < 4:
+        return
+    event_id = f"{parts[1]}_{parts[2]}"
+    choice = parts[3]
+
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    result_text, changes = EventsEngine.resolve_event(event_id, choice, char)
+
+    # Bazadagi o'zgarishlarni qo'llash
+    new_gold = max(0, char["gold"] + changes.get("gold", 0))
+    new_hp = max(10, min(char["max_hp"], char["hp"] + changes.get("hp", 0)))
+    new_sanity = max(0, min(100, char.get("sanity", 100) + changes.get("sanity", 0)))
+    new_xp = char.get("xp", 0) + changes.get("xp", 0)
+
+    await update_character(char["id"], gold=new_gold, hp=new_hp, sanity=new_sanity, xp=new_xp)
+
+    buttons = [
+        [InlineKeyboardButton(text="🧭 Yana Sahroga Chiqish (-15 Stamina)", callback_data="menu_explore_again")],
+        [InlineKeyboardButton(text="🏠 Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.edit_text(result_text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "menu_explore_again")
+async def process_explore_again(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+    if char["stamina"] < 15:
+        await callback.answer("Stamina kamida 15 bo'lishi kerak! Tavernaga boring.", show_alert=True)
+        return
+
+    await update_character(char["id"], stamina=char["stamina"] - 15)
+    event = EventsEngine.get_random_event()
+
+    text = (
+        f"🧭 *VALORIYA SARHADLARI BO'YLAB SAYOHAT* (-15 Stamina)\n\n"
+        f"*{event['title']}*\n\n"
+        f"{event['desc']}\n\n"
+        f"Qanday qarorga kelasiz?"
+    )
+
+    buttons = []
+    for choice_key, choice_label in event["options"]:
+        buttons.append([
+            InlineKeyboardButton(text=choice_label, callback_data=f"expact_{event['id']}_{choice_key}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# =====================================================================
+# 19. ENSIKLOPEDIYA VA LORE (GRAND ARCHIVE OF VALORIA)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("📖 Ensiklopediya") | (F.text == "/lore") | (F.text == "/bestiary") | (F.text == "/ensiklopediya"))
+async def btn_lore(message: Message):
+    text = (
+        "📖 *VALORIYA BUYUK ARXIVI VA ENSIKLOPEDIYASI* 🏛\n\n"
+        "Qit'aning ming yillik sirlari, maxluqlar anatomiyasi, afsonaviy relikviyalar "
+        "va 12 ta buyuk imperiya qasamyodlari shu yerda saqlanadi.\n\n"
+        "Qaysi bo'limdagi ilmlarni o'rganmoqchisiz?"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="👺 Maxluqlar Ensiklopediyasi (Bestiariy)", callback_data="lore_menu_bestiary")],
+        [InlineKeyboardButton(text="🗡 100+ Qurollar & Sovutlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="📜 Qadimiy Qo'lyozmalar & Mayxona Sirlari", callback_data="lore_menu_scrolls")],
+        [InlineKeyboardButton(text="🦁 12 Imperiya Tarixi va Armiyalari", callback_data="lore_menu_kingdoms")],
+        [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ]
+    await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "lore_hub")
+async def cb_lore_hub(callback: CallbackQuery):
+    text = (
+        "📖 *VALORIYA BUYUK ARXIVI VA ENSIKLOPEDIYASI* 🏛\n\n"
+        "Qit'aning ming yillik sirlari, maxluqlar anatomiyasi, afsonaviy relikviyalar "
+        "va 12 ta buyuk imperiya qasamyodlari shu yerda saqlanadi.\n\n"
+        "Qaysi bo'limdagi ilmlarni o'rganmoqchisiz?"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="👺 Maxluqlar Ensiklopediyasi (Bestiariy)", callback_data="lore_menu_bestiary")],
+        [InlineKeyboardButton(text="🗡 100+ Qurollar & Sovutlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="📜 Qadimiy Qo'lyozmalar & Mayxona Sirlari", callback_data="lore_menu_scrolls")],
+        [InlineKeyboardButton(text="🦁 12 Imperiya Tarixi va Armiyalari", callback_data="lore_menu_kingdoms")],
+        [InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.1 BESTIARY LIST & DETAILS
+@menu_buttons_router.callback_query(F.data == "lore_menu_bestiary")
+async def cb_lore_bestiary_list(callback: CallbackQuery):
+    text = (
+        "👺 *VALORIYA MAXLUQOTLAR BESTIARIYSI* 👺\n\n"
+        "Valoriya o'rmonlari, zindonlari va tog'larida uchraydigan barcha yirtqichlar, "
+        "bosslar va la'natlangan maxluqlar ro'yxati. Ularning zaifliklarini bilish g'alaba kalitidir!\n\n"
+        "Batafsil anketasini ko'rish uchun maxluqni tanlang:"
+    )
+    buttons = []
+    for b_id, b_data in BESTIARY_DATA.items():
+        buttons.append([
+            InlineKeyboardButton(text=f"{b_data['name']} [{b_data['danger']}]", callback_data=f"beast_info_{b_id}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("beast_info_"))
+async def cb_lore_beast_details(callback: CallbackQuery):
+    b_id = callback.data.replace("beast_info_", "")
+    b = BESTIARY_DATA.get(b_id)
+    if not b:
+        return
+
+    text = (
+        f"👺 *MAXLUQ SHAXSIY ANKETASI: {b['name']}*\n\n"
+        f"⚠️ Xavflilik darajasi: *{b['danger']}*\n"
+        f"🌲 Yashash muhiti: _{b['habitat']}_\n"
+        f"❤️ Jon (HP): *{b['hp']}* | ⚔️ Zarba: *{b['atk']}* | 🛡 Himoya: *{b['def']}*\n"
+        f"🎯 *Zaifligi:* `{b['weakness']}`\n\n"
+        f"📜 *Tavsif va Xatti-harakati:*\n{b['desc']}\n\n"
+        f"🎁 *Tushadigan o'ljalar (Loot):*\n{b['loot']}"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Maxluqlar Ro'yxati", callback_data="lore_menu_bestiary")],
+        [InlineKeyboardButton(text="🏛 Bosh Arxiv", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.2 ITEMS CATALOG
+@menu_buttons_router.callback_query(F.data == "lore_menu_items")
+async def cb_lore_items_list(callback: CallbackQuery):
+    text = (
+        "🗡 *100+ ANJOMLAR VA AFSONAVIY RELIKVIYALAR KATALOGI* 🛡\n\n"
+        "Valoriya dunyosidagi barcha qurollar, sovutlar, uzuklar va mifik tojlar to'plami.\n\n"
+        "Eng kuchli buyumlarni ko'zdan kechiring:"
+    )
+    buttons = []
+    # Eng mashhur 10 ta afsonaviy qurol/zirh
+    sample_items = list(ITEMS_CATALOG.items())[:12]
+    for i_id, i_data in sample_items:
+        buttons.append([
+            InlineKeyboardButton(text=f"{i_data['name']} (⚔️{i_data['attack']} | 🛡{i_data['defense']})", callback_data=f"item_info_{i_id}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("item_info_"))
+async def cb_lore_item_details(callback: CallbackQuery):
+    i_id = callback.data.replace("item_info_", "")
+    item = ITEMS_CATALOG.get(i_id)
+    if not item:
+        return
+
+    rarity_icons = {"common": "⚪️ Oddiy", "rare": "🔵 Noyob", "epic": "🟣 Epik", "legendary": "🟡 Afsonaviy", "mythic": "🔴 Mifik", "divine": "👑 Ilohiy"}
+    r_str = rarity_icons.get(item["rarity"], item["rarity"].upper())
+
+    text = (
+        f"*{item['name']}*\n\n"
+        f"🏷 Qimmatlilik darajasi: *{r_str}* (Tier {item['tier']})\n"
+        f"⚔️ Hujum kuchi (ATK): *+{item['attack']}*\n"
+        f"🛡 Himoya kuchi (DEF): *+{item['defense']}*\n"
+        f"🪙 O'rtacha bozor narxi: *{item['price']:,} 🪙 Oltin*\n\n"
+        f"📜 *Tarixi va Afsonasi:*\n_{item['desc']}_"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Buyumlar Katalogi", callback_data="lore_menu_items")],
+        [InlineKeyboardButton(text="🏛 Bosh Arxiv", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.3 SCROLLS & TAVERN RUMORS
+@menu_buttons_router.callback_query(F.data == "lore_menu_scrolls")
+async def cb_lore_scrolls_list(callback: CallbackQuery):
+    text = (
+        "📜 *QADIMIY QO'LYOZMALAR VA MAYXONA AFSONALARI* 📜\n\n"
+        "Mayxonalarda aytiladigan sirlar, karvon yo'llari xaritalari va "
+        "Valoriya yaratilishi haqidagi qo'lyozmalarni mutolaa qiling:"
+    )
+    buttons = []
+    for s_id, s_data in ANCIENT_SCROLLS.items():
+        buttons.append([InlineKeyboardButton(text=f"📜 {s_data['title']}", callback_data=f"scroll_read_{s_id}")])
+    buttons.append([InlineKeyboardButton(text="🍻 Mayxona Mish-Mishlari (Tasodifiy)", callback_data="lore_random_rumor")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("scroll_read_"))
+async def cb_lore_scroll_read(callback: CallbackQuery):
+    s_id = callback.data.replace("scroll_read_", "")
+    sc = ANCIENT_SCROLLS.get(s_id)
+    if not sc:
+        return
+
+    text = f"*{sc['title']}*\n\n{sc['text']}"
+    buttons = [
+        [InlineKeyboardButton(text="⬅️ Qo'lyozmalar Ro'yxati", callback_data="lore_menu_scrolls")],
+        [InlineKeyboardButton(text="🏛 Bosh Arxiv", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "lore_random_rumor")
+async def cb_lore_random_rumor(callback: CallbackQuery):
+    import random
+    rumor = random.choice(TAVERN_RUMORS)
+    text = (
+        f"🍻 *MAYXONA SHIVIR-SHIVIRI: {rumor['title']}*\n\n"
+        f"🗣 *Aytuvchi:* _{rumor['author']}_\n\n"
+        f"'{rumor['text']}'"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="🎲 Boshqa Mish-Mish Eshitish", callback_data="lore_random_rumor")],
+        [InlineKeyboardButton(text="⬅️ Qo'lyozmalar", callback_data="lore_menu_scrolls")],
+        [InlineKeyboardButton(text="🏛 Bosh Arxiv", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+# 19.4 KINGDOMS LORE
+@menu_buttons_router.callback_query(F.data == "lore_menu_kingdoms")
+async def cb_lore_kingdoms_list(callback: CallbackQuery):
+    text = (
+        "🦁 *12 BUYUK IMPERIYA SIYOSATI VA HARBIY DOKTRINALARI* 🦁\n\n"
+        "Har bir imperiyaning yashirin maqsadlari, elita qo'shinlari va afzalliklari:"
+    )
+    buttons = []
+    for k_id, k_data in KINGDOMS.items():
+        buttons.append([InlineKeyboardButton(text=f"{k_data['name']}", callback_data=f"lore_k_view_{k_id}")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Ensiklopediya", callback_data="lore_hub")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("lore_k_view_"))
+async def cb_lore_single_kingdom(callback: CallbackQuery):
+    k_id = callback.data.replace("lore_k_view_", "")
+    k = KINGDOMS.get(k_id)
+    if not k:
+        return
+
+    text = (
+        f"👑 *{k['name']} TO'LIQ DOSYESI* 👑\n\n"
+        f"🏛 *Poytaxti:* {k['capital']}\n"
+        f"👤 *Hukmdori:* {k['ruler']}\n"
+        f"📜 *Shiori:* _{k['motto']}_\n"
+        f"⚔️ *Harbiy ixtisosligi:* {k['specialty']}\n"
+        f"💎 *Qirollik Bonusi:* Mudofaa, iqtisod va qonli urushlarda maxsus afzallik beradi.\n"
+        f"🎙 *Hukmdor tabiati:* _{k['personality'].upper()} — {k['voice_style']}_\n\n"
+        f"Siz ushbu imperiya saroyiga borib, paxta qo'yishingiz yoki xizmatiga kirishingiz mumkin!"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="🍯 Saroyga Borish (Paxta Qo'yish)", callback_data=f"flatter_{k_id}")],
+        [InlineKeyboardButton(text="⬅️ Qirolliklar Ro'yxati", callback_data="lore_menu_kingdoms")],
+        [InlineKeyboardButton(text="🏛 Bosh Arxiv", callback_data="lore_hub")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+

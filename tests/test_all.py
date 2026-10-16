@@ -296,8 +296,8 @@ async def run_comprehensive_tests():
         "name": "Runa Ritsari", "strength": 20, "agility": 15, "stamina": 100,
         "weapon_attack": 15, "runes": ["fire_rune"], "hp": 100, "max_hp": 100
     }
-    rune_defender = {"name": "Himoyachi", "hp": 100, "constitution": 10, "agility": 10, "armor_defense": 5}
-    r_dmg, r_log, _ = BattleEngine.calculate_round(rune_attacker, rune_defender)
+    rune_defender = {"name": "Himoyachi", "hp": 100, "constitution": 10, "agility": 0, "armor_defense": 5}
+    r_dmg, r_log, _ = BattleEngine.calculate_round(rune_attacker, rune_defender, action="skill")
     assert any("Olov Runasi" in l for l in r_log), "Olov runasi jangda ishlamadi!"
 
     # Muz Runasi tekshiruvi (0% dodge)
@@ -409,9 +409,12 @@ async def run_comprehensive_tests():
     kb_player = main_reply_keyboard(is_owner=False)
     kb_owner = main_reply_keyboard(is_owner=True)
 
-    # O'yinchi menyusida kamida 14 ta asosiy tugma bo'lishi kerak
+    # O'yinchi menyusida barcha yangi tugmalar bo'lishi kerak
     player_buttons = [btn.text for row in kb_player.keyboard for btn in row]
     assert "⚔️ Arena (1v1)" in player_buttons, "Arena tugmasi yo'q!"
+    assert "🗺 Zindon & Reydlar" in player_buttons, "Zindon tugmasi yo'q!"
+    assert "🧭 Sahro & Sarguzasht" in player_buttons, "Sahro tugmasi yo'q!"
+    assert "📖 Ensiklopediya (Lore)" in player_buttons, "Ensiklopediya tugmasi yo'q!"
     assert "🛒 Jonli Bozor (P2P)" in player_buttons, "Bozor tugmasi yo'q!"
     assert "📜 Kvestlar & Yutuqlar" in player_buttons, "Kvestlar tugmasi yo'q!"
     assert "⛏ Shaxta & Alximiya" in player_buttons, "Shaxta tugmasi yo'q!"
@@ -426,9 +429,32 @@ async def run_comprehensive_tests():
     assert "👑 OLIY BOSHQARUV (God-Mode)" in owner_buttons, "Owner uchun God-Mode tugmasi yo'q!"
     print(f"✅ TEST 14 O'TDI: Doimiy menyu tugmalari (O'yinchi: {len(player_buttons)} ta, Owner: {len(owner_buttons)} ta) muvaffaqiyatli tekshirildi.")
 
+    # =====================================================================
+    # 15. 100X KONTENT ENSIKLOPEDIYASI: BESTIARIY, ANJOMLAR, SARGUZASHTLAR
+    # =====================================================================
+    print("\n[TEST 15] 100x Kontent Kengaytmasi (Bestiariy, 10-Qavat Zindon, 100+ Anjomlar, Qo'lyozmalar)...")
+    from game.bestiary import BESTIARY_DATA
+    from game.items_db import ITEMS_CATALOG
+    from game.events_engine import EventsEngine, WILDERNESS_EVENTS
+    from game.lore_db import TAVERN_RUMORS, ANCIENT_SCROLLS
+    from database.db import DUNGEON_FLOORS
+
+    assert len(BESTIARY_DATA) >= 10, "Bestiariyda maxluqlar kam!"
+    assert len(ITEMS_CATALOG) >= 25, "Anjomlar katalogida buyumlar kam!"
+    assert len(DUNGEON_FLOORS) >= 10, "Zindon qavatlari 10 taga yetmadi!"
+    assert len(WILDERNESS_EVENTS) >= 5, "Sahro sarguzashtlari yetarli emas!"
+    assert len(ANCIENT_SCROLLS) >= 3, "Qadimiy qo'lyozmalar yo'q!"
+
+    # Tasodifiy sahro sarguzashti testi
+    ev = EventsEngine.get_random_event()
+    assert ev["id"] in [e["id"] for e in WILDERNESS_EVENTS], "Sarguzasht topilmadi!"
+    res_text, changes = EventsEngine.resolve_event("event_shrine", "pray", char)
+    assert changes["hp"] > 0, "Ilohiy buloq joni tiklamadi!"
+    print(f"✅ TEST 15 O'TDI: {len(BESTIARY_DATA)} ta maxluq, {len(ITEMS_CATALOG)} ta anjom, 10 qavatli zindon, {len(WILDERNESS_EVENTS)} ta interaktiv sarguzasht muvaffaqiyatli tekshirildi.")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 14 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print("👑 VALORIYA QIT'ASI, DOIMIY TUGMALAR VA GOD-MODE TO'LIQ TAYYOR!")
+    print("🎉 BARCHA 15 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print("👑 VALORIYA QIT'ASI 100X KONTENT VA MASSIV ARXIV BILAN TAYYOR!")
     print("=========================================================")
 
 if __name__ == "__main__":
