@@ -2,9 +2,12 @@ import math
 import random
 from typing import Dict, Any, Optional, List
 from npc.actions.economy import ECONOMY_COOLDOWNS
+from npc.actions.diplomacy import DIPLOMACY_COOLDOWNS
+from npc.actions.military import MILITARY_COOLDOWNS
+from npc.actions.espionage import ESPIONAGE_COOLDOWNS
 
 # =====================================================================
-# VALORIYA: QAROR DVIGATELI (UTILITY AI & SOFTMAX SELECTION) (FAZA 3)
+# VALORIYA: QAROR DVIGATELI (UTILITY AI & SOFTMAX SELECTION) (FAZA 3 & 4)
 # =====================================================================
 # Har bir hukmdor xislatlari, ichki hissiyotlari va joriy vaziyatga qarab
 # harakatlarni baholaydi (Score). Eng yaxshi 3 tasidan Softmax (T=0.3)
@@ -13,7 +16,12 @@ from npc.actions.economy import ECONOMY_COOLDOWNS
 # Determinik testlar uchun 'seed' parametri qo'llab-quvvatlanadi.
 # =====================================================================
 
-ALL_COOLDOWNS = dict(ECONOMY_COOLDOWNS)
+ALL_COOLDOWNS = {
+    **ECONOMY_COOLDOWNS,
+    **DIPLOMACY_COOLDOWNS,
+    **MILITARY_COOLDOWNS,
+    **ESPIONAGE_COOLDOWNS
+}
 
 async def is_action_on_cooldown(
     db, ruler_id: str, action: str, custom_cooldown: Optional[int] = None

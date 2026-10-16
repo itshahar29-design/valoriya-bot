@@ -938,8 +938,104 @@ async def run_comprehensive_tests():
     print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 3 MUVAFFAQIShLI)!")
     print("=========================================================")
 
+    # =====================================================================
+    # 26. 11 PERSONA IMZO HARAKATLARI, 24S XIYONAT VA OWNER DAXLSIZLIGI (FAZA 4: TEST 26)
+    # =====================================================================
+    print("\n[TEST 26] 11 Persona Imzo Harakatlari, 24-Soatlik Xiyonat Telegrafi va Owner Daxlsizligi...")
+    from npc.actions.economy import OWNER_USERNAME
+    from npc.actions.diplomacy import (
+        execute_urush_elon, execute_ultimatum, execute_kechirim_talab,
+        execute_vositachilik, execute_ittifoq_broker
+    )
+    from npc.actions.military import (
+        execute_reyd, execute_vendetta_elon, execute_kuygan_yer,
+        execute_asir_olish, execute_turnir_otkazish, execute_karvon_reydi,
+        execute_karvon_talash, execute_oliklarni_yigish, execute_muqaddas_urush
+    )
+    from npc.actions.espionage import (
+        execute_sabotaj, execute_xiyonat, execute_mish_mish_zaharlash,
+        execute_maslahat_berish
+    )
+
+    async with get_connection() as db:
+        # 1. Barcha modullarda Owner (@nakama_02 / 648616238) daxlsizligi
+        assert (await execute_urush_elon(db, "crimson_sultanate", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_ultimatum(db, "ash_necropolis", OWNER_USERNAME))["status"] == "blocked_owner_immunity"
+        assert (await execute_kechirim_talab(db, "lionguard", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_reyd(db, "frost_peak", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_vendetta_elon(db, "frost_peak", OWNER_USERNAME))["status"] == "blocked_owner_immunity"
+        assert (await execute_kuygan_yer(db, "crimson_sultanate", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_asir_olish(db, "blood_tide", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_sabotaj(db, "shadowfang", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_xiyonat(db, "shadowfang", OWNER_TELEGRAM_ID))["status"] == "blocked_owner_immunity"
+        assert (await execute_mish_mish_zaharlash(db, "shadowfang", OWNER_USERNAME, "Fitna"))["status"] == "blocked_owner_immunity"
+
+        # 2. Xiyonat 24-soatlik telegraf mexanizmi (Moros va boshqalar)
+        # 1-chaqiriq: 24 soat oldin ogohlantirish beradi
+        t_warn = await execute_xiyonat(db, "shadowfang", "azure_lily")
+        assert t_warn["status"] == "telegraphed_24h_warning", "Xiyonat 24s ogohlantirish bermadi!"
+        
+        # 2-chaqiriq darhol: 24 soat tugamaganini aytib kutadi
+        t_wait = await execute_xiyonat(db, "shadowfang", "azure_lily")
+        assert t_wait["status"] == "waiting_24h_telegraph", "Xiyonat telegraf muddati tekshirilmadi!"
+
+        # 3-chaqiriq (24 soat o'tgach yoki tezlashtirilgan ijro)
+        t_exec = await execute_xiyonat(db, "shadowfang", "azure_lily", force_execute_after_24h=True)
+        assert t_exec["status"] == "executed", "24 soatdan so'ng xiyonat ijro etilmadi!"
+
+        # 3. 11 Persona imzo harakatlari testi
+        # Valter V (Kibr): Turnir o'tkazish
+        t_valter = await execute_turnir_otkazish(db, "lionguard", cost=2000)
+        assert t_valter["status"] == "tournament_held"
+
+        # Ragnar (G'azab): Vendetta
+        t_ragnar = await execute_vendetta_elon(db, "frost_peak", "azure_lily")
+        assert t_ragnar["status"] == "vendetta_declared"
+
+        # Boris (Vazmin): Vositachilik
+        t_boris = await execute_vositachilik(db, "ursus_peak", "lionguard", "crimson_sultanate")
+        assert t_boris["status"] == "truce_brokered"
+
+        # Izabella (Diplomat): Ittifoq brokerligi
+        t_izabella = await execute_ittifoq_broker(db, "azure_lily", "lionguard", "ursus_peak", fee=1000)
+        assert t_izabella["status"] == "brokered"
+
+        # Sulaymon (Qahr): Urush e'lon qilish
+        t_sulaymon = await execute_urush_elon(db, "crimson_sultanate", "frost_peak")
+        assert t_sulaymon["status"] == "war_declared"
+
+        # Botirxon (Yovvoyi): Karvon reydi
+        t_botir = await execute_karvon_reydi(db, "iron_steppe")
+        assert t_botir["status"] == "caravan_raided"
+
+        # Qora Soqol (Taloqchi): Karvon talash
+        t_qora = await execute_karvon_talash(db, "blood_tide", "silk_road")
+        assert t_qora["status"] == "plundered"
+
+        # Malakor (Muzdek): O'liklarni yig'ish (Undead army)
+        t_malakor = await execute_oliklarni_yigish(db, "ash_necropolis", corpses_count=50)
+        assert t_malakor["status"] == "undead_raised"
+
+        # Avreliy (Mutassib): Muqaddas urush
+        t_avreliy = await execute_muqaddas_urush(db, "dawn_citadel", "ash_necropolis")
+        assert t_avreliy["status"] == "crusade_proclaimed"
+
+        # Elenor (Donishmand): Maslahat va hint
+        t_elenor = await execute_maslahat_berish(db, "silver_glade", char["id"])
+        assert t_elenor["status"] == "hint_given"
+
+        await db.commit()
+
+    print(f"✅ TEST 26 O'TDI: 11 Persona Imzo Harakatlari, 24-Soatlik Xiyonat Telegrafi va Owner Daxlsizligi (10/10 Blok) 100% tasdiqlandi!")
+
+    print("\n=========================================================")
+    print("🎉 BARCHA 26 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 4 MUVAFFAQIShLI)!")
+    print("=========================================================")
+
 if __name__ == "__main__":
     asyncio.run(run_comprehensive_tests())
+
 
 
 

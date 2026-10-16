@@ -160,7 +160,22 @@ async def apply_npc_migrations(db):
     );
     """)
 
-    # 33. Mavjud jadvallarga yangi ustunlar (Idempotent ALTER TABLE)
+    # 33. Diplomatiya jadvali (Imperiyalararo munosabatlar)
+    await db.execute("""
+    CREATE TABLE IF NOT EXISTS diplomacy (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        empire1 TEXT NOT NULL,
+        empire2 TEXT NOT NULL,
+        status TEXT DEFAULT 'neutral',
+        pact_type TEXT DEFAULT NULL,
+        is_secret INTEGER DEFAULT 0,
+        since TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        grievance INTEGER DEFAULT 0,
+        UNIQUE(empire1, empire2)
+    );
+    """)
+
+    # 34. Mavjud jadvallarga yangi ustunlar (Idempotent ALTER TABLE)
     for col_info in [
         ("diplomacy", "pact_type", "TEXT DEFAULT NULL"),
         ("diplomacy", "is_secret", "INTEGER DEFAULT 0"),

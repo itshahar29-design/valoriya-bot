@@ -1,5 +1,5 @@
 """
-Valoriya MMORPG — NPC Harakatlar Paketi
+Valoriya MMORPG — NPC Harakatlar Paketi (Iqtisod, Diplomatiya, Harbiy, Josuslik)
 """
 
 from npc.actions.economy import (
@@ -28,7 +28,66 @@ from npc.actions.economy import (
     execute_xazina_sarfi,
 )
 
+from npc.actions.diplomacy import (
+    DIPLOMACY_COOLDOWNS,
+    execute_ittifoq_taklif,
+    execute_zaif_ittifoq_rad,
+    execute_kechirim_talab,
+    execute_vositachilik,
+    execute_tinchlik_taklif,
+    execute_ittifoq_broker,
+    execute_urush_elon,
+    execute_maxfiy_pakt,
+    execute_ultimatum,
+    execute_embargo,
+    execute_elchi_yuborish,
+    execute_sovga_yuborish,
+    execute_ittifoq_buzish,
+)
+
+from npc.actions.military import (
+    MILITARY_COOLDOWNS,
+    execute_turnir_otkazish,
+    execute_vendetta_elon,
+    execute_berserk_reyd,
+    execute_sovga_bilan_tinchlanish,
+    execute_chegara_patrul,
+    execute_kuygan_yer,
+    execute_karvon_reydi,
+    execute_otliq_yordam,
+    execute_qabila_chaqiruvi,
+    execute_karvon_talash,
+    execute_xiroj_xavfsiz_yol,
+    execute_asir_olish,
+    execute_fursatchi_hujum,
+    execute_oliklarni_yigish,
+    execute_muqaddas_urush,
+    execute_ushr_yigish,
+    execute_taqvodorga_shifo,
+    execute_reyd,
+    execute_qamal,
+    execute_mudofaa_kuchaytirish,
+    execute_yollanma_yollash,
+)
+
+from npc.actions.espionage import (
+    ESPIONAGE_COOLDOWNS,
+    execute_malumot_sotish,
+    execute_bank_qarzi,
+    execute_ittifoqni_sotish,
+    execute_mish_mish_zaharlash,
+    execute_xiyonat,
+    execute_maslahat_berish,
+    execute_tarixni_eslash,
+    execute_izchilga_mukofot,
+    execute_josus_yuborish,
+    execute_mish_mish_tarqatish,
+    execute_sabotaj,
+    execute_pora_berish,
+)
+
 __all__ = [
+    # Economy
     "ECONOMY_COOLDOWNS",
     "clamp_float",
     "calculate_greed_need",
@@ -52,4 +111,56 @@ __all__ = [
     "execute_karvon_tolli",
     "execute_auksion_snayper",
     "execute_xazina_sarfi",
+    # Diplomacy
+    "DIPLOMACY_COOLDOWNS",
+    "execute_ittifoq_taklif",
+    "execute_zaif_ittifoq_rad",
+    "execute_kechirim_talab",
+    "execute_vositachilik",
+    "execute_tinchlik_taklif",
+    "execute_ittifoq_broker",
+    "execute_urush_elon",
+    "execute_maxfiy_pakt",
+    "execute_ultimatum",
+    "execute_embargo",
+    "execute_elchi_yuborish",
+    "execute_sovga_yuborish",
+    "execute_ittifoq_buzish",
+    # Military
+    "MILITARY_COOLDOWNS",
+    "execute_turnir_otkazish",
+    "execute_vendetta_elon",
+    "execute_berserk_reyd",
+    "execute_sovga_bilan_tinchlanish",
+    "execute_chegara_patrul",
+    "execute_kuygan_yer",
+    "execute_karvon_reydi",
+    "execute_otliq_yordam",
+    "execute_qabila_chaqiruvi",
+    "execute_karvon_talash",
+    "execute_xiroj_xavfsiz_yol",
+    "execute_asir_olish",
+    "execute_fursatchi_hujum",
+    "execute_oliklarni_yigish",
+    "execute_muqaddas_urush",
+    "execute_ushr_yigish",
+    "execute_taqvodorga_shifo",
+    "execute_reyd",
+    "execute_qamal",
+    "execute_mudofaa_kuchaytirish",
+    "execute_yollanma_yollash",
+    # Espionage
+    "ESPIONAGE_COOLDOWNS",
+    "execute_malumot_sotish",
+    "execute_bank_qarzi",
+    "execute_ittifoqni_sotish",
+    "execute_mish_mish_zaharlash",
+    "execute_xiyonat",
+    "execute_maslahat_berish",
+    "execute_tarixni_eslash",
+    "execute_izchilga_mukofot",
+    "execute_josus_yuborish",
+    "execute_mish_mish_tarqatish",
+    "execute_sabotaj",
+    "execute_pora_berish",
 ]
