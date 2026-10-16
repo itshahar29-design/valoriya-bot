@@ -10,6 +10,7 @@ def main_reply_keyboard(is_owner: bool = False) -> ReplyKeyboardMarkup:
         [KeyboardButton(text="🏰 Gildiya & Qal'alar"), KeyboardButton(text="👑 Oliy Taxt")],
         [KeyboardButton(text="🍻 Taverna"), KeyboardButton(text="📖 Ensiklopediya (Lore)")],
         [KeyboardButton(text="🎁 Kundalik Sovg'a"), KeyboardButton(text="🏆 Reyting")],
+        [KeyboardButton(text="🧠 Mahoratlar (Talantlar)"), KeyboardButton(text="🐾 Hamrohlar & Miniklar")],
         [KeyboardButton(text="👤 Profil & Karta")]
     ]
     if is_owner:

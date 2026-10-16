@@ -521,9 +521,58 @@ async def run_comprehensive_tests():
     total_procedural = loot_matrix["total_unique_items"] + mob_matrix["total_unique_encounters"] + dungeon_matrix["total_rooms"]
     print(f"✅ TEST 16 O'TDI: 10,000+ Arxitektura to'liq tasdiqlandi. Jami: {total_procedural:,} ta protsessual kontent birliklari!")
 
+    # =====================================================================
+    # 17. MAHORAT SHAJARASI (675 TALANT) & JANGOVAR HAMROHLAR (960 PETS)
+    # =====================================================================
+    print("\n[TEST 17] Mahorat Shajarasi (675 Talant) & Hamrohlar Tizimi (960 Pets)...")
+    from game.skills_engine import SKILL_TREES, get_skills_matrix_size
+    from game.pets_engine import PET_SPECIES, EVOLUTION_STAGES, ELEMENT_ASPECTS, generate_companion, get_pet_matrix_size
+    from database.db import (
+        unlock_or_upgrade_skill, get_character_skills,
+        add_character_pet, get_character_pets, set_active_pet, get_active_pet, feed_pet
+    )
+
+    # 1. Mahoratlar Shajarasi (675 Talant)
+    skills_matrix = get_skills_matrix_size()
+    assert skills_matrix["specializations"] == 9, f"Sub-klasslar 9 ta emas ({skills_matrix['specializations']})!"
+    assert skills_matrix["total_skill_nodes"] == 135, f"Mahoratlar 135 ta emas ({skills_matrix['total_skill_nodes']})!"
+    assert skills_matrix["total_skill_upgrades"] == 675, f"Talant darajalari 675 ta emas ({skills_matrix['total_skill_upgrades']})!"
+
+    # Mahorat o'rganish testi
+    success, msg = await unlock_or_upgrade_skill(char["id"], "paladin", "pal_holy_strike")
+    assert success, f"Mahorat ochilmadi: {msg}"
+    learned = await get_character_skills(char["id"])
+    assert any(s["skill_id"] == "pal_holy_strike" for s in learned), "O'rganilgan mahorat DB da topilmadi!"
+    print(f"   🧠 Mahorat Shajarasi: {skills_matrix['total_skill_upgrades']} ta talant (O'rganildi: 'pal_holy_strike', Qolgan SP: {char.get('skill_points', 5)-1})")
+
+    # 2. Hamrohlar & Miniklar Matritsasi (960 Pets & Mounts)
+    pet_matrix = get_pet_matrix_size()
+    assert pet_matrix["species"] == 30, f"Zotlar 30 ta emas ({pet_matrix['species']})!"
+    assert pet_matrix["evolution_stages"] == 4, f"Evolyutsiya bosqichlari 4 ta emas ({pet_matrix['evolution_stages']})!"
+    assert pet_matrix["aspects"] == 8, f"Element aspektlari 8 ta emas ({pet_matrix['aspects']})!"
+    assert pet_matrix["total_companion_variants"] == 960, f"Hamrohlar 960 ta emas ({pet_matrix['total_companion_variants']})!"
+
+    # Hamroh yaratish va boqish testi
+    new_comp = generate_companion(species_id="wolf_shadow", stage=2, aspect_key="fire")
+    assert new_comp["atk"] > 30, "Hamroh zarbasi kam!"
+    pet_db_id = await add_character_pet(char["id"], new_comp, is_active=True)
+    assert pet_db_id > 0, "Hamroh DB ga saqlanmadi!"
+
+    active_p = await get_active_pet(char["id"])
+    assert active_p is not None, "Faol hamroh topilmadi!"
+    assert active_p["id"] == pet_db_id, "Faol hamroh ID mos emas!"
+
+    # Boqish (Feed)
+    feed_success, feed_msg = await feed_pet(char["id"], pet_db_id, food_gold=50)
+    assert feed_success, f"Hamrohni boqish muvaffaqiyatsiz: {feed_msg}"
+    print(f"   🐾 Hamrohlar Matritsasi: {pet_matrix['total_companion_variants']} ta minik/hamroh (Faol: '{active_p['name']}', Boqildi: {feed_success})")
+
+    grand_total = total_procedural + skills_matrix["total_skill_upgrades"] + pet_matrix["total_companion_variants"]
+    print(f"✅ TEST 17 O'TDI: Barcha 675 ta mahorat va 960 ta hamrohlar muvaffaqiyatli ishga tushirildi! Jami Grand Kontent Fondi: {grand_total:,} ta!")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 16 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print(f"👑 VALORIYA: 131,000+ ENTITYLIK PROTSESSUAL GRAND MMORPG TAYYOR!")
+    print("🎉 BARCHA 17 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: {grand_total:,} TA ENTITY VA MEXANIKALAR BILAN JONLI!")
     print("=========================================================")
 
 if __name__ == "__main__":

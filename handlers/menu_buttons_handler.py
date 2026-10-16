@@ -1016,3 +1016,295 @@ async def cb_lore_bounties(callback: CallbackQuery):
     ]
     await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
+# =====================================================================
+# 20. MAHORATLAR VA TALANTLAR MENYUSI (SKILL TREES)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🧠 Mahoratlar") | (F.text == "/skills"))
+async def btn_skills(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.answer("Avval /start orqali qahramoningizni tanlang!")
+        return
+
+    from database.db import get_character_skills
+    from game.skills_engine import SKILL_TREES
+
+    char_class = char.get("class_id", "warrior")
+    sp = char.get("skill_points") or 0
+    learned_skills = await get_character_skills(char["id"])
+
+    available_specs = {k: v for k, v in SKILL_TREES.items() if v["class_id"] == char_class}
+
+    text = (
+        f"🧠 *QAHRAMON MAHORATLAR SHAJARASI (TALENT TREE)* 🧠\n\n"
+        f"👤 Qahramon: *{char['name']}* | Kasb: `{char_class.capitalize()}`\n"
+        f"⚡️ Bo'sh Mahorat Ochkolari (SP): *{sp} SP*\n"
+        f"📚 O'rganilgan Mahoratlar: *{len(learned_skills)} ta*\n\n"
+        f"Har bir jangovar yo'nalish bo'yicha 15 tadan maxsus faol va passiv talantlar mavjud. "
+        f"Ixtisoslashuv shaxobchasini tanlang:"
+    )
+
+    buttons = []
+    for spec_id, spec_data in available_specs.items():
+        buttons.append([
+            InlineKeyboardButton(text=f"{spec_data['title_uz']}", callback_data=f"spec_view_{spec_id}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("spec_view_"))
+async def cb_spec_view(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    spec_id = callback.data.replace("spec_view_", "")
+    from game.skills_engine import SKILL_TREES
+    from database.db import get_character_skills
+
+    spec = SKILL_TREES.get(spec_id)
+    if not spec:
+        return
+
+    learned = await get_character_skills(char["id"])
+    learned_map = {s["skill_id"]: s["rank"] for s in learned}
+    sp = char.get("skill_points") or 0
+
+    text = (
+        f"{spec['title_uz']}\n\n"
+        f"_{spec['desc_uz']}_\n"
+        f"⚡️ Sizda mavjud: *{sp} SP*\n\n"
+        f"📌 *Talantlar va Qobiliyatlar:* (Tanlang va kuchaytiring)\n\n"
+    )
+
+    buttons = []
+    for s_id, s_info in list(spec["skills"].items())[:8]:
+        cur_rank = learned_map.get(s_id, 0)
+        rank_str = f"[{cur_rank}/{s_info['max_rank']}]" if cur_rank > 0 else f"[{s_info['cost_sp']} SP]"
+        buttons.append([
+            InlineKeyboardButton(
+                text=f"{s_info['icon']} {s_info['name']} {rank_str}",
+                callback_data=f"skill_up_{spec_id}_{s_id}"
+            )
+        ])
+
+    buttons.append([InlineKeyboardButton(text="⬅️ Barcha Shaxobchalar", callback_data="skills_hub_cb")])
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "skills_hub_cb")
+async def cb_skills_hub(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import get_character_skills
+    from game.skills_engine import SKILL_TREES
+
+    char_class = char.get("class_id", "warrior")
+    sp = char.get("skill_points") or 0
+    learned_skills = await get_character_skills(char["id"])
+    available_specs = {k: v for k, v in SKILL_TREES.items() if v["class_id"] == char_class}
+
+    text = (
+        f"🧠 *QAHRAMON MAHORATLAR SHAJARASI (TALENT TREE)* 🧠\n\n"
+        f"👤 Qahramon: *{char['name']}* | Kasb: `{char_class.capitalize()}`\n"
+        f"⚡️ Bo'sh Mahorat Ochkolari (SP): *{sp} SP*\n"
+        f"📚 O'rganilgan Mahoratlar: *{len(learned_skills)} ta*\n\n"
+        f"Ixtisoslashuv shaxobchasini tanlang:"
+    )
+
+    buttons = []
+    for spec_id, spec_data in available_specs.items():
+        buttons.append([
+            InlineKeyboardButton(text=f"{spec_data['title_uz']}", callback_data=f"spec_view_{spec_id}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("skill_up_"))
+async def cb_skill_upgrade(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    parts = callback.data.split("_")
+    spec_id = parts[2]
+    skill_id = "_".join(parts[3:])
+
+    from database.db import unlock_or_upgrade_skill
+    success, msg = await unlock_or_upgrade_skill(char["id"], spec_id, skill_id)
+    await callback.answer(msg, show_alert=True)
+    callback.data = f"spec_view_{spec_id}"
+    await cb_spec_view(callback)
+
+# =====================================================================
+# 21. HAMROHLAR VA MINIKLAR MENYUSI (PETS & MOUNTS)
+# =====================================================================
+@menu_buttons_router.message(F.text.startswith("🐾 Hamrohlar") | (F.text == "/pets"))
+async def btn_pets(message: Message):
+    user_id = message.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        await message.answer("Avval /start orqali qahramoningizni tanlang!")
+        return
+
+    from database.db import get_character_pets, get_active_pet
+
+    active_pet = await get_active_pet(char["id"])
+    all_pets = await get_character_pets(char["id"])
+
+    text = (
+        "🐾 *VALORIYA JANGOVAR HAMROHLARI VA MINIKLAR* 🐎\n\n"
+        "O'rmon va zindonlarda topiladigan maxsus sadoqatli yirtqichlar va afsonaviy jonivorlar. "
+        "Ular jangda siz bilan yelkama-yelka kurashadi va zarbalarni yutadi!\n\n"
+    )
+
+    if active_pet:
+        text += (
+            f"👑 *Hozirgi Faol Hamrohingiz:*\n"
+            f"*{active_pet['name']}*\n"
+            f"🍖 To'qlik darajasi: *{active_pet['hunger']}%*\n"
+            f"🌟 Daraja: *Lvl {active_pet['level']}* (EXP: {active_pet['exp']})\n"
+            f"✨ Aspekt: `{active_pet['aspect']}` | Bosqich: `{active_pet['stage']}`\n\n"
+        )
+    else:
+        text += "⚠️ *Sizda hozircha faol hamroh tanlanmagan.*\n\n"
+
+    text += f"📦 Jami sizga tegishli jonivorlar: *{len(all_pets)} ta*\n"
+
+    buttons = []
+    if active_pet:
+        buttons.append([InlineKeyboardButton(text="🍗 Ovqat Berish (50 🪙)", callback_data=f"pet_feed_{active_pet['id']}")])
+
+    buttons.append([InlineKeyboardButton(text="🥚 Sirli Hamroh Tuxumini Ochish (300 🪙)", callback_data="pet_hatch_egg")])
+    if all_pets:
+        buttons.append([InlineKeyboardButton(text="📋 Barcha Jonivorlarim Ro'yxati", callback_data="pet_list_all")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    await message.answer(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("pet_feed_"))
+async def cb_pet_feed(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    pet_db_id = int(callback.data.replace("pet_feed_", ""))
+    from database.db import feed_pet
+    success, msg = await feed_pet(char["id"], pet_db_id, food_gold=50)
+    await callback.answer(msg, show_alert=True)
+    await cb_pets_hub(callback)
+
+@menu_buttons_router.callback_query(F.data == "pet_hatch_egg")
+async def cb_pet_hatch(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    if char["gold"] < 300:
+        await callback.answer("Tuxum ochish uchun 300 🪙 Oltin kerak!", show_alert=True)
+        return
+
+    from database.db import update_character, add_character_pet
+    from game.pets_engine import generate_companion
+
+    new_pet = generate_companion(stage=1)
+    await update_character(char["id"], {"gold": char["gold"] - 300})
+    await add_character_pet(char["id"], new_pet, is_active=True)
+
+    text = (
+        f"🥚✨ *MO'JIZA! TUXUM YORILIB YANGI HAMROH DUNYOGA KELDI!* ✨🥚\n\n"
+        f"Tabriklaymiz, sarguzashtlaringizda sizga yangi sodiq do'st qo'shildi:\n\n"
+        f"*{new_pet['name']}*\n"
+        f"⚔️ ATK: `+{new_pet['atk']}` | 🛡 DEF: `+{new_pet['def']}` | ❤️ HP: `+{new_pet['hp']}`\n"
+        f"📜 _{new_pet['desc']}_\n\n"
+        f"Bu jonivor darhol sizning asosiy jangovar hamrohingiz etib tayinlandi!"
+    )
+    buttons = [
+        [InlineKeyboardButton(text="🐾 Hamrohlar Boshqaruviga Qaytish", callback_data="pets_hub_cb")]
+    ]
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "pets_hub_cb")
+async def cb_pets_hub(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import get_character_pets, get_active_pet
+
+    active_pet = await get_active_pet(char["id"])
+    all_pets = await get_character_pets(char["id"])
+
+    text = (
+        "🐾 *VALORIYA JANGOVAR HAMROHLARI VA MINIKLAR* 🐎\n\n"
+        "O'rmon va zindonlarda topiladigan maxsus sadoqatli yirtqichlar va afsonaviy jonivorlar.\n\n"
+    )
+
+    if active_pet:
+        text += (
+            f"👑 *Hozirgi Faol Hamrohingiz:*\n"
+            f"*{active_pet['name']}*\n"
+            f"🍖 To'qlik darajasi: *{active_pet['hunger']}%*\n"
+            f"🌟 Daraja: *Lvl {active_pet['level']}* (EXP: {active_pet['exp']})\n"
+            f"✨ Aspekt: `{active_pet['aspect']}` | Bosqich: `{active_pet['stage']}`\n\n"
+        )
+    else:
+        text += "⚠️ *Sizda hozircha faol hamroh tanlanmagan.*\n\n"
+
+    text += f"📦 Jami sizga tegishli jonivorlar: *{len(all_pets)} ta*\n"
+
+    buttons = []
+    if active_pet:
+        buttons.append([InlineKeyboardButton(text="🍗 Ovqat Berish (50 🪙)", callback_data=f"pet_feed_{active_pet['id']}")])
+
+    buttons.append([InlineKeyboardButton(text="🥚 Sirli Hamroh Tuxumini Ochish (300 🪙)", callback_data="pet_hatch_egg")])
+    if all_pets:
+        buttons.append([InlineKeyboardButton(text="📋 Barcha Jonivorlarim Ro'yxati", callback_data="pet_list_all")])
+    buttons.append([InlineKeyboardButton(text="⬅️ Bosh Menyu", callback_data="menu_main")])
+
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data == "pet_list_all")
+async def cb_pet_list_all(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    from database.db import get_character_pets
+    all_pets = await get_character_pets(char["id"])
+
+    text = "🐾 *SIZNING BARCHA JONIVORLARINGIZ:* 🐾\n\nFaol qilish uchun jonivorni tanlang:\n\n"
+    buttons = []
+    for p in all_pets:
+        active_tag = " [FAOL 👑]" if p.get("is_active") == 1 else ""
+        buttons.append([
+            InlineKeyboardButton(text=f"{p['name']}{active_tag}", callback_data=f"pet_activate_{p['id']}")
+        ])
+    buttons.append([InlineKeyboardButton(text="⬅️ Hamrohlar Bo'limi", callback_data="pets_hub_cb")])
+
+    await callback.message.edit_text(text, parse_mode="Markdown", reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+@menu_buttons_router.callback_query(F.data.startswith("pet_activate_"))
+async def cb_pet_activate(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    char = await get_character_by_user_id(user_id)
+    if not char:
+        return
+
+    pet_db_id = int(callback.data.replace("pet_activate_", ""))
+    from database.db import set_active_pet
+    await set_active_pet(char["id"], pet_db_id)
+    await callback.answer("Tanlangan jonivor faol jangovar hamroh etib belgilandi!", show_alert=True)
+    await cb_pets_hub(callback)
+

@@ -271,6 +271,39 @@ async def init_db():
         );
         """)
 
+        # 19. Character Skills (Mahoratlar Shajarasi)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS character_skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            character_id INTEGER NOT NULL,
+            specialization_id TEXT NOT NULL,
+            skill_id TEXT NOT NULL,
+            rank INTEGER DEFAULT 1,
+            unlocked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(character_id, skill_id),
+            FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+        );
+        """)
+
+        # 20. Character Pets & Mounts (Jangovar Hamrohlar va Miniklar)
+        await db.execute("""
+        CREATE TABLE IF NOT EXISTS character_pets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            character_id INTEGER NOT NULL,
+            pet_id TEXT NOT NULL,
+            species_id TEXT NOT NULL,
+            name TEXT NOT NULL,
+            aspect TEXT NOT NULL,
+            stage INTEGER DEFAULT 1,
+            level INTEGER DEFAULT 1,
+            exp INTEGER DEFAULT 0,
+            hunger INTEGER DEFAULT 100,
+            is_active INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (character_id) REFERENCES characters(id) ON DELETE CASCADE
+        );
+        """)
+
         # Migrations if needed
         for col_def in [
             ("username", "TEXT DEFAULT NULL"),
@@ -278,6 +311,7 @@ async def init_db():
             ("is_muted", "INTEGER DEFAULT 0"),
             ("buff_multiplier", "REAL DEFAULT 1.0"),
             ("last_daily_claim", "TEXT DEFAULT NULL"),
+            ("skill_points", "INTEGER DEFAULT 5"),
             ("daily_streak", "INTEGER DEFAULT 0"),
             ("guild_id", "INTEGER DEFAULT NULL"),
             ("referral_count", "INTEGER DEFAULT 0"),
@@ -2112,6 +2146,148 @@ async def sell_trade_good(character_id: int, good_key: str, amount: int = 1) -> 
         await increment_quest_progress(character_id, "market_or_tavern", 1)
         await unlock_achievement(character_id, "market_trader", "🛒 Savdo Magnati")
         return True, f"💰 *SOTILDI!* {amount}x {good['name']} jami {total_revenue:,} 🪙 ga sotildi!"
+
+# =====================================================================
+# MAHORATLAR VA TALANTLAR (SKILLS & TALENTS)
+# =====================================================================
+async def get_character_skills(character_id: int) -> List[Dict[str, Any]]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM character_skills WHERE character_id = ? ORDER BY id ASC;",
+            (character_id,)
+        ) as cur:
+            rows = await cur.fetchall()
+            return [dict(r) for r in rows]
+
+async def unlock_or_upgrade_skill(character_id: int, specialization_id: str, skill_id: str) -> Tuple[bool, str]:
+    from game.skills_engine import SKILL_TREES
+    spec = SKILL_TREES.get(specialization_id)
+    if not spec or skill_id not in spec["skills"]:
+        return False, "Bunday mahorat topilmadi!"
+        
+    skill_info = spec["skills"][skill_id]
+    
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT * FROM characters WHERE id = ?", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+            
+        sp = char.get("skill_points") or 0
+        cost = skill_info.get("cost_sp", 1)
+        
+        # Check current rank
+        async with db.execute(
+            "SELECT * FROM character_skills WHERE character_id = ? AND skill_id = ?;",
+            (character_id, skill_id)
+        ) as cur:
+            existing = await cur.fetchone()
+            
+        if existing:
+            current_rank = existing["rank"]
+            if current_rank >= skill_info["max_rank"]:
+                return False, f"Bu mahorat maksimal ({skill_info['max_rank']}) darajaga yetgan!"
+            if sp < cost:
+                return False, f"Yetarli Skill Point (SP) yo'q! Kerak: {cost} SP, Sizda: {sp} SP."
+            new_rank = current_rank + 1
+            await db.execute(
+                "UPDATE character_skills SET rank = ? WHERE id = ?;",
+                (new_rank, existing["id"])
+            )
+            await db.execute(
+                "UPDATE characters SET skill_points = skill_points - ? WHERE id = ?;",
+                (cost, character_id)
+            )
+            await db.commit()
+            return True, f"✨ *MAHORAT KUCHAYTIRILDI!* {skill_info['icon']} *{skill_info['name']}* (Rank {new_rank}/{skill_info['max_rank']}) ga ko'tarildi!"
+        else:
+            if sp < cost:
+                return False, f"Yetarli Skill Point (SP) yo'q! Kerak: {cost} SP, Sizda: {sp} SP."
+            await db.execute(
+                "INSERT INTO character_skills (character_id, specialization_id, skill_id, rank) VALUES (?, ?, ?, 1);",
+                (character_id, specialization_id, skill_id)
+            )
+            await db.execute(
+                "UPDATE characters SET skill_points = skill_points - ? WHERE id = ?;",
+                (cost, character_id)
+            )
+            await db.commit()
+            await unlock_achievement(character_id, "first_skill", "🧠 Ilm Sohibi")
+            return True, f"🎉 *YANGI MAHORAT OCHILDI!* {skill_info['icon']} *{skill_info['name']}* (Rank 1/{skill_info['max_rank']}) o'rganildi!"
+
+# =====================================================================
+# JANGOVAR HAMROHLAR & MINIKLAR (PETS & MOUNTS)
+# =====================================================================
+async def add_character_pet(character_id: int, pet_dict: dict, is_active: bool = False) -> int:
+    async with get_connection() as db:
+        if is_active:
+            await db.execute("UPDATE character_pets SET is_active = 0 WHERE character_id = ?;", (character_id,))
+        cur = await db.execute("""
+        INSERT INTO character_pets (character_id, pet_id, species_id, name, aspect, stage, hunger, is_active)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+        """, (
+            character_id,
+            pet_dict["id"],
+            pet_dict["species_id"],
+            pet_dict["name"],
+            pet_dict["aspect"],
+            pet_dict.get("stage", 1),
+            pet_dict.get("hunger", 100),
+            1 if is_active else 0
+        ))
+        await db.commit()
+        await unlock_achievement(character_id, "first_pet", "🐾 Hayvonlar Do'sti")
+        return cur.lastrowid
+
+async def get_character_pets(character_id: int) -> List[Dict[str, Any]]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM character_pets WHERE character_id = ? ORDER BY is_active DESC, id ASC;",
+            (character_id,)
+        ) as cur:
+            rows = await cur.fetchall()
+            return [dict(r) for r in rows]
+
+async def set_active_pet(character_id: int, pet_db_id: int) -> bool:
+    async with get_connection() as db:
+        await db.execute("UPDATE character_pets SET is_active = 0 WHERE character_id = ?;", (character_id,))
+        await db.execute("UPDATE character_pets SET is_active = 1 WHERE id = ? AND character_id = ?;", (pet_db_id, character_id))
+        await db.commit()
+        return True
+
+async def get_active_pet(character_id: int) -> Optional[Dict[str, Any]]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute(
+            "SELECT * FROM character_pets WHERE character_id = ? AND is_active = 1 LIMIT 1;",
+            (character_id,)
+        ) as cur:
+            row = await cur.fetchone()
+            return dict(row) if row else None
+
+async def feed_pet(character_id: int, pet_db_id: int, food_gold: int = 50) -> Tuple[bool, str]:
+    async with get_connection() as db:
+        db.row_factory = aiosqlite.Row
+        async with db.execute("SELECT gold FROM characters WHERE id = ?;", (character_id,)) as cur:
+            char = dict(await cur.fetchone())
+            
+        if char["gold"] < food_gold:
+            return False, f"Oziq-ovqat sotib olishga yetarli oltin yo'q! Kerak: {food_gold} 🪙."
+            
+        async with db.execute("SELECT * FROM character_pets WHERE id = ? AND character_id = ?;", (pet_db_id, character_id)) as cur:
+            pet = await cur.fetchone()
+            if not pet:
+                return False, "Hamroh topilmadi!"
+                
+        pet_dict = dict(pet)
+        new_hunger = min(100, pet_dict["hunger"] + 35)
+        new_exp = pet_dict["exp"] + 25
+        
+        await db.execute("UPDATE characters SET gold = gold - ? WHERE id = ?;", (food_gold, character_id))
+        await db.execute("UPDATE character_pets SET hunger = ?, exp = ? WHERE id = ?;", (new_hunger, new_exp, pet_db_id))
+        await db.commit()
+        return True, f"🍖 *HAMROH TO'YINDIRILDI!* {pet_dict['name']} minnatdorlik bilan ovqatlandi (+35 To'qlik, +25 XP)!"
 
 
 
