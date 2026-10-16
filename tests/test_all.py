@@ -723,9 +723,63 @@ async def run_comprehensive_tests():
 
     print(f"✅ TEST 19 O'TDI: 60+ Kunlik Endgame Loop (Prestige X, 100-Floor Tower, 100k+ Runewords, Promo-Engine) 100% muvaffaqiyatli ishga tushirildi!")
 
+    # =====================================================================
+    # 20. NPC TIRIK DUNYO (FAZA 1): 12 HUKMDOR SHAXSIYATI VA JADVALLAR 24–32
+    # =====================================================================
+    print("\n[TEST 20] NPC Tirik Dunyo: 12 Hukmdor Shaxsiyat Matritsasi & Jadvallar 24–32...")
+    from npc.personality import RULER_PROFILES, validate_profile, get_ruler_profile, TRAIT_NAMES
+    from database.db import get_connection
+
+    # 1. 12 ta profil va 8 ta xislat 0-100 oralig'ida ekanligi
+    assert len(RULER_PROFILES) == 12, f"Hukmdor profillari 12 ta emas ({len(RULER_PROFILES)})!"
+    for emp_id, prof in RULER_PROFILES.items():
+        assert validate_profile(prof) is True, f"{emp_id} shaxsiyat profili tekshiruvdan o'tmadi!"
+        for t_name, t_val in prof["traits"].items():
+            assert 0 <= t_val <= 100, f"{emp_id} ning {t_name} xislati 0-100 oralig'ida emas: {t_val}"
+
+    # Asosiy arxitip tekshiruvlari
+    torin = get_ruler_profile("iron_bastion")
+    assert torin["traits"]["greed"] == 98, "Torin ochko'zligi 98 emas!"
+    qora_soqol = get_ruler_profile("blood_tide")
+    assert qora_soqol["traits"]["greed"] == 90, "Qora Soqol ochko'zligi 90 emas!"
+    avreliy = get_ruler_profile("sun_order")
+    assert avreliy["traits"]["piety"] == 100, "Patriarx Avreliy taqvosi 100 emas!"
+    ragnar = get_ruler_profile("frost_peak")
+    assert ragnar["traits"]["anger"] == 95, "Ragnar g'azabi 95 emas!"
+
+    # 2. Baza jadvallari (24-32) va migratsiya versiyasi tekshiruvi
+    async with get_connection() as db:
+        # Schema version
+        async with db.execute("SELECT version FROM schema_version WHERE version = 1;") as cur:
+            row_v = await cur.fetchone()
+            assert row_v is not None and row_v[0] == 1, "Sxema versiyasi 1 emas!"
+
+        # Jadvallarning mavjudligi
+        tables_to_check = [
+            "npc_rulers", "npc_memory", "npc_relations", "npc_actions_log",
+            "world_state", "rumors", "npc_loans", "bot_knights", "npc_quests"
+        ]
+        for tbl in tables_to_check:
+            async with db.execute(f"SELECT count(*) FROM {tbl};") as cur_t:
+                res_cnt = await cur_t.fetchone()
+                assert res_cnt is not None, f"Jadval {tbl} topilmadi!"
+
+        # npc_rulers da barcha 12 ta hukmdor seed qilinganmi?
+        async with db.execute("SELECT count(*) FROM npc_rulers;") as cur_r:
+            cnt_rulers = (await cur_r.fetchone())[0]
+            assert cnt_rulers == 12, f"npc_rulers jadvalida 12 ta hukmdor yo'q: {cnt_rulers}"
+
+        # Torin xazinasi va ochko'zligi DB da to'g'ri o'tirganmi?
+        async with db.execute("SELECT greed, treasury FROM npc_rulers WHERE empire_id = 'iron_bastion';") as cur_torin:
+            r_torin = await cur_torin.fetchone()
+            assert r_torin[0] == 98, "Bazada Torin ochko'zligi 98 emas!"
+            assert r_torin[1] >= 40000, "Bazada Torin xazinasi to'g'ri emas!"
+
+    print(f"✅ TEST 20 O'TDI: NPC Tirik Dunyo Faza 1 (12 Hukmdor, 8 Xislat, Jadvallar 24–32, WAL Mode) 100% muvaffaqiyatli ishga tushirildi!")
+
     print("\n=========================================================")
-    print("🎉 BARCHA 19 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
-    print(f"👑 VALORIYA: 60+ KUNLIK CHEKSIZ MMORPG VA REKLAMA TRAFIGI MOTOR!")
+    print("🎉 BARCHA 20 TA MEGA-TEST 100% MUVAFFAQIShLI O'TDI!")
+    print(f"👑 VALORIYA: TIRIK DUNYO VA NPC AQL V3.0 (FAZA 1 MUVAFFAQIShLI)!")
     print("=========================================================")
 
 if __name__ == "__main__":

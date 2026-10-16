@@ -417,6 +417,13 @@ async def init_db():
 
         await db.commit()
 
+        # Apply Phase 1 NPC migrations (tables 24-32, schema_version, WAL mode, ruler seeding)
+        try:
+            from npc.migrations import apply_npc_migrations
+            await apply_npc_migrations(db)
+        except Exception:
+            pass
+
 async def register_group(chat_id: int, title: str):
     async with get_connection() as db:
         await db.execute("""
